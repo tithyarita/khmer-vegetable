@@ -25,14 +25,16 @@
     </div>
 </template>
 <style scoped>
+
 .card-wrap{
     display: flex;
     gap: 20px;
     align-items: stretch;
+    justify-content: center;
     
 }
 .card-farm{
-    width:470px;
+    width:430px;
     flex: 1; /* Take up remaining space */
     background: linear-gradient(to bottom right , #fff 85%, #1aba37 100%);
     padding:10px;
@@ -72,7 +74,9 @@
 .info{
     display: flex;
     gap: 30px;
-    margin-top:20px;
+    margin-top:30px;
+    margin-left:50px;
+
     strong{
         color:darkgray;
         font-size:10px;

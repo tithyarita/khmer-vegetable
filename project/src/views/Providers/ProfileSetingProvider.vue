@@ -2,13 +2,12 @@
 import BankAccount from '@/components/Providers/BankAccount.vue';
 import ProfileCard from '@/components/Providers/ProfileCard.vue';
 import ProviderForm from '@/components/Providers/ProviderForm.vue';
-import Sidebar from '@/components/Providers/Sidebar.vue';
+
 
 </script>
 
 <template>
     <div class="layout">
-        <!-- <Sidebar /> -->
         <div class="main-contant">
             <div class="header">
                 <h2>Provider Profile</h2>
@@ -29,6 +28,7 @@ import Sidebar from '@/components/Providers/Sidebar.vue';
 <style>   
 .layout{
     display: flex;
+    gap:20px;
     min-height: 100vh;
     margin:center;
 }
@@ -46,6 +46,11 @@ import Sidebar from '@/components/Providers/Sidebar.vue';
     display: flex;
     align-items: center;
     gap: 15px;
+    i{
+        font-size: 18px;
+        color: #2e7d32;
+        cursor: pointer;
+    }
 }
 .header .right p{
     margin:0;

@@ -11,7 +11,7 @@
     <div class="banks">
       <div class="bank">
         <div class="bank-name">
-            <p>ACLEDA</p>
+            <p>ABA</p>
             <strong>1234 1234 1234</strong>
         </div>
         <p>QR Code</p>
