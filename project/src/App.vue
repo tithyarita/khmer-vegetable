@@ -1,4 +1,4 @@
-<script setup>
+<!-- <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
 </script>
@@ -82,4 +82,21 @@ nav a:first-of-type {
     margin-top: 1rem;
   }
 }
+</style> -->
+
+<script setup>
+import { RouterLink, RouterView } from 'vue-router'
+import ProfileSetingProvider from './views/Providers/ProfileSetingProvider.vue'
+</script>
+
+<template>
+
+  <div class="wrapper">
+    <ProfileSetingProvider />
+
+  </div>
+</template>
+
+<style> 
+
 </style>
