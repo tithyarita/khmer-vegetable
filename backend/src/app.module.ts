@@ -8,7 +8,7 @@ import { UsersModule } from './users/users.module';
 import { StaffModule } from './staff/staff.module';
 import { AdminModule } from './admin/admin.module';
 import { ProvidersModule } from './providers/providers.module';
-import { ApplicationsModule } from './applications/applications.module';
+import { ApplicationsModule } from './providers/applications.module';
 
 @Module({
   imports: [
