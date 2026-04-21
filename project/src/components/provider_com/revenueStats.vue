@@ -1,15 +1,16 @@
 <template>
-  <div class="analyse-bar">
+  <div class="revenue-stats">
     <div class="row g-3">
-      <div v-for="card in cards" :key="card.id" class="col-12 col-sm-6 col-lg-3">
-        <div class="card-item card h-100 border-0 shadow-sm">
+      <div v-for="stat in stats" :key="stat.id" class="col-12 col-sm-6 col-lg-3">
+        <div class="stat-card card h-100 border-0 shadow-sm rounded-3">
           <div class="card-body d-flex align-items-center gap-3">
-            <div class="card-icon rounded" :style="{ backgroundColor: card.color }">
-              <i :class="card.icon"></i>
+            <div class="stat-icon rounded-3" :style="{ backgroundColor: stat.color }">
+              <i :class="stat.icon"></i>
             </div>
             <div>
-              <h6 class="card-value mb-1">{{ formatNumber(card.value) }}</h6>
-              <p class="card-label mb-0 small text-muted">{{ card.label }}</p>
+              <p class="stat-label small text-muted mb-1">{{ stat.label }}</p>
+              <h6 class="stat-value mb-0">{{ stat.value }}</h6>
+              <small class="stat-sublabel text-muted">{{ stat.sublabel }}</small>
             </div>
           </div>
         </div>
@@ -21,54 +22,54 @@
 <script setup>
 import { ref } from 'vue'
 
-const cards = ref([
+const stats = ref([
   {
     id: 1,
-    icon: 'bi bi-person-circle',
-    label: 'Customers',
-    value: 5583,
+    icon: 'bi bi-wallet2',
+    label: 'Total Earning',
+    value: '$350.4',
+    sublabel: '',
     color: '#e0a0e3'
   },
   {
     id: 2,
-    icon: 'bi bi-briefcase',
-    label: 'Orders Received',
-    value: 539,
+    icon: 'bi bi-cash-coin',
+    label: 'Earn this month',
+    value: '$642.39',
+    sublabel: '',
     color: '#8ec5fc'
   },
   {
     id: 3,
-    icon: 'bi bi-people',
-    label: 'Delivery Partners',
-    value: 105,
+    icon: 'bi bi-bag-check',
+    label: 'Total Orders',
+    value: '57',
+    sublabel: '',
     color: '#d97ef1'
   },
   {
     id: 4,
-    icon: 'bi bi-box',
-    label: 'Delivery',
-    value: 20835,
+    icon: 'bi bi-percent',
+    label: 'Orders This month',
+    value: '57',
+    sublabel: '',
     color: '#ffc56d'
   }
 ])
-
-const formatNumber = (num) => {
-  return num.toLocaleString()
-}
 </script>
 
 <style scoped>
-.analyse-bar {
+.revenue-stats {
   padding: 0;
 }
 
-.card-item {
+.stat-card {
   background: white;
-  border-radius: 8px;
+  border-radius: 16px;
   transition: all 0.3s ease;
 }
 
-.card-item:hover {
+.stat-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
@@ -77,7 +78,7 @@ const formatNumber = (num) => {
   padding: 1.25rem;
 }
 
-.card-icon {
+.stat-icon {
   width: 60px;
   height: 60px;
   display: flex;
@@ -88,30 +89,37 @@ const formatNumber = (num) => {
   flex-shrink: 0;
 }
 
-.card-value {
+.stat-value {
   font-size: 1.5rem;
   font-weight: 700;
   color: #212529;
 }
 
-.card-label {
-  font-size: 0.9rem;
+.stat-label {
+  font-size: 0.85rem;
   color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-sublabel {
+  font-size: 0.75rem;
+  color: #adb5bd;
 }
 
 @media (max-width: 1199px) {
-  .card-icon {
+  .stat-icon {
     width: 50px;
     height: 50px;
     font-size: 1.5rem;
   }
 
-  .card-value {
+  .stat-value {
     font-size: 1.25rem;
   }
 
-  .card-label {
-    font-size: 0.85rem;
+  .stat-label {
+    font-size: 0.8rem;
   }
 
   .card-body {
@@ -120,18 +128,18 @@ const formatNumber = (num) => {
 }
 
 @media (max-width: 768px) {
-  .card-icon {
+  .stat-icon {
     width: 45px;
     height: 45px;
     font-size: 1.25rem;
   }
 
-  .card-value {
+  .stat-value {
     font-size: 1rem;
   }
 
-  .card-label {
-    font-size: 0.8rem;
+  .stat-label {
+    font-size: 0.75rem;
   }
 
   .card-body {
@@ -140,18 +148,18 @@ const formatNumber = (num) => {
 }
 
 @media (max-width: 576px) {
-  .card-icon {
+  .stat-icon {
     width: 40px;
     height: 40px;
     font-size: 1rem;
   }
 
-  .card-value {
+  .stat-value {
     font-size: 0.9rem;
   }
 
-  .card-label {
-    font-size: 0.75rem;
+  .stat-label {
+    font-size: 0.7rem;
   }
 
   .card-body {

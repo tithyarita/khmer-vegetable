@@ -9,27 +9,35 @@
       <!-- Main Content -->
       <div class="main-content">
         <!-- Header -->
-        <div class="dashboard-header bg-success text-white p-4">
-          <h5 class="mb-0">Dashboard</h5>
-        </div>
+        <PageHeader title="Dashboard" />
 
         <!-- Content Area -->
-        <div class="content-wrapper">
+        <div class="content-wrapper flex-grow-1 overflow-y-auto p-4">
           <!-- Analyse Cards -->
-          <AnalyseBar />
+          <div class="mb-4">
+            <AnalyseBar />
+          </div>
 
           <!-- Products Sell Analysis Chart -->
-          <ProductsSellAnalysis />
+          <div class="card mb-4">
+            <div class="card-body">
+              <ProductsSellAnalysis />
+            </div>
+          </div>
 
           <!-- Popular Products Section -->
-          <div class="products-section">
-            <div class="products-header">
-              <h5 class="mb-0">Popular Product</h5>
-              <a href="#" class="view-all">View All</a>
+          <div class="card">
+            <div class="card-header bg-white py-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Popular Product</h5>
+                <button @click="goToProducts" class="btn btn-link btn-sm text-decoration-none">View All</button>
+              </div>
             </div>
-            <div class="products-grid">
-              <div v-for="product in products" :key="product.id">
-                <ProductCard :product="product" />
+            <div class="card-body">
+              <div class="row g-3">
+                <div v-for="product in products" :key="product.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+                  <ProductCard :product="product" />
+                </div>
               </div>
             </div>
           </div>
@@ -41,14 +49,18 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import SideBar from '@/components/provider_com/sideBar.vue'
+import PageHeader from '@/components/provider_com/pageHeader.vue'
 import AnalyseBar from '@/components/provider_com/analyseBar.vue'
-import ProductsSellAnalysis from '@/components/provider_com/ProductsSellAnalysis.vue'
+import ProductsSellAnalysis from '@/components/provider_com/productsSellAnalysis.vue'
 import ProductCard from '@/components/provider_com/productCard.vue'
 import tomatoesImg from '@/assets/img-provider/tomatoes.jpg'
 import carrotImg from '@/assets/img-provider/carrot.jpg'
 import cabbageImg from '@/assets/img-provider/cabbage.jpg'
 import onionImg from '@/assets/img-provider/onion.jpg'
+
+const router = useRouter()
 
 const products = ref([
   {
@@ -80,6 +92,10 @@ const products = ref([
     image: onionImg
   }
 ])
+
+const goToProducts = () => {
+  router.push('/provider-products?sort=popular')
+}
 </script>
 
 <style scoped>
@@ -118,55 +134,45 @@ const products = ref([
   flex-direction: column;
 }
 
-.dashboard-header {
-  background-color: #2d5016 !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
-}
-
 .content-wrapper {
   background-color: #f5f5f5;
-  flex: 1;
-  overflow-y: auto;
+}
+
+.card {
+  background: white;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+  border-bottom: 1px solid #dee2e6 !important;
+  border-radius: 8px 8px 0 0;
+}
+
+.card-body {
   padding: 1.5rem;
 }
 
-.products-section {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  margin-top: 20px;
-}
-
-.products-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.products-header h5 {
-  font-weight: 600;
-  color: #212529;
-  margin: 0;
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.view-all {
+.btn-link {
   color: #ff6b9d;
-  font-size: 0.9rem;
-  text-decoration: none;
   font-weight: 500;
+  text-decoration: none;
 }
 
-.view-all:hover {
+.btn-link:hover {
   color: #ff5882;
+  text-decoration: none;
+}
+
+@media (max-width: 1024px) {
+  .sidebar-wrapper {
+    width: 200px;
+  }
+  
+  .content-wrapper {
+    padding: 1rem !important;
+  }
 }
 
 @media (max-width: 768px) {
@@ -178,11 +184,45 @@ const products = ref([
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #dee2e6;
+    max-height: 180px;
   }
 
-  .products-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  .main-content {
+    flex: 1;
+  }
+
+  .content-wrapper {
+    padding: 1rem !important;
+  }
+
+  .card {
+    margin-bottom: 1rem;
   }
 }
 
+@media (max-width: 576px) {
+  .sidebar-wrapper {
+    max-height: 150px;
+  }
+
+  .dashboard-header {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .dashboard-header h5 {
+    font-size: 1rem;
+  }
+
+  .content-wrapper {
+    padding: 0.75rem !important;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .card-header {
+    padding: 0.75rem 1rem !important;
+  }
+}
 </style>

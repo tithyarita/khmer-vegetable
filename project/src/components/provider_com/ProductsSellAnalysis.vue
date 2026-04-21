@@ -66,15 +66,14 @@ onMounted(() => {
 .products-sell-analysis {
   background: white;
   border-radius: 8px;
-  padding: 20px;
+  padding: 1.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  margin-top: 20px;
 }
 
 .chart-container {
   position: relative;
   height: 300px;
-  margin-top: 15px;
+  margin-top: 1rem;
 }
 
 h5 {
@@ -85,5 +84,47 @@ h5 {
 .badge {
   font-size: 0.75rem;
   padding: 0.4rem 0.8rem;
+}
+
+@media (max-width: 1024px) {
+  .products-sell-analysis {
+    padding: 1.25rem;
+  }
+
+  .chart-container {
+    height: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .products-sell-analysis {
+    padding: 1rem;
+  }
+
+  .chart-container {
+    height: 200px;
+  }
+
+  h5 {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .products-sell-analysis {
+    padding: 0.75rem;
+  }
+
+  .chart-container {
+    height: 180px;
+  }
+
+  h5 {
+    font-size: 0.95rem;
+  }
+
+  .badge {
+    font-size: 0.65rem;
+  }
 }
 </style>

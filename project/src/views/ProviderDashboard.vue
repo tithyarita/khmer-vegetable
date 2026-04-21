@@ -43,7 +43,7 @@
 import { ref } from 'vue'
 import SideBar from '@/components/provider_com/sideBar.vue'
 import AnalyseBar from '@/components/provider_com/analyseBar.vue'
-import ProductsSellAnalysis from '@/components/provider_com/ProductsSellAnalysis.vue'
+import ProductsSellAnalysis from '@/components/provider_com/productsSellAnalysis.vue'
 import ProductCard from '@/components/provider_com/productCard.vue'
 
 const products = ref([

@@ -1,0 +1,450 @@
+<template>
+  <div>
+    <!-- Modal -->
+    <div class="modal fade" :class="{ show: isOpen }" :style="{ display: isOpen ? 'block' : 'none' }" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <!-- Header -->
+          <div class="modal-header bg-gradient border-0 py-4">
+            <h5 class="modal-title fw-bold">{{ isEditMode ? 'Edit Product' : 'Add New Product' }}</h5>
+            <button type="button" class="btn-close" @click="closeModal"></button>
+          </div>
+
+          <!-- Body -->
+          <div class="modal-body p-4">
+            <form @submit.prevent="saveProduct" class="product-form">
+              <!-- Image Preview Section -->
+              <div class="text-center mb-4">
+                <div class="image-preview-wrapper position-relative d-inline-block">
+                  <img 
+                    :src="formData.image || 'https://via.placeholder.com/200?text=No+Image'" 
+                    @error="handleImageError"
+                    class="img-thumbnail rounded-3" 
+                    style="width: 180px; height: 180px; object-fit: cover;"
+                  />
+                  <label class="image-upload-overlay">
+                    <input type="file" accept="image/*" @change="handleImageUpload" style="display: none;">
+                    <div class="upload-icon">
+                      <i class="bi bi-cloud-upload"></i>
+                    </div>
+                  </label>
+                </div>
+                <p class="small text-muted mt-2">Click image to upload</p>
+              </div>
+
+              <!-- Product ID -->
+              <div class="mb-3">
+                <label for="productId" class="form-label fw-semibold">
+                  <i class="bi bi-key"></i> Product ID
+                </label>
+                <input 
+                  v-model="formData.id" 
+                  type="text" 
+                  class="form-control form-control-lg" 
+                  id="productId" 
+                  :disabled="isEditMode"
+                  placeholder="Auto-generated"
+                >
+              </div>
+
+              <!-- Product Name -->
+              <div class="mb-3">
+                <label for="productName" class="form-label fw-semibold">
+                  <i class="bi bi-box"></i> Product Name
+                </label>
+                <input 
+                  v-model="formData.name" 
+                  type="text" 
+                  class="form-control form-control-lg" 
+                  id="productName" 
+                  placeholder="e.g., Fresh Carrot"
+                  required
+                >
+              </div>
+
+              <!-- Price and Stock Row -->
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="productPrice" class="form-label fw-semibold">
+                    <i class="bi bi-currency-dollar"></i> Price
+                  </label>
+                  <input 
+                    v-model.number="formData.price" 
+                    type="number" 
+                    step="0.01"
+                    class="form-control form-control-lg" 
+                    id="productPrice" 
+                    placeholder="0.00"
+                    required
+                  >
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="productStock" class="form-label fw-semibold">
+                    <i class="bi bi-bag"></i> Stock
+                  </label>
+                  <input 
+                    v-model="formData.stock" 
+                    type="text" 
+                    class="form-control form-control-lg" 
+                    id="productStock" 
+                    placeholder="e.g., 100kg"
+                    required
+                  >
+                </div>
+              </div>
+
+              <!-- Category and Date Row -->
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="productCategory" class="form-label fw-semibold">
+                    <i class="bi bi-tag"></i> Category
+                  </label>
+                  <select 
+                    v-model="formData.category" 
+                    class="form-select form-select-lg" 
+                    id="productCategory" 
+                    required
+                  >
+                    <option value="">Select Category</option>
+                    <option value="vegetables">Vegetables</option>
+                    <option value="fruits">Fruits</option>
+                    <option value="herbs">Herbs</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="productDate" class="form-label fw-semibold">
+                    <i class="bi bi-calendar"></i> Added Date
+                  </label>
+                  <input 
+                    v-model="formData.addedDate" 
+                    type="text" 
+                    class="form-control form-control-lg" 
+                    id="productDate" 
+                    placeholder="DD MMM YYYY"
+                    required
+                  >
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Footer -->
+          <div class="modal-footer bg-light border-top py-3">
+            <button type="button" class="btn btn-secondary btn-lg" @click="closeModal">
+              <i class="bi bi-x-circle"></i> Cancel
+            </button>
+            <button type="button" class="btn btn-success btn-lg" @click="saveProduct">
+              <i class="bi bi-check-circle"></i> {{ isEditMode ? 'Update' : 'Add' }} Product
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Backdrop -->
+    <div v-if="isOpen" class="modal-backdrop fade show"></div>
+  </div>
+</template>
+
+<script setup>
+import { ref, watch } from 'vue'
+import carrotImg from '@/assets/img-provider/carrot.jpg'
+
+const props = defineProps({
+  isOpen: {
+    type: Boolean,
+    required: true
+  },
+  isEditMode: {
+    type: Boolean,
+    default: false
+  },
+  product: {
+    type: Object,
+    default: null
+  }
+})
+
+const emit = defineEmits(['close', 'save'])
+
+const formData = ref({
+  id: '',
+  name: '',
+  price: 0,
+  stock: '',
+  category: '',
+  addedDate: '',
+  image: ''
+})
+
+// Watch for prop changes to update form data
+watch(() => props.isOpen, (newVal) => {
+  if (newVal && props.product) {
+    // Edit mode
+    formData.value = { ...props.product }
+  } else if (newVal && !props.isEditMode) {
+    // Add mode
+    resetForm()
+  }
+})
+
+const resetForm = () => {
+  formData.value = {
+    id: `PRD${Date.now()}`,
+    name: '',
+    price: 0,
+    stock: '',
+    category: '',
+    addedDate: new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }),
+    image: carrotImg
+  }
+}
+
+const handleImageUpload = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      formData.value.image = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const handleImageError = (event) => {
+  event.target.src = 'https://via.placeholder.com/200?text=Image+Error'
+}
+
+const closeModal = () => {
+  emit('close')
+}
+
+const saveProduct = () => {
+  emit('save', formData.value)
+}
+</script>
+
+<style scoped>
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1050;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  outline: 0;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1040;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000;
+  opacity: 0.5;
+}
+
+.modal-dialog {
+  position: relative;
+  width: auto;
+  margin: 1.75rem auto;
+  max-width: 600px;
+}
+
+.modal-dialog-centered {
+  display: flex;
+  align-items: center;
+  min-height: calc(100% - 3.5rem);
+}
+
+.modal-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  pointer-events: auto;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.5rem;
+  outline: 0;
+}
+
+.modal-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  background: linear-gradient(135deg, #2d5016 0%, #3d6b20 100%);
+  color: white;
+}
+
+.modal-title {
+  margin-bottom: 0;
+  line-height: 1.5;
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: white;
+}
+
+.modal-body {
+  position: relative;
+  flex: 1 1 auto;
+  padding: 2rem 1.5rem;
+}
+
+.modal-footer {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e9ecef;
+  gap: 1rem;
+}
+
+.btn-close {
+  filter: invert(1);
+}
+
+/* Image Preview Styles */
+.image-preview-wrapper {
+  position: relative;
+}
+
+.image-preview-wrapper img {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.image-preview-wrapper:hover img {
+  transform: scale(1.05);
+}
+
+.image-upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  cursor: pointer;
+}
+
+.image-preview-wrapper:hover .image-upload-overlay {
+  opacity: 1;
+}
+
+.upload-icon {
+  color: white;
+  font-size: 2rem;
+  text-align: center;
+}
+
+/* Form Styles */
+.product-form .form-label {
+  color: #333;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.product-form .form-control,
+.product-form .form-select {
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+}
+
+.product-form .form-control:focus,
+.product-form .form-select:focus {
+  border-color: #2d5016;
+  box-shadow: 0 0 0 0.2rem rgba(45, 80, 22, 0.15);
+}
+
+.product-form .form-control:disabled,
+.product-form .form-select:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+/* Button Styles */
+.btn-lg {
+  padding: 0.6rem 1.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.3s ease;
+}
+
+.btn-success {
+  background-color: #2d5016;
+  border-color: #2d5016;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #1f3810;
+  border-color: #1f3810;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(45, 80, 22, 0.2);
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+  border-color: #5a6268;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .modal-dialog {
+    max-width: 90%;
+    margin: 0.5rem auto;
+  }
+
+  .modal-header {
+    padding: 1rem;
+  }
+
+  .modal-body {
+    padding: 1.5rem 1rem;
+  }
+
+  .modal-footer {
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+
+  .modal-title {
+    font-size: 1.1rem;
+  }
+
+  .image-preview-wrapper img {
+    width: 140px !important;
+    height: 140px !important;
+  }
+}
+</style>
