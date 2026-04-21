@@ -1,12 +1,12 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-@Entity('staff')
-export class Staff {
+@Entity('providers')
+export class Provider {
   @PrimaryGeneratedColumn()
   id!: number;
 
   @Column()
-  name!: string;
+  provider_name!: string;
 
   @Column({ unique: true })
   email!: string;
