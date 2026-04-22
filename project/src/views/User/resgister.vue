@@ -98,10 +98,18 @@ const handleRegister = async (e) => {
 </script>
 
 <style scoped>
+html, body {
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+}
 .register-page {
   display: flex;
   width: 100vw;
   height: 100vh;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   background: #f8f8f8;
 }
 .register-left {
