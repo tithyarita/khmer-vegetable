@@ -79,8 +79,8 @@ import ProfileSetingProvider from './views/Providers/ProfileSetingProvider.vue'
 <template>
 
   <div class="wrapper">
-    <ProfileSetingProvider />
-
+    <!-- <ProfileSetingProvider /> -->
+    <RouterView />
   </div>
 </template>
 
