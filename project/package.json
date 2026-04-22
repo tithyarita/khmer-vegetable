@@ -10,8 +10,11 @@
     "test:unit": "vitest"
   },
   "dependencies": {
+<<<<<<< HEAD
     "axios": "^1.15.1",
     "bootstrap": "^5.3.8",
+=======
+>>>>>>> 801e0e42a194703c158f647848719ce1f354f5a1
     "bootstrap-icons": "^1.13.1",
     "chart.js": "^4.5.1",
     "pinia": "^3.0.4",

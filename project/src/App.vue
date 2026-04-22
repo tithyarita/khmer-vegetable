@@ -1,4 +1,4 @@
-<script setup>
+<!-- <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
 </script>
@@ -44,4 +44,44 @@ nav a:first-of-type {
 }
 
 
+<<<<<<< HEAD
 </style>
+=======
+  .logo {
+    margin: 0 2rem 0 0;
+  }
+
+  header .wrapper {
+    display: flex;
+    place-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  nav {
+    text-align: left;
+    margin-left: -1rem;
+    font-size: 1rem;
+
+    padding: 1rem 0;
+    margin-top: 1rem;
+  }
+}
+</style> -->
+
+<script setup>
+import { RouterLink, RouterView } from 'vue-router'
+import ProfileSetingProvider from './views/Providers/ProfileSetingProvider.vue'
+</script>
+
+<template>
+
+  <div class="wrapper">
+    <ProfileSetingProvider />
+
+  </div>
+</template>
+
+<style> 
+
+</style>
+>>>>>>> 801e0e42a194703c158f647848719ce1f354f5a1

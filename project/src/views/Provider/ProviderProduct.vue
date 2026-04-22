@@ -12,7 +12,7 @@
         <PageHeader title="All Products" />
 
         <!-- Filter Bar -->
-        <div class="filter-bar bg-white border-bottom p-4 flex-shrink-0">
+        <div class="filter-bar bg-white border-bottom p-4 ">
           <div class="row w-100 g-3 align-items-center">
             <div class="col-12 col-md-3">
               <input 
@@ -63,7 +63,7 @@
         />
 
         <!-- Pagination -->
-        <div class="pagination-wrapper bg-white border-top p-3 flex-shrink-0">
+        <div class="pagination-wrapper bg-white border-top p-3 ">
           <nav aria-label="Page navigation">
             <ul class="pagination pagination-sm justify-content-center mb-0">
               <li class="page-item" :class="{ disabled: currentPage === 1 }">
