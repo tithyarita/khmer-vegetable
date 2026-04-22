@@ -1,0 +1,2 @@
+// This file is only needed for axios import in the frontend. If you already have axios installed, you can skip this step.
+// npm install axios
