@@ -34,10 +34,10 @@
     
 }
 .card-farm{
-    width:430px;
-    flex: 1; /* Take up remaining space */
+    width:330px;
+    flex: 0.55; /* Take up remaining space */
     background: linear-gradient(to bottom right , #fff 85%, #1aba37 100%);
-    padding:10px;
+    padding:10px 20px;
     border-radius:8px;
     border: gray solid 1px;
     box-shadow:0 2px 5px rgba(0,0,0,0.1);

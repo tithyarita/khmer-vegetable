@@ -110,5 +110,6 @@ button{
   padding:12px;
   border-radius:10px;
   margin-top:10px;
+  cursor:pointer;
 }
 </style>
