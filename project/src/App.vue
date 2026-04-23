@@ -1,4 +1,4 @@
-<!-- <script setup>
+<script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
 </script>
@@ -10,6 +10,7 @@ import HelloWorld from './components/HelloWorld.vue'
 <style scoped>
 header {
   line-height: 1.5;
+  padding: 0;
   max-height: 100vh;
 }
 
@@ -69,21 +70,4 @@ nav a:first-of-type {
     margin-top: 1rem;
   }
 }
-</style> -->
-
-<script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import ProfileSetingProvider from './views/Provider/ProfileSetingProvider.vue'
-</script>
-
-<template>
-
-  <div class="wrapper">
-    <!-- <ProfileSetingProvider /> -->
-    <RouterView />
-  </div>
-</template>
-
-<style> 
-
-</style>
+</style> 

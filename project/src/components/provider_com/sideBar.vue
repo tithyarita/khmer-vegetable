@@ -62,6 +62,8 @@ const isActive = (itemRoute) => {
   margin: 0;
   font-weight: 700;
   font-size: 1.25rem;
+  color: white;
+  margin-left: 15px;
 }
 
 .sidebar-menu {

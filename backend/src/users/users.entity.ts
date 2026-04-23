@@ -16,4 +16,7 @@ export class users {
 
   @Column()
   phone!: string;
+
+  @Column({ default: 'customer' })
+  role!: string;
 }
