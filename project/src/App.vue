@@ -73,7 +73,7 @@ nav a:first-of-type {
 
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import ProfileSetingProvider from './views/Providers/ProfileSetingProvider.vue'
+import ProfileSetingProvider from './views/Provider/ProfileSetingProvider.vue'
 </script>
 
 <template>

@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
 import ProviderProduct from '../views/Provider/ProviderProduct.vue'
 import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
+import ProfileSetingProvider from '../views/Provider/ProfileSetingProvider.vue' 
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -31,6 +32,11 @@ const router = createRouter({
       path: '/provider-revenue',
       name: 'providerRevenue',
       component: ProviderRevenue,
+    },
+    {
+      path: '/provider-profile',
+      name: 'providerProfile',
+      component: ProfileSetingProvider,
     },
   ],
 })

@@ -20,7 +20,7 @@
 
         <div class="image-card">
             <img src="@/assets/images/farm-image.jpg" alt="Farm Image">
-            <p>Sustainability isn’t a goal. It’s our natural rhythm.</p>
+            <p>Sustainability isn't a goal. It's our natural rhythm.</p>
         </div>
     </div>
 </template>
@@ -28,14 +28,14 @@
 
 .card-wrap{
     display: flex;
-    gap: 20px;
-    align-items: stretch;
+    gap: 50px;
+
     justify-content: center;
     
 }
 .card-farm{
-    width:430px;
-    flex: 1; /* Take up remaining space */
+    width:330px;
+    flex: 0.4; /* Take up remaining space */
     background: linear-gradient(to bottom right , #fff 85%, #1aba37 100%);
     padding:10px;
     border-radius:8px;
