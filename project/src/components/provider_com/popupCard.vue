@@ -127,6 +127,20 @@
                   >
                 </div>
               </div>
+
+              <!-- Description -->
+              <div class="mb-3">
+                <label for="productDescription" class="form-label fw-semibold">
+                  <i class="bi bi-file-text"></i> Description
+                </label>
+                <textarea 
+                  v-model="formData.description" 
+                  class="form-control form-control-lg" 
+                  id="productDescription" 
+                  placeholder="Enter product description"
+                  rows="4"
+                ></textarea>
+              </div>
             </form>
           </div>
 
@@ -176,19 +190,27 @@ const formData = ref({
   stock: '',
   category: '',
   addedDate: '',
+  description: '',
   image: ''
 })
 
 // Watch for prop changes to update form data
 watch(() => props.isOpen, (newVal) => {
-  if (newVal && props.product) {
-    // Edit mode
+  if (newVal && props.isEditMode && props.product) {
+    // Edit mode - load product data
     formData.value = { ...props.product }
   } else if (newVal && !props.isEditMode) {
-    // Add mode
+    // Add mode - reset form
     resetForm()
   }
-})
+}, { immediate: true })
+
+// Also watch the product prop directly for changes
+watch(() => props.product, (newProduct) => {
+  if (newProduct && props.isEditMode && props.isOpen) {
+    formData.value = { ...newProduct }
+  }
+}, { deep: true })
 
 const resetForm = () => {
   formData.value = {
@@ -198,6 +220,7 @@ const resetForm = () => {
     stock: '',
     category: '',
     addedDate: new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }),
+    description: '',
     image: carrotImg
   }
 }
@@ -254,6 +277,9 @@ const saveProduct = () => {
   width: auto;
   margin: 1.75rem auto;
   max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-dialog-centered {
@@ -273,6 +299,8 @@ const saveProduct = () => {
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 0.5rem;
   outline: 0;
+  max-height: 90vh;
+  overflow: hidden;
 }
 
 .modal-header {
@@ -298,6 +326,8 @@ const saveProduct = () => {
   position: relative;
   flex: 1 1 auto;
   padding: 2rem 1.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .modal-footer {
@@ -309,6 +339,9 @@ const saveProduct = () => {
   padding: 1rem 1.5rem;
   border-top: 1px solid #e9ecef;
   gap: 1rem;
+  background-color: #f8f9fa;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
 }
 
 .btn-close {
@@ -382,6 +415,12 @@ const saveProduct = () => {
   cursor: not-allowed;
 }
 
+.product-form textarea.form-control {
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
 /* Button Styles */
 .btn-lg {
   padding: 0.6rem 1.5rem;
@@ -391,27 +430,31 @@ const saveProduct = () => {
   transition: all 0.3s ease;
 }
 
-.btn-success {
+.modal-footer .btn {
+  min-width: 120px;
+  cursor: pointer;
+}
+
+.modal-footer .btn-success {
   background-color: #2d5016;
   border-color: #2d5016;
   color: white;
 }
 
-.btn-success:hover {
-  background-color: #1f3810;
-  border-color: #1f3810;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(45, 80, 22, 0.2);
+.modal-footer .btn-success:hover {
+  background-color: #1e5a24;
+  border-color: #1e5a24;
 }
 
-.btn-secondary {
+.modal-footer .btn-secondary {
   background-color: #6c757d;
   border-color: #6c757d;
+  color: white;
 }
 
-.btn-secondary:hover {
+.modal-footer .btn-secondary:hover {
   background-color: #5a6268;
-  border-color: #5a6268;
+  border-color: #545b62;
 }
 
 /* Responsive */

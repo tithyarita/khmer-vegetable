@@ -58,6 +58,7 @@
         <!-- Products Table -->
         <ProductTable 
           :products="paginatedProducts"
+          @view="viewProductDetail"
           @edit="openEditProductModal"
           @delete="deleteProduct"
         />
@@ -109,7 +110,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import SideBar from '@/components/provider_com/sideBar.vue'
 import PageHeader from '@/components/provider_com/pageHeader.vue'
 import ProductTable from '@/components/provider_com/productTable.vue'
@@ -120,6 +121,7 @@ import cabbageImg from '@/assets/img-provider/cabbage.jpg'
 import onionImg from '@/assets/img-provider/onion.jpg'
 
 const route = useRoute()
+const router = useRouter()
 const STORAGE_KEY = 'khmer_products'
 
 const searchQuery = ref('')
@@ -327,6 +329,13 @@ const openAddProductModal = () => {
   isEditMode.value = false
   selectedProduct.value = null
   showModal.value = true
+}
+
+const viewProductDetail = (productId) => {
+  router.push({
+    name: 'productDetail',
+    params: { id: productId }
+  })
 }
 
 const openEditProductModal = (product) => {

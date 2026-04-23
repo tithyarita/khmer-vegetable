@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
 import ProviderProduct from '../views/Provider/ProviderProduct.vue'
+import ProductDetail from '../views/Provider/ProductDetail.vue'
 import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
 import ProfileSetingProvider from '../views/Provider/ProfileSetingProvider.vue'
 import ProviderCustomers from '../views/Provider/ProviderCustomers.vue' 
@@ -28,6 +29,11 @@ const router = createRouter({
       path: '/provider-products',
       name: 'providerProducts',
       component: ProviderProduct,
+    },
+    {
+      path: '/product-detail/:id',
+      name: 'productDetail',
+      component: ProductDetail,
     },
     {
       path: '/provider-revenue',

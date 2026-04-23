@@ -31,6 +31,9 @@
             <td class="stock-col">{{ product.stock }}</td>
             <td class="action-col">
               <div class="action-buttons d-flex gap-2">
+                <button class="btn btn-sm btn-info" @click="$emit('view', product.id)" title="View Details">
+                  <i class="bi bi-eye"></i>
+                </button>
                 <button class="btn btn-sm btn-warning" @click="$emit('edit', product)" title="Edit">
                   <i class="bi bi-pencil"></i>
                 </button>
@@ -54,7 +57,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['edit', 'delete'])
+const emit = defineEmits(['view', 'edit', 'delete'])
 
 const handleImageError = (event) => {
   event.target.src = 'https://via.placeholder.com/300'

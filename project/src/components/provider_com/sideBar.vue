@@ -18,14 +18,23 @@
         <span class="menu-label">{{ item.label }}</span>
       </router-link>
     </div>
+
+    <!-- Logout Section -->
+    <div class="sidebar-footer">
+      <button @click="handleLogout" class="logout-btn p-3 d-flex align-items-center gap-3 w-100">
+        <i class="bi bi-box-arrow-right menu-icon"></i>
+        <span class="menu-label">Logout</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
 
 const menuItems = ref([
   { id: 1, icon: 'bi bi-speedometer2', label: 'Dashboard', route: '/provider-dashboard' },
@@ -38,6 +47,16 @@ const menuItems = ref([
 
 const isActive = (itemRoute) => {
   return route.path === itemRoute
+}
+
+const handleLogout = () => {
+  // Clear any stored authentication data
+  localStorage.removeItem('authToken')
+  localStorage.removeItem('userRole')
+  sessionStorage.clear()
+  
+  // Navigate to login page
+  router.push('/')
 }
 </script>
 
@@ -57,6 +76,7 @@ const isActive = (itemRoute) => {
   min-height: 70px;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .sidebar-header h5 {
@@ -72,6 +92,36 @@ const isActive = (itemRoute) => {
   flex-direction: column;
   flex: 1;
   overflow-y: auto;
+}
+
+.sidebar-footer {
+  border-top: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.logout-btn {
+  cursor: pointer;
+  border-left: 4px solid transparent;
+  background-color: transparent;
+  transition: all 0.3s ease;
+  color: #495057;
+  font-weight: 500;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+  padding: 0.75rem 1rem !important;
+  border: none;
+  width: 100%;
+}
+
+.logout-btn:hover {
+  background-color: #e9ecef;
+  color: #2d5016;
+  border-left-color: #2d5016;
 }
 
 .menu-item {
