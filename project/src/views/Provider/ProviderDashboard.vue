@@ -25,6 +25,13 @@
             </div>
           </div>
 
+          <!-- Top Customers Section -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <TopCustomers />
+            </div>
+          </div>
+
           <!-- Popular Products Section -->
           <div class="card">
             <div class="card-header bg-white py-3">
@@ -55,6 +62,7 @@ import PageHeader from '@/components/provider_com/pageHeader.vue'
 import AnalyseBar from '@/components/provider_com/analyseBar.vue'
 import ProductsSellAnalysis from '@/components/provider_com/ProductsSellAnalysis.vue'
 import ProductCard from '@/components/provider_com/productCard.vue'
+import TopCustomers from '@/components/provider_com/TopCustomers.vue'
 import tomatoesImg from '@/assets/img-provider/tomatoes.jpg'
 import carrotImg from '@/assets/img-provider/carrot.jpg'
 import cabbageImg from '@/assets/img-provider/cabbage.jpg'

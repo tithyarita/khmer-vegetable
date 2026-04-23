@@ -1,6 +1,6 @@
 <template>
-  <div class="provider-revenue">
-    <div class="revenue-container">
+  <div class="provider-customers">
+    <div class="customers-container">
       <!-- Sidebar -->
       <div class="sidebar-wrapper">
         <SideBar />
@@ -9,31 +9,16 @@
       <!-- Main Content -->
       <div class="main-content">
         <!-- Header -->
-        <PageHeader title="Earning" />
+        <PageHeader title="Customers" />
 
         <!-- Content Area -->
         <div class="content-wrapper flex-grow-1 overflow-y-auto p-4">
-          <!-- Revenue Stats -->
-          <div class="mb-4">
-            <RevenueStats />
-          </div>
-
-          <!-- Products Sell Analysis Chart -->
-          <div class="card mb-4">
+          <!-- Customers Table Component -->
+          <div class="card">
             <div class="card-body">
-              <ProductsSellAnalysis />
+              <TopCustomers :showSearch="true" :showSort="true" />
             </div>
           </div>
-
-          <!-- Top Customers Section -->
-          <div class="card mb-4">
-            <div class="card-body">
-              <TopCustomers :limit="5" />
-            </div>
-          </div>
-
-          <!-- Recent Orders -->
-          <RecentOrder />
         </div>
       </div>
     </div>
@@ -43,14 +28,11 @@
 <script setup>
 import SideBar from '@/components/provider_com/sideBar.vue'
 import PageHeader from '@/components/provider_com/pageHeader.vue'
-import RevenueStats from '@/components/provider_com/revenueStats.vue'
-import ProductsSellAnalysis from '@/components/provider_com/ProductsSellAnalysis.vue'
-import RecentOrder from '@/components/provider_com/recentOrder.vue'
 import TopCustomers from '@/components/provider_com/TopCustomers.vue'
 </script>
 
 <style scoped>
-.provider-revenue {
+.provider-customers {
   background-color: #f5f5f5;
   width: 100%;
   height: 100vh;
@@ -64,7 +46,7 @@ import TopCustomers from '@/components/provider_com/TopCustomers.vue'
   overflow: hidden;
 }
 
-.revenue-container {
+.customers-container {
   display: flex;
   height: 100%;
   width: 100%;
@@ -94,6 +76,7 @@ import TopCustomers from '@/components/provider_com/TopCustomers.vue'
   border: none;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
 }
 
 .card-body {
@@ -104,14 +87,10 @@ import TopCustomers from '@/components/provider_com/TopCustomers.vue'
   .sidebar-wrapper {
     width: 200px;
   }
-
-  .content-wrapper {
-    padding: 1rem !important;
-  }
 }
 
 @media (max-width: 768px) {
-  .revenue-container {
+  .customers-container {
     flex-direction: column;
   }
 
@@ -130,8 +109,8 @@ import TopCustomers from '@/components/provider_com/TopCustomers.vue'
     padding: 1rem !important;
   }
 
-  .card {
-    margin-bottom: 1rem;
+  .card-body {
+    padding: 1rem;
   }
 }
 
@@ -140,20 +119,8 @@ import TopCustomers from '@/components/provider_com/TopCustomers.vue'
     max-height: 150px;
   }
 
-  .revenue-header {
-    padding: 0.75rem 1rem !important;
-  }
-
-  .revenue-header h5 {
-    font-size: 1rem;
-  }
-
   .content-wrapper {
     padding: 0.75rem !important;
-  }
-
-  .card-body {
-    padding: 1rem;
   }
 }
 </style>
