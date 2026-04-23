@@ -28,11 +28,12 @@
 
       </div>
     </div>
-
     <div class="divider"></div>
+    
 
     <!-- Bottom row -->
     <div class="navbar-bottom">
+    <hr>
       <div class="container">
 
         <ul class="categories">
@@ -46,13 +47,30 @@
           </li>
         </ul>
 
-        <div class="cart" @click="goToCart">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#2D7A3A" stroke-width="1.8"/>
-            <line x1="3" y1="6" x2="21" y2="6" stroke="#2D7A3A" stroke-width="1.8"/>
-            <path d="M16 10a4 4 0 01-8 0" stroke="#2D7A3A" stroke-width="1.8"/>
-          </svg>
-          <span v-if="count > 0" class="badge">{{ count }}</span>
+        <div class="nav-actions">
+          <!-- Favorite Button -->
+          <div class="favorite" @click="toggleFavorite">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.08C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 12 21 12 21Z"
+                :stroke="isFavorited ? 'transparent' : '#2D7A3A'"
+                :fill="isFavorited ? '#2D7A3A' : 'none'"
+                stroke-width="1.8"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span v-if="favoriteCount > 0" class="badge">{{ favoriteCount }}</span>
+          </div>
+
+          <!-- Cart Button -->
+          <div class="cart" @click="goToCart">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#2D7A3A" stroke-width="1.8"/>
+              <line x1="3" y1="6" x2="21" y2="6" stroke="#2D7A3A" stroke-width="1.8"/>
+              <path d="M16 10a4 4 0 01-8 0" stroke="#2D7A3A" stroke-width="1.8"/>
+            </svg>
+            <span v-if="count > 0" class="badge">{{ count }}</span>
+          </div>
         </div>
 
       </div>
@@ -70,6 +88,8 @@ export default {
       location: 'Phnom Penh, Cambodia',
       active: 'Leafy Greens',
       count: 2,
+      favoriteCount: 3,
+      isFavorited: false,
       categories: ['Leafy Greens', 'Root Veg', 'Cruciferous', 'Seasonal'],
     }
   },
@@ -79,6 +99,10 @@ export default {
     },
     goToCart() {
       console.log("Go to cart page")
+    },
+    toggleFavorite() {
+      this.isFavorited = !this.isFavorited
+      console.log("Go to favorites page")
     }
   }
 }
@@ -202,6 +226,30 @@ export default {
   border-bottom: 2px solid #2D7A3A;
 }
 
+/* ACTIONS GROUP */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.favorite {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  background: #e6f4ea;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.favorite:hover {
+  background: #d0ecda;
+}
+
 .cart {
   position: relative;
   width: 36px;
@@ -212,6 +260,11 @@ export default {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cart:hover {
+  background: #d0ecda;
 }
 
 .badge {
