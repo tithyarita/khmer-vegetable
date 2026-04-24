@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Delete, Param } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { users } from './users.entity';
@@ -10,6 +10,25 @@ export class UsersController {
     @InjectRepository(users)
     private readonly usersRepository: Repository<users>,
   ) {}
+
+  // =========================
+  // GET ALL USERS (for table)
+  // =========================
+  @Get()
+  async findAll() {
+    return this.usersRepository.find({
+      select: ['id', 'name', 'email', 'phone', 'role'],
+    });
+  }
+
+  // =========================
+  // DELETE USER
+  // =========================
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    await this.usersRepository.delete(id);
+    return { message: 'User deleted successfully' };
+  }
 
   @Post('register')
   async register(
