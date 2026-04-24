@@ -13,7 +13,7 @@ export class UsersService {
 
   async register(body: { name: string; email: string; phone: string; password: string }) {
     const { name, email, phone, password } = body;
-    if (!name || !email || !phone || !password) {
+    if (!name || !email || !phone || !password ) {
       return { message: 'All fields are required.' };
     }
     const existing = await this.usersRepository.findOne({ where: { email } });
@@ -21,7 +21,7 @@ export class UsersService {
       return { message: 'Email already registered.' };
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = this.usersRepository.create({ name, email, phone, password: hashedPassword });
+    const user = this.usersRepository.create({ name, email, phone, password: hashedPassword,  });
     await this.usersRepository.save(user);
     return { message: 'Registration successful!' };
   }

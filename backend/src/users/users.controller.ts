@@ -17,7 +17,7 @@ export class UsersController {
   @Get()
   async findAll() {
     return this.usersRepository.find({
-      select: ['id', 'name', 'email', 'phone', 'role'],
+      select: ['id', 'name', 'email', 'phone', 'role', 'createat'],
     });
   }
 
@@ -39,6 +39,7 @@ export class UsersController {
       phone: string;
       password: string;
       role: string;
+      
     },
   ) {
     const { name, email, phone, password } = body;
@@ -66,6 +67,7 @@ export class UsersController {
       phone,
       role: 'customer',
       password: hashedPassword,
+
     });
 
     // save to MySQL ✅
@@ -78,6 +80,7 @@ export class UsersController {
       email: newUser.email,
       phone: newUser.phone,
       role: newUser.role,
+      createat: newUser.createat,
     });
 
     return {

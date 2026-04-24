@@ -33,6 +33,7 @@
             <th>EMAIL</th>
             <th>PHONE</th>
             <th>ROLE</th>
+            <th>CREATEAT</th>
             <th>ACTIONS</th>
           </tr>
         </thead>
@@ -45,6 +46,7 @@
             <td>{{ user.email }}</td>
             <td>{{ user.phone }}</td>
             <td>{{ user.role }}</td>
+            <td>{{ formatDate(user.createat)}}</td>
 
             <td>
               <button class="btn-table" @click="deleteUser(user.id)">
@@ -79,6 +81,10 @@ const fetchUsers = async () => {
   } catch (err) {
     console.error('Fetch error:', err)
   }
+}
+const formatDate = (date) => {
+  if (!date) return ''
+  return new Date(date).toLocaleString()
 }
 
 
