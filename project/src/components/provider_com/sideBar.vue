@@ -39,10 +39,9 @@ const router = useRouter()
 const menuItems = ref([
   { id: 1, icon: 'bi bi-speedometer2', label: 'Dashboard', route: '/provider-dashboard' },
   { id: 2, icon: 'bi bi-box-seam', label: 'Products', route: '/provider-products' },
-  { id: 3, icon: 'bi bi-people', label: 'Customers', route: '/provider-customers' },
-  { id: 4, icon: 'bi bi-bag-check', label: 'Orders', route: '#' },
-  { id: 5, icon: 'bi bi-graph-up', label: 'Revenue', route: '/provider-revenue' },
-  { id: 6, icon: 'bi bi-gear', label: 'Setting', route: '/provider-profile' }
+  { id: 3, icon: 'bi bi-bag-check', label: 'Orders', route: '#' },
+  { id: 4, icon: 'bi bi-graph-up', label: 'Revenue', route: '/provider-revenue' },
+  { id: 5, icon: 'bi bi-gear', label: 'Setting', route: '/provider-profile' }
 ])
 
 const isActive = (itemRoute) => {

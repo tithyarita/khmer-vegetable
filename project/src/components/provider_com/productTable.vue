@@ -7,6 +7,7 @@
             <th class="id-header">ID</th>
             <th class="name-header">PRODUCT NAME</th>
             <th class="price-header">PRICE</th>
+            <th class="discount-header">DISCOUNT (%)</th>
             <th class="date-header">ADDED DATE</th>
             <th class="stock-header">STOCK</th>
             <th class="action-header">ACTIONS</th>
@@ -27,6 +28,7 @@
               </div>
             </td>
             <td class="price-col">${{ product.price }}</td>
+            <td class="discount-col">{{ product.discount || 0 }}%</td>
             <td class="date-col">{{ product.addedDate || 'N/A' }}</td>
             <td class="stock-col">{{ product.stock }}</td>
             <td class="action-col">

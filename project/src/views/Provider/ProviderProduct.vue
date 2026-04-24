@@ -142,7 +142,8 @@ const getDefaultProducts = () => [
     addedDate: '03 Feb 2020',
     stock: '100kg',
     category: 'vegetables',
-    image: carrotImg
+    image: carrotImg,
+    discount: 0
   },
   {
     id: '0932489309Z',
@@ -151,7 +152,8 @@ const getDefaultProducts = () => [
     addedDate: '03 Feb 2020',
     stock: '100kg',
     category: 'vegetables',
-    image: carrotImg
+    image: carrotImg,
+    discount: 0
   },
   {
     id: '0932489309Z',
@@ -160,7 +162,8 @@ const getDefaultProducts = () => [
     addedDate: '03 Feb 2020',
     stock: '100kg',
     category: 'vegetables',
-    image: carrotImg
+    image: carrotImg,
+    discount: 0
   },
   {
     id: '0932489309Z',
@@ -169,7 +172,8 @@ const getDefaultProducts = () => [
     addedDate: '03 Feb 2020',
     stock: '100kg',
     category: 'vegetables',
-    image: carrotImg
+    image: carrotImg,
+    discount: 0
   },
   {
     id: '0932489309Z',
@@ -178,7 +182,8 @@ const getDefaultProducts = () => [
     addedDate: '03 Feb 2020',
     stock: '100kg',
     category: 'vegetables',
-    image: carrotImg
+    image: carrotImg,
+    discount: 0
   },
   {
     id: '0932489309Z',
@@ -187,7 +192,8 @@ const getDefaultProducts = () => [
     addedDate: '03 Feb 2020',
     stock: '100kg',
     category: 'vegetables',
-    image: carrotImg
+    image: carrotImg,
+    discount: 0
   },
   {
     id: '0932489309Z',
@@ -196,7 +202,8 @@ const getDefaultProducts = () => [
     addedDate: '03 Feb 2020',
     stock: '100kg',
     category: 'vegetables',
-    image: carrotImg
+    image: carrotImg,
+    discount: 0
   },
   {
     id: '0932489309Z',
@@ -205,7 +212,8 @@ const getDefaultProducts = () => [
     addedDate: '03 Feb 2020',
     stock: '100kg',
     category: 'vegetables',
-    image: carrotImg
+    image: carrotImg,
+    discount: 0
   }
 ]
 
