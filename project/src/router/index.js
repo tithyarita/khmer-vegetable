@@ -1,16 +1,22 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
+// Public
 import HomeView from '../views/HomeView.vue'
+
+// Provider
 import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
 import ProviderProduct from '../views/Provider/ProviderProduct.vue'
 import ProductDetail from '../views/Provider/ProductDetail.vue'
 import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
-import ProfileSetingProvider from '../views/Provider/ProfileSettingProvider.vue' 
+import ProfileSettingProvider from '../views/Provider/ProfileSettingProvider.vue' 
 import StaffLayout from '../Layout/StaffLayout.vue'
-import DashboardView from '../views/Staff/Dashboardview .vue'
+import DashboardView from '../views/Staff/Dashboardview.vue'
 import ApplicationsView from '../views/Staff/Applicationsview.vue'
 import ProfileView from '../views/Staff/Profile.vue'
+
+// Admin
 import AdminLayout from '../Layout/AdminLayout.vue'
-import DashboardOverview from '../views/Admin/admindashboard.vue'
+import AdminDashboard from '../views/Admin/admindashboard.vue'
 import StaffManagement from '../views/Admin/StaffManagement.vue'
 import ProviderManagement from '../views/Admin/ProviderManagement.vue'
 import UserManagement from '../views/Admin/UserManagement.vue'
@@ -19,67 +25,140 @@ import OrdersManagement from '../views/Admin/OrdersManagement.vue'
 import Reports from '../views/Admin/Report.vue'
 import AdminSetting from '../views/Admin/AdminSetting.vue'
 
+// User (Auth)
+import UserRegister from '../views/User/resgister.vue'
+import UserLogin from '../views/User/login.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    // Public
     {
       path: '/',
-      name: 'home',
+      name: 'Home',
       component: HomeView,
     },
     {
       path: '/about',
-      name: 'about',
+      name: 'About',
       component: () => import('../views/AboutView.vue'),
     },
+
+    // Provider
     {
       path: '/provider-dashboard',
-      name: 'providerDashboard',
+      name: 'ProviderDashboard',
       component: ProviderDashboard,
     },
     {
       path: '/provider-products',
-      name: 'providerProducts',
+      name: 'ProviderProducts',
       component: ProviderProduct,
     },
     {
       path: '/product-detail/:id',
-      name: 'productDetail',
+      name: 'ProductDetail',
       component: ProductDetail,
+      props: true,
     },
     {
       path: '/provider-revenue',
-      name: 'providerRevenue',
+      name: 'ProviderRevenue',
       component: ProviderRevenue,
     },
     {
       path: '/provider-profile',
-      name: 'providerProfile',
-      component: ProfileSetingProvider,
+      name: 'ProviderProfile',
+      component: ProfileSettingProvider,
     },
     {
       path: '/staff',
       component: StaffLayout,
       children: [
-      { path: 'dashboard',    component: DashboardView,    name: 'Dashboard' },
-      { path: 'applications', component: ApplicationsView, name: 'Applications' },
-      { path: 'profile',      component: ProfileView,      name: 'Profile' },
-      ]
+        {
+          path: '',
+          redirect: '/staff/dashboard',
+        },
+        {
+          path: 'dashboard',
+          name: 'StaffDashboard',
+          component: DashboardView,
+        },
+        {
+          path: 'applications',
+          name: 'Applications',
+          component: ApplicationsView,
+        },
+        {
+          path: 'profile',
+          name: 'StaffProfile',
+          component: ProfileView,
+        },
+      ],
+    },
+
+    // Admin
+    {
+      path: '/admin',
+      component: AdminLayout,
+      children: [
+        {
+          path: '',
+          redirect: '/admin/dashboard',
+        },
+        {
+          path: 'dashboard',
+          name: 'AdminDashboard',
+          component: AdminDashboard,
+        },
+        {
+          path: 'staff',
+          name: 'AdminStaff',
+          component: StaffManagement,
+        },
+        {
+          path: 'providers',
+          name: 'AdminProviders',
+          component: ProviderManagement,
+        },
+        {
+          path: 'users',
+          name: 'AdminUsers',
+          component: UserManagement,
+        },
+        {
+          path: 'products',
+          name: 'AdminProducts',
+          component: ProductManagement,
+        },
+        {
+          path: 'orders',
+          name: 'AdminOrders',
+          component: OrdersManagement,
+        },
+        {
+          path: 'reports',
+          name: 'AdminReports',
+          component: Reports,
+        },
+        {
+          path: 'settings',
+          name: 'AdminSettings',
+          component: AdminSetting,
+        },
+      ],
+    },
+
+    // User (Auth)
+    {
+      path: '/user/register',
+      name: 'UserRegister',
+      component: UserRegister,
     },
     {
-    path: '/admin',
-    component: AdminLayout,
-    children: [
-      { path: '',          redirect: '/admin/dashboard'                          },
-      { path: 'dashboard', component: DashboardOverview, name: 'AdminDashboard' },
-      { path: 'staff',     component: StaffManagement,         name: 'AdminStaff'     },
-      { path: 'providers', component: ProviderManagement,         name: 'AdminProviders' },
-      { path: 'users',     component: UserManagement,         name: 'AdminUsers'     },
-      { path: 'products',  component: ProductManagement,         name: 'AdminProducts'  },
-      { path: 'orders',    component: OrdersManagement,         name: 'AdminOrders'    },
-      { path: 'reports',   component: Reports,         name: 'AdminReports'   },
-      { path: 'settings',  component: AdminSetting,         name: 'AdminSettings'  },
-    ]
+      path: '/user/login',
+      name: 'UserLogin',
+      component: UserLogin,
     },
   ],
 })

@@ -100,23 +100,32 @@ const handleImageError = (event) => {
 }
 
 .name-header {
-  width: 30%;
+  width: 27%;
 }
 
 .price-header {
   width: 12%;
+  text-align: left;
+}
+
+.discount-header {
+  width: 15%;
+
 }
 
 .date-header {
-  width: 18%;
+  width: 16%;
+
 }
 
 .stock-header {
   width: 14%;
+
 }
 
 .action-header {
   width: 14%;
+  
 }
 
 .product-row {
@@ -143,7 +152,7 @@ const handleImageError = (event) => {
 }
 
 .name-col {
-  width: 30%;
+  width: 27%;
 }
 
 .product-row-content {
@@ -169,16 +178,26 @@ const handleImageError = (event) => {
   text-align: left;
 }
 
+.discount-col {
+  font-weight: 600;
+  color: #212529;
+  width: 15%;
+  text-align: center;
+  padding: 12px 12px;
+}
+
 .date-col {
   font-size: 0.9rem;
   color: #666;
-  width: 18%;
+  width: 16%;
+
 }
 
 .stock-col {
-  font-weight: 500;
+  font-weight: 600;
+  color: #212529;
   width: 14%;
-  text-align: center;
+
 }
 
 .action-col {

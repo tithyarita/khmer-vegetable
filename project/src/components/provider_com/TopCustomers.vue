@@ -59,7 +59,6 @@
             <th class="text-muted small fw-semibold p-3">Total Orders</th>
             <th class="text-muted small fw-semibold p-3">Total Items</th>
             <th class="text-muted small fw-semibold p-3">Total Amount</th>
-            <th v-if="showAllMode" class="text-muted small fw-semibold p-3">Joined Date</th>
             <th class="text-muted small fw-semibold p-3">Actions</th>
           </tr>
         </thead>
@@ -79,7 +78,6 @@
             <td class="p-3">
               <span class="fw-semibold text-success">${{ customer.totalAmount.toFixed(2) }}</span>
             </td>
-            <td v-if="showAllMode" class="p-3 small text-muted">{{ formatDate(customer.joinedDate) }}</td>
             <td class="p-3">
               <button 
                 @click="viewCustomerDetails(customer)" 
