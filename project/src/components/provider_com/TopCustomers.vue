@@ -2,12 +2,22 @@
   <div class="top-customers-section">
     <!-- Header with Title and See All Button -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h5 class="mb-0 fw-bold">{{ showSearch ? 'All Customers' : 'Top Customers' }}</h5>
-      <button v-if="!showSearch" @click="showAllCustomers" class="btn btn-link btn-sm text-decoration-none">See All</button>
+      <div class="d-flex align-items-center gap-3">
+        <button 
+          v-if="showAllMode" 
+          @click="backToTopCustomers" 
+          class="btn btn-sm btn-outline-secondary"
+          title="Back to Top Customers"
+        >
+          <i class="bi bi-arrow-left"></i> Back
+        </button>
+        <h5 class="mb-0 fw-bold">{{ showAllMode ? 'All Customers' : 'Top Customers' }}</h5>
+      </div>
+      <button v-if="!showAllMode" @click="showAllCustomers" class="btn btn-link btn-sm text-decoration-none">See All</button>
     </div>
 
-    <!-- Search and Filter (optional) -->
-    <div v-if="showSearch" class="mb-4">
+    <!-- Search and Filter -->
+    <div v-if="showAllMode" class="mb-4">
       <div class="row g-3">
         <div class="col-md-6">
           <input 
@@ -49,7 +59,6 @@
             <th class="text-muted small fw-semibold p-3">Total Orders</th>
             <th class="text-muted small fw-semibold p-3">Total Items</th>
             <th class="text-muted small fw-semibold p-3">Total Amount</th>
-            <th v-if="showSearch" class="text-muted small fw-semibold p-3">Joined Date</th>
             <th class="text-muted small fw-semibold p-3">Actions</th>
           </tr>
         </thead>
@@ -69,13 +78,12 @@
             <td class="p-3">
               <span class="fw-semibold text-success">${{ customer.totalAmount.toFixed(2) }}</span>
             </td>
-            <td v-if="showSearch" class="p-3 small text-muted">{{ formatDate(customer.joinedDate) }}</td>
             <td class="p-3">
               <button 
                 @click="viewCustomerDetails(customer)" 
                 class="btn btn-sm btn-view-orders"
               >
-                {{ showSearch ? 'View Details' : 'View Orders' }}
+                {{ showAllMode ? 'View Details' : 'View Orders' }}
               </button>
             </td>
           </tr>
@@ -225,6 +233,7 @@ const selectedCustomer = ref(null)
 const isLoading = ref(false)
 const searchQuery = ref('')
 const sortBy = ref('name')
+const showAllMode = ref(false) // Toggle between top customers and all customers view
 
 // Mock data for demonstration
 const mockCustomersData = [
@@ -362,7 +371,7 @@ const displayedCustomers = computed(() => {
   let filtered = props.customers.length > 0 ? props.customers : topCustomers.value
 
   // Search filter
-  if (props.showSearch && searchQuery.value) {
+  if ((props.showSearch || showAllMode.value) && searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(c => 
       c.name.toLowerCase().includes(query) || 
@@ -371,7 +380,7 @@ const displayedCustomers = computed(() => {
   }
 
   // Sort
-  if (props.showSort) {
+  if (props.showSort || showAllMode.value) {
     filtered = [...filtered].sort((a, b) => {
       switch(sortBy.value) {
         case 'orders':
@@ -385,8 +394,8 @@ const displayedCustomers = computed(() => {
     })
   }
 
-  // Apply limit (if set)
-  if (props.limit) {
+  // Apply limit only when NOT in "See All" mode
+  if (!showAllMode.value && props.limit) {
     return filtered.slice(0, props.limit)
   }
   return filtered
@@ -431,7 +440,12 @@ const closeModal = () => {
 }
 
 const showAllCustomers = () => {
-  router.push('/provider-customers')
+  showAllMode.value = true
+}
+
+const backToTopCustomers = () => {
+  showAllMode.value = false
+  searchQuery.value = ''
 }
 
 const refreshCustomers = () => {

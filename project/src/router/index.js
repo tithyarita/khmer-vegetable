@@ -8,10 +8,7 @@ import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
 import ProviderProduct from '../views/Provider/ProviderProduct.vue'
 import ProductDetail from '../views/Provider/ProductDetail.vue'
 import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
-import ProfileSettingProvider from '../views/Provider/ProfileSettingProvider.vue'
-import ProviderCustomers from '../views/Provider/ProviderCustomers.vue'
-
-// Staff
+import ProfileSettingProvider from '../views/Provider/ProfileSettingProvider.vue' 
 import StaffLayout from '../Layout/StaffLayout.vue'
 import DashboardView from '../views/Staff/Dashboardview.vue'
 import ApplicationsView from '../views/Staff/Applicationsview.vue'
@@ -74,13 +71,6 @@ const router = createRouter({
       name: 'ProviderProfile',
       component: ProfileSettingProvider,
     },
-    {
-      path: '/provider-customers',
-      name: 'ProviderCustomers',
-      component: ProviderCustomers,
-    },
-
-    // Staff
     {
       path: '/staff',
       component: StaffLayout,

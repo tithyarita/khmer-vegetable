@@ -94,6 +94,25 @@
                 </div>
               </div>
 
+              <!-- Discount Row -->
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="productDiscount" class="form-label fw-semibold">
+                    <i class="bi bi-percent"></i> Discount (%)
+                  </label>
+                  <input 
+                    v-model.number="formData.discount" 
+                    type="number" 
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    class="form-control form-control-lg" 
+                    id="productDiscount" 
+                    placeholder="0.00"
+                  >
+                </div>
+              </div>
+
               <!-- Category and Date Row -->
               <div class="row">
                 <div class="col-md-6 mb-3">
@@ -191,7 +210,8 @@ const formData = ref({
   category: '',
   addedDate: '',
   description: '',
-  image: ''
+  image: '',
+  discount: 0
 })
 
 // Watch for prop changes to update form data
@@ -221,7 +241,8 @@ const resetForm = () => {
     category: '',
     addedDate: new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }),
     description: '',
-    image: carrotImg
+    image: carrotImg,
+    discount: 0
   }
 }
 
