@@ -9,6 +9,7 @@ import { StaffModule } from './staff/staff.module';
 import { AdminModule } from './admin/admin.module';
 import { ProvidersModule } from './providers/providers.module';
 import { ApplicationsModule } from './providers/applications.module';
+import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { ApplicationsModule } from './providers/applications.module';
       password: 'root', // your MySQL password
       database: 'khmer_vegetable_market',
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: true, // set to false in production
+      // migrations: [__dirname + '/migration/**/*{.ts,.js}'],
     }),
 
     AuthModule,
@@ -29,6 +31,7 @@ import { ApplicationsModule } from './providers/applications.module';
     AdminModule,
     ProvidersModule,
     ApplicationsModule,
+    ProductModule,
   ],
 
   controllers: [AppController],
