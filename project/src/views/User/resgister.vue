@@ -135,6 +135,7 @@ const handleRegister = async () => {
   } finally {
     loading.value = false
   }
+  
 }
 </script>
 
