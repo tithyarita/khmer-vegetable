@@ -35,7 +35,7 @@ export class ProductController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: './uploads',
+        destination: './uploads', // ensure this folder exists
         filename: (req, file, cb) => {
           const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, uniqueName + extname(file.originalname));
