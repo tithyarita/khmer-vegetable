@@ -19,7 +19,7 @@
             <td class="name-col">
               <div class="product-row-content">
                 <img 
-                  :src="product.image || 'https://via.placeholder.com/50?text=No+Image'" 
+                  :src="product.image || placeholderImage" 
                   @error="handleImageError"
                   class="row-image rounded" 
                   :alt="product.name"
@@ -62,8 +62,14 @@ const props = defineProps({
 
 const emit = defineEmits(['view', 'edit', 'delete'])
 
+// SVG placeholder image as data URI - no external requests
+const placeholderImage = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 50 50%22%3E%3Crect width=%2250%22 height=%2250%22 fill=%22%23f0f0f0%22/%3E%3C/svg%3E'
+
 const handleImageError = (event) => {
-  event.target.src = 'https://via.placeholder.com/300'
+  // Prevent infinite error loop - only set placeholder once
+  if (event.target.src !== placeholderImage) {
+    event.target.src = placeholderImage
+  }
 }
 </script>
 

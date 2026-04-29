@@ -28,7 +28,7 @@
               <div class="text-center mb-4">
                 <div class="image-preview-wrapper position-relative d-inline-block">
                   <img 
-                    :src="formData.image || 'https://via.placeholder.com/200?text=No+Image'" 
+                    :src="formData.image || placeholderImage" 
                     @error="handleImageError"
                     class="img-thumbnail rounded-3" 
                     style="width: 180px; height: 180px; object-fit: cover;"
@@ -215,6 +215,9 @@ const emit = defineEmits(['close', 'save'])
 
 const validationErrors = ref({})
 
+// SVG placeholder image as data URI - no external requests
+const placeholderImage = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%23f0f0f0%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2214%22 fill=%22%23999%22%3ENo Image%3C/text%3E%3C/svg%3E'
+
 const formData = ref({
   id: '',
   name: '',
@@ -281,7 +284,10 @@ const handleImageUpload = (event) => {
 }
 
 const handleImageError = (event) => {
-  event.target.src = 'https://via.placeholder.com/200?text=Image+Error'
+  // Prevent infinite error loop - only set placeholder once
+  if (event.target.src !== placeholderImage) {
+    event.target.src = placeholderImage
+  }
 }
 
 const closeModal = () => {
