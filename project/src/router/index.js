@@ -29,7 +29,7 @@ import ApplicationsView from '../views/Staff/Applicationsview.vue'
 
 import ProfileView from '../views/Staff/Profile.vue'
 
-
+import ApllicationDetailsView from '../views/Staff/ProviderReviewDetail.vue'
 
 // Admin
 
@@ -181,6 +181,15 @@ const router = createRouter({
 
         },
 
+        {
+          path: 'details',
+
+          name: 'ApplicationDetails',
+              
+          component: ApllicationDetailsView,
+
+        },
+        
         {
 
           path: 'profile',

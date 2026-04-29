@@ -66,6 +66,9 @@
       </div>
     </div>
 
+    <!-- Nested route for application details -->
+    <router-view />
+
     <!-- Footer strip -->
     <div class="system-footer">
       <span>The Organic Editorial System v2.4</span>
