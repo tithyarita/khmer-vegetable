@@ -39,7 +39,6 @@ export class UsersController {
       phone: string;
       password: string;
       role: string;
-      
     },
   ) {
     const { name, email, phone, password, role } = body;
