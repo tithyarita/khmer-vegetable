@@ -12,6 +12,17 @@
 
           <!-- Body -->
           <div class="modal-body p-4">
+            <!-- Validation Errors Display -->
+            <div v-if="Object.keys(validationErrors).length > 0" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+              <strong>Please fix the following errors:</strong>
+              <ul class="mb-0 mt-2">
+                <li v-for="(error, field) in validationErrors" :key="field">
+                  {{ error }}
+                </li>
+              </ul>
+              <button type="button" class="btn-close" @click="validationErrors = {}" aria-label="Close"></button>
+            </div>
+
             <form @submit.prevent="saveProduct" class="product-form">
               <!-- Image Preview Section -->
               <div class="text-center mb-4">
@@ -55,7 +66,7 @@
                 <input 
                   v-model="formData.name" 
                   type="text" 
-                  class="form-control form-control-lg" 
+                  :class="['form-control form-control-lg', { 'is-invalid': validationErrors.name }]"
                   id="productName" 
                   placeholder="e.g., Fresh Carrot"
                   required
@@ -72,7 +83,7 @@
                     v-model.number="formData.price" 
                     type="number" 
                     step="0.01"
-                    class="form-control form-control-lg" 
+                    :class="['form-control form-control-lg', { 'is-invalid': validationErrors.price }]"
                     id="productPrice" 
                     placeholder="0.00"
                     required
@@ -81,14 +92,15 @@
 
                 <div class="col-md-6 mb-3">
                   <label for="productStock" class="form-label fw-semibold">
-                    <i class="bi bi-bag"></i> Stock
+                    <i class="bi bi-bag"></i> Stock (kg)
                   </label>
                   <input 
-                    v-model="formData.stock" 
-                    type="text" 
-                    class="form-control form-control-lg" 
+                    v-model.number="formData.stock" 
+                    type="number" 
+                    step="0.01"
+                    :class="['form-control form-control-lg', { 'is-invalid': validationErrors.stock }]"
                     id="productStock" 
-                    placeholder="e.g., 100kg"
+                    placeholder="e.g., 100"
                     required
                   >
                 </div>
@@ -106,7 +118,7 @@
                     step="0.01"
                     min="0"
                     max="100"
-                    class="form-control form-control-lg" 
+                    :class="['form-control form-control-lg', { 'is-invalid': validationErrors.discount }]"
                     id="productDiscount" 
                     placeholder="0.00"
                   >
@@ -121,7 +133,7 @@
                   </label>
                   <select 
                     v-model="formData.category" 
-                    class="form-select form-select-lg" 
+                    :class="['form-select form-select-lg', { 'is-invalid': validationErrors.category }]"
                     id="productCategory" 
                     required
                   >
@@ -183,7 +195,6 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import carrotImg from '@/assets/img-provider/carrot.jpg'
 
 const props = defineProps({
   isOpen: {
@@ -202,15 +213,19 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'save'])
 
+const validationErrors = ref({})
+
 const formData = ref({
   id: '',
   name: '',
   price: 0,
-  stock: '',
+  stock: 0,
   category: '',
   addedDate: '',
   description: '',
-  image: '',
+  image: '', // preview/display URL (can be base64 or full URL)
+  imageUrl: '', // backend stored URL
+  imageFile: null, // actual file object
   discount: 0
 })
 
@@ -219,9 +234,11 @@ watch(() => props.isOpen, (newVal) => {
   if (newVal && props.isEditMode && props.product) {
     // Edit mode - load product data
     formData.value = { ...props.product }
+    validationErrors.value = {}
   } else if (newVal && !props.isEditMode) {
     // Add mode - reset form
     resetForm()
+    validationErrors.value = {}
   }
 }, { immediate: true })
 
@@ -237,11 +254,13 @@ const resetForm = () => {
     id: `PRD${Date.now()}`,
     name: '',
     price: 0,
-    stock: '',
+    stock: 0,
     category: '',
     addedDate: new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }),
     description: '',
-    image: carrotImg,
+    image: '',
+    imageUrl: '',
+    imageFile: null,
     discount: 0
   }
 }
@@ -249,6 +268,10 @@ const resetForm = () => {
 const handleImageUpload = (event) => {
   const file = event.target.files[0]
   if (file) {
+    // Store the actual file object for API upload
+    formData.value.imageFile = file
+    
+    // Also create a preview URL for display
     const reader = new FileReader()
     reader.onload = (e) => {
       formData.value.image = e.target.result
@@ -265,8 +288,47 @@ const closeModal = () => {
   emit('close')
 }
 
+const validateForm = () => {
+  validationErrors.value = {}
+  
+  // Validate name
+  if (!formData.value.name || formData.value.name.trim() === '') {
+    validationErrors.value.name = 'Product name is required'
+  }
+  
+  // Validate price
+  if (formData.value.price === '' || formData.value.price === null || isNaN(formData.value.price)) {
+    validationErrors.value.price = 'Price must be a valid number'
+  } else if (formData.value.price <= 0) {
+    validationErrors.value.price = 'Price must be greater than 0'
+  }
+  
+  // Validate stock
+  if (formData.value.stock === '' || formData.value.stock === null || isNaN(formData.value.stock)) {
+    validationErrors.value.stock = 'Stock must be a valid number'
+  } else if (formData.value.stock < 0) {
+    validationErrors.value.stock = 'Stock cannot be negative'
+  }
+  
+  // Validate discount
+  if (formData.value.discount === '' || formData.value.discount === null || isNaN(formData.value.discount)) {
+    validationErrors.value.discount = 'Discount must be a valid number'
+  } else if (formData.value.discount < 0 || formData.value.discount > 100) {
+    validationErrors.value.discount = 'Discount must be between 0 and 100'
+  }
+  
+  // Validate category
+  if (!formData.value.category) {
+    validationErrors.value.category = 'Please select a category'
+  }
+  
+  return Object.keys(validationErrors.value).length === 0
+}
+
 const saveProduct = () => {
-  emit('save', formData.value)
+  if (validateForm()) {
+    emit('save', formData.value)
+  }
 }
 </script>
 

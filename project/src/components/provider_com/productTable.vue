@@ -19,10 +19,11 @@
             <td class="name-col">
               <div class="product-row-content">
                 <img 
-                  :src="product.image" 
+                  :src="product.image || 'https://via.placeholder.com/50?text=No+Image'" 
                   @error="handleImageError"
                   class="row-image rounded" 
                   :alt="product.name"
+                  style="width: 50px; height: 50px; object-fit: cover;"
                 />
                 <span>{{ product.name }}</span>
               </div>
@@ -182,8 +183,8 @@ const handleImageError = (event) => {
   font-weight: 600;
   color: #212529;
   width: 15%;
-  text-align: center;
-  padding: 12px 12px;
+  text-align: left;
+  /* padding: 12px 12px; */
 }
 
 .date-col {
