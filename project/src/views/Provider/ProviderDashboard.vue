@@ -57,16 +57,16 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import SideBar from '@/components/provider_com/sideBar.vue'
-import PageHeader from '@/components/provider_com/pageHeader.vue'
-import AnalyseBar from '@/components/provider_com/analyseBar.vue'
-import ProductsSellAnalysis from '@/components/provider_com/ProductsSellAnalysis.vue'
-import ProductCard from '@/components/provider_com/productCard.vue'
-import TopCustomers from '@/components/provider_com/TopCustomers.vue'
-import tomatoesImg from '@/assets/img-provider/tomatoes.jpg'
-import carrotImg from '@/assets/img-provider/carrot.jpg'
-import cabbageImg from '@/assets/img-provider/cabbage.jpg'
-import onionImg from '@/assets/img-provider/onion.jpg'
+import SideBar from '../../components/provider_com/sideBar.vue'
+import PageHeader from '../../components/provider_com/pageHeader.vue'
+import AnalyseBar from '../../components/provider_com/analyseBar.vue'
+import ProductsSellAnalysis from '../../components/provider_com/ProductsSellAnalysis.vue'
+import ProductCard from '../../components/provider_com/productCard.vue'
+import TopCustomers from '../../components/provider_com/TopCustomers.vue'
+import tomatoesImg from '../../assets/img-provider/tomatoes.jpg'
+import carrotImg from '../../assets/img-provider/carrot.jpg'
+import cabbageImg from '../../assets/img-provider/cabbage.jpg'
+import onionImg from '../../assets/img-provider/onion.jpg'
 
 const router = useRouter() 
 
