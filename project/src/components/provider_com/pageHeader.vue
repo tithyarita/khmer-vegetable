@@ -1,10 +1,6 @@
 <template>
   <div class="page-header bg-success text-white d-flex align-items-center">
     <h5 class="mb-0 fw-bold">{{ title }}</h5>
-    <div class="profile">
-      <i class="bi bi-bell-fill"></i>
-      <img src="@/assets/images/avatar.jpg" alt="Profile" class="profile-img rounded-circle">
-    </div>
   </div>
 </template>
 

@@ -1,115 +1,167 @@
+<script setup>
+import { ref, watch } from "vue"
+import { useProviderStore } from "@/stores/providerStore"
+
+const store = useProviderStore()
+
+const name     = ref("")
+const farm     = ref("")
+const location = ref("")
+const story    = ref("")
+
+// Sync form when store loads
+watch(
+  () => store.provider,
+  (p) => {
+    if (!p) return
+    name.value     = p.name
+    farm.value     = p.farm
+    location.value = p.location
+    story.value    = p.story
+  },
+  { immediate: true, deep: true }
+)
+
+const saveProvider = () => {
+  store.updateProfile({
+    name:     name.value,
+    farm:     farm.value,
+    location: location.value,
+    story:    story.value,
+  })
+  alert("Profile updated!")
+}
+</script>
+
 <template>
-  <div class="box">
-    <h3>Provider</h3>
+  <div class="card">
+    <p class="section-title">Edit Profile Information</p>
 
-    <div class="avatar">
-      <img src="@/assets/images/avatar.jpg" alt="Provider Avatar">
-      <i class="bi bi-pencil-square edit-icon"></i>
+    <div class="form-grid">
+
+      <div class="form-field">
+        <label for="name">Full Name</label>
+        <input id="name" v-model="name" type="text" placeholder="Enter your name" />
+      </div>
+
+      <div class="form-field">
+        <label for="farm">Farm Name</label>
+        <input id="farm" v-model="farm" type="text" placeholder="Enter farm name" />
+      </div>
+
+      <div class="form-field">
+        <label for="location">Location</label>
+        <input id="location" v-model="location" type="text" placeholder="City / Province" />
+      </div>
+
+      <div class="form-field">
+        <label>Provider ID</label>
+        <input
+          :value="store.provider.id"
+          type="text"
+          readonly
+          class="readonly"
+        />
+      </div>
+
+      <div class="form-field full">
+        <label for="story">Farm Story</label>
+        <textarea
+          id="story"
+          v-model="story"
+          placeholder="Tell customers about your farm..."
+        />
+      </div>
+
     </div>
 
-    <div class="form">
-        <label>Provider Name</label>
-        <div class ="mini">
-            <input v-model="name"/>
-            <i class="bi bi-person edit-icon"></i>
-        </div>
-
-        <label>Farm Name</label>
-        <div class ="mini">
-            <input v-model="farm"/>
-            <i class="bi bi-building edit-icon"></i>
-        </div>
-
-        <label>Location</label>
-        <div class ="mini">
-            <input v-model="location"/>
-            <i class="bi bi-geo-alt edit-icon"></i>
-        </div>
-
-        <label>Farm Story</label>
-        <textarea v-model="story"></textarea>
-       
-
-      <button>Save Changes</button>
-    </div>
+    <button class="save-btn" @click="saveProvider">Save Changes</button>
   </div>
 </template>
 
-<script setup>
-import { ref } from "vue" //import { useProviderStore } from '@/stores/providerStore';
-
-const name = ref("Sok Min")
-const farm = ref("Ta Min Farm")
-const location = ref("Phnom Penh")
-const story = ref("TA MIN Farms began as a three-acre project dedicated to heirloom vegetable varieties. Today, we manage over 150 acres of certified organic land. Our mission is to reconnect consumers with thetrue flavor of the earth, utilizing regenerative practices that restore soil health and biodiversity. Every vegetable we provide is hand-harvested at peak nutritional density and delivered via carbon-neutral logistics.")
-</script>
-
 <style scoped>
-.box{
-  background:#fff;
-  padding:25px;
-  border-radius:18px;
-  margin-bottom:25px;
-  border: gray solid 3px;
-  margin-top:20px;
+.card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e0e0e0;
+  padding: 24px;
 }
-.avatar{
-  text-align:center;
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2e7d32;
+  margin: 0 0 16px;
 }
-.avatar img{
-  width:120px;
-  height:120px;
-  border-radius:50%;
-  border:4px solid #2e7d32;
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
-.form{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  margin-top:20px;
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
-i{
-    color:#2e7d32;
-    position:relative;
-    right:10px;
-    left: -20px;
-    cursor:pointer;
+
+.form-field.full {
+  grid-column: 1 / -1;
 }
-label{
-    font-size:14px;
-    color:#777;
-    font-style: Plus Jakarta Sans;
+
+label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
 }
-h3{
-    font-style: Plus Jakarta Sans;
-    color:#2e7d32;
-    font-weight: bold;
+
+input,
+textarea {
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1a1a1a;
+  background: #fafafa;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  resize: none;
 }
-input{
-    width:300px;
-    height:150p;
-    padding:10px;
-    border-radius:8px;
-    border:1px solid #ddd;
-    background:#dcd6d6;
-    font-weight:bold;
+
+input:focus,
+textarea:focus {
+  border-color: #2e7d32;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.08);
 }
-textarea{
-    width:100%;
-    height:100px;
-    padding:10px;
-    border-radius:8px;
-    border:1px solid #ddd;
-    background:#dcd6d6;
-    font-style: Plus Jakarta Sans;
+
+input.readonly {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
-button{
-  background:#2e7d32;
-  color:white;
-  border:none;
-  padding:12px;
-  border-radius:10px;
-  margin-top:10px;
-  cursor:pointer;
+
+textarea {
+  min-height: 90px;
+  line-height: 1.6;
+}
+
+.save-btn {
+  margin-top: 18px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  padding: 11px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.save-btn:hover {
+  background: #1b5e20;
 }
 </style>

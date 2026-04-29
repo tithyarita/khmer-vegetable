@@ -9,11 +9,11 @@ import ProviderProduct from '../views/Provider/ProviderProduct.vue'
 import ProductDetail from '../views/Provider/ProductDetail.vue'
 import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
 import ProfileSettingProvider from '../views/Provider/ProfileSettingProvider.vue' 
+import ProviderOrders from '../views/Provider/ProviderOrders.vue'
 import StaffLayout from '../Layout/StaffLayout.vue'
 import DashboardView from '../views/Staff/Dashboardview.vue'
 import ApplicationsView from '../views/Staff/Applicationsview.vue'
 import ProfileView from '../views/Staff/Profile.vue'
-
 // Admin
 import AdminLayout from '../Layout/AdminLayout.vue'
 import AdminDashboard from '../views/Admin/admindashboard.vue'
@@ -70,6 +70,11 @@ const router = createRouter({
       path: '/provider-profile',
       name: 'ProviderProfile',
       component: ProfileSettingProvider,
+    },
+    {
+      path: '/provider-orders',
+      name: 'ProviderOrders',
+      component: ProviderOrders,
     },
     {
       path: '/staff',
