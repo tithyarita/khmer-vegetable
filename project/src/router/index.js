@@ -58,6 +58,7 @@ import AdminSetting from '../views/Admin/AdminSetting.vue'
 import UserRegister from '../views/User/resgister.vue'
 
 import UserLogin from '../views/User/login.vue'
+import ProviderOrders from '@/views/Provider/ProviderOrders.vue'
 
 
 
@@ -100,6 +101,16 @@ const router = createRouter({
       name: 'ProviderDashboard',
 
       component: ProviderDashboard,
+
+    },
+
+    {
+
+      path: '/provider-orders',
+
+      name: 'ProviderOrders',
+
+      component: ProviderOrders,
 
     },
 
