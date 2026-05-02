@@ -1,6 +1,5 @@
 <template>
   <div class="admin-users-page">
-
     <!-- HEADER -->
     <div class="header-row">
       <div>
@@ -9,20 +8,20 @@
           Manage all registered users stored in MySQL database.
         </p>
       </div>
-
       <div class="search-bar">
         <input
           v-model="search"
           type="text"
           placeholder="Search by name or email..."
         />
-
         <button class="btn-green" @click="addUser">
           Add User
         </button>
+        <button class="btn-outline" @click="exportCSV">
+          Export CSV
+        </button>
       </div>
     </div>
-
     <!-- TABLE -->
     <div class="user-table">
       <table>
@@ -37,28 +36,47 @@
             <th>ACTIONS</th>
           </tr>
         </thead>
-
         <tbody>
           <tr v-for="user in filteredUsers" :key="user.id">
-
             <td>{{ user.id }}</td>
             <td>{{ user.name }}</td>
             <td>{{ user.email }}</td>
             <td>{{ user.phone }}</td>
             <td>{{ user.role }}</td>
             <td>{{ formatDate(user.createat)}}</td>
-
             <td>
               <button class="btn-table" @click="deleteUser(user.id)">
                 Delete
               </button>
             </td>
-
           </tr>
         </tbody>
       </table>
     </div>
-
+    <!-- Add User Modal -->
+    <div v-if="showAddModal" class="modal-backdrop">
+      <div class="modal animate-modal">
+        <button class="modal-close" @click="showAddModal = false">×</button>
+        <h2>Add New User</h2>
+        <form @submit.prevent="submitUser">
+          <input v-model="newUser.name" type="text" placeholder="Name" required />
+          <input v-model="newUser.email" type="email" placeholder="Email" required />
+          <input v-model="newUser.phone" type="text" placeholder="Phone" required />
+          <input v-model="newUser.password" type="password" placeholder="Password" required />
+          <select v-model="newUser.role" required>
+            <option value="" disabled>Select Role</option>
+            <option value="admin">Admin</option>
+            <option value="staff">Staff</option>
+            <option value="provider">Provider</option>
+            <option value="customer">Customer</option>
+          </select>
+          <div class="modal-actions">
+            <button type="submit" class="btn-green">Add</button>
+            <button type="button" @click="showAddModal = false">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -67,6 +85,7 @@ import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 
 const API_URL = 'http://localhost:3000/users'
+const REGISTER_URL = 'http://localhost:3000/users/register'
 
 const users = ref([])
 const search = ref('')
@@ -114,6 +133,61 @@ const filteredUsers = computed(() => {
 onMounted(() => {
   fetchUsers()
 })
+
+// Add User Modal
+const showAddModal = ref(false)
+const newUser = ref({
+  name: '',
+  email: '',
+  phone: '',
+  password: '',
+  role: ''
+})
+
+function addUser() {
+  showAddModal.value = true
+  newUser.value = { name: '', email: '', phone: '', password: '', role: 'customer' }
+}
+
+async function submitUser() {
+  try {
+    const res = await axios.post(REGISTER_URL, newUser.value)
+    showAddModal.value = false
+    await fetchUsers()
+    // Show success message
+    alert(res.data?.message || 'User added successfully!')
+  } catch (err) {
+    alert('Failed to add user')
+    console.error(err)
+  }
+}
+
+// Export users to CSV
+function exportCSV() {
+  if (!users.value.length) {
+    alert('No users to export.');
+    return;
+  }
+  const header = ['ID', 'Name', 'Email', 'Phone', 'Role', 'Created At'];
+  const rows = users.value.map(u => [
+    u.id,
+    u.name,
+    u.email,
+    u.phone ? `="${u.phone}"` : '',
+    u.role,
+    formatDate(u.createat)
+  ]);
+  const csvContent = [header, ...rows]
+    .map(e => e.map(field => '"' + String(field).replace(/"/g, '""') + '"').join(','))
+    .join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', 'users.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 </script>
 <style scoped>
 .admin-users-page {
@@ -350,5 +424,66 @@ onMounted(() => {
 .audit-cta p {
   color: #374151;
   font-size: 1rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(120, 120, 120, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* margin-top: 50px; */
+  /* height: 80vh; */
+  z-index: 1000;
+
+}
+.modal {
+  background: #fff;
+  margin-top: 40px;
+  height: 80vh;
+  padding: 2.5rem 2rem 2rem 2rem;
+  border-radius: 16px;
+  min-width: 340px;
+  max-width: 30vw;
+  box-shadow: 0 8px 40px #0003;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+}
+.animate-modal {
+  animation: modalIn 0.18s cubic-bezier(.4,0,.2,1);
+}
+@keyframes modalIn {
+  from { transform: translateY(40px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #64748b;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+.modal input, .modal select {
+  width: 100%;
+  padding: 0.7rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 1rem;
+}
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
 }
 </style>

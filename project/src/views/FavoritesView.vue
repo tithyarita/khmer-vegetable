@@ -1,9 +1,17 @@
 <template>
-  <div class="home">
+  <div class="favorites">
     <NavigationBar />
     <br>
 
-    <HeroBanner />
+    <section class="section favorites-section">
+      <div class="section-inner">
+        <div class="section-header">
+          <h2 class="section-title">My Favorites</h2>
+          <a href="#" class="see-all">All Favorites →</a>
+        </div>
+        <Card />
+      </div>
+    </section>
 
     <section class="section popular-vegetables">
       <div class="section-inner">
@@ -12,30 +20,27 @@
           <a href="#" class="see-all">All Deals →</a>
         </div>
         <Card />
-          <div class="section-header">
-          <h2 class="section-title">Popular Vegetables</h2>
-          <a href="#" class="see-all">All Deals →</a>
-        </div>
-      
-          
-        <Farm />
-          <div class="section-header">
-          <h2 class="section-title">Popular Vegetables</h2>
-          <a href="#" class="see-all">All Deals →</a>
-        </div>
-        <Deals />
-        
       </div>
     </section>
+
+    <section class="section farmers-section">
+      <div class="section-inner">
+        <div class="section-header">
+          <h2 class="section-title">Featured Farmers</h2>
+          <a href="#" class="see-all">View All →</a>
+        </div>
+        <Farm />
+      </div>
+    </section>
+
     <Footer />
   </div>
 </template>
 
 <script setup>
-import HeroBanner from '../components/Customer/Hero.vue'
 import NavigationBar from '../components/Customer/NavigationBar.vue'
-import Farm from '../components/Customer/FarmerCard.vue'
 import Card from '../components/Customer/Card.vue'
+import Farm from '../components/Customer/FarmerCard.vue'
 import Deals from '../components/Customer/DealsCard.vue'
 import Footer from '../components/Customer/Footer.vue'
 </script>
@@ -46,9 +51,9 @@ import Footer from '../components/Customer/Footer.vue'
   color: rgb(101, 142, 101);
   text-decoration: none;
   font-size: 1.2rem;
-  
 }
-.home {
+
+.favorites {
   width: 100%;
   min-height: 100vh;
   background-color: #f9f9f6;
@@ -89,23 +94,6 @@ import Footer from '../components/Customer/Footer.vue'
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 20px;
 }
-/* ── ONLY Popular Vegetables HEADER ── */
-:deep(.vegetables-header .section-title) {
-  font-family: "DM Serif Display", serif;
-  font-size: 2rem;
-  color: #2d6a4f;
-  letter-spacing: -0.5px;
-}
-
-/* optional different link style */
-:deep(.vegetables-header .see-all) {
-  color: #3ddc84;
-  font-weight: 700;
-}
-
-:deep(.vegetables-header .see-all:hover) {
-  color: #1f7a4a;
-}
 
 .farmers-grid {
   display: grid;
@@ -131,5 +119,4 @@ import Footer from '../components/Customer/Footer.vue'
     gap: 12px;
   }
 }
-  
 </style>

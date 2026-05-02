@@ -42,9 +42,10 @@
 
     <!-- Action button -->
     <div class="qi-action">
-      <button class="btn-details" @click="$emit('view', applicant)">
+      <router-link to="/staff/details" class="btn-details" @click="$emit('view', applicant)">
         View Details
-      </button>
+      </router-link>
+
     </div>
   </div>
 </template>

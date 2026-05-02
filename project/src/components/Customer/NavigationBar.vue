@@ -98,11 +98,10 @@ export default {
       this.active = cat
     },
     goToCart() {
-      console.log("Go to cart page")
+      this.$router.push('/cart')
     },
     toggleFavorite() {
-      this.isFavorited = !this.isFavorited
-      console.log("Go to favorites page")
+      this.$router.push('/favorites')
     }
   }
 }

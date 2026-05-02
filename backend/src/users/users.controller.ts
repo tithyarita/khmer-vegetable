@@ -39,10 +39,9 @@ export class UsersController {
       phone: string;
       password: string;
       role: string;
-      
     },
   ) {
-    const { name, email, phone, password } = body;
+    const { name, email, phone, password, role } = body;
 
     // validation
     if (!name || !email || !phone || !password) {
@@ -65,9 +64,8 @@ export class UsersController {
       name,
       email,
       phone,
-      role: 'customer',
+      role: role || 'customer',
       password: hashedPassword,
-
     });
 
     // save to MySQL ✅
