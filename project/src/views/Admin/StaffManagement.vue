@@ -1,56 +1,102 @@
 <template>
-  <div class="staff-page">
+  <div class="provider-management-page">
 
-    <!-- Page header -->
-    <div class="page-header">
+    <!-- HEADER -->
+    <div class="header-row">
       <div>
-        <h1 class="page-title">Staff Management</h1>
-        <p class="page-sub">Manage staff accounts and permissions across the marketplace ecosystem.</p>
+        <h1 class="title">Staff Management</h1>
+        <p class="subtitle">
+          Manage staff accounts and permissions across the marketplace ecosystem.
+        </p>
       </div>
-      <button class="btn-add" @click="showAddModal = true">
-        <i class="bi bi-plus-lg me-1"></i> Add Staff Member
+
+      <button class="apply-filter-btn" @click="showAddModal = true">
+        + Add Staff Member
       </button>
     </div>
 
-    <!-- Two-column layout: table | detail panel -->
-    <div class="staff-body">
+    <!-- MAIN -->
+    <div class="main-content">
 
-      <!-- Left: Staff list table -->
-      <div class="table-col">
-        <StaffListTable
-          :staff="staffList"
-          :selected="selectedMember"
-          @select="selectedMember = $event"
-        />
+      <!-- TABLE -->
+      <div class="table-section">
+
+        <table class="provider-table compact-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>STAFF</th>
+              <th>EMAIL</th>
+              <th>ROLE</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr
+              v-for="s in staffList"
+              :key="s.id"
+              @click="selectStaff(s)"
+              :class="{ selected: selectedMember?.id === s.id }"
+              style="font-size:0.85rem; height:32px;"
+            >
+              <td>{{ s.staffId }}</td>
+
+              <td>
+                <div class="farm-owner" style="gap:0.3rem;">
+                  <img :src="s.avatar" class="avatar" />
+                  <div>
+                    <div class="farm-name">{{ s.name }}</div>
+                    <div class="owner-name">{{ s.role }}</div>
+                  </div>
+                </div>
+              </td>
+
+              <td>{{ s.email }}</td>
+              <td>{{ s.role }}</td>
+            </tr>
+          </tbody>
+        </table>
+
       </div>
 
-      <!-- Right: Detail panel -->
-      <div class="detail-col">
-        <StaffDetailPanel :member="selectedMember" />
+      <!-- DETAILS -->
+      <div class="details-section" v-if="selectedMember">
+
+        <div class="details-card compact-details">
+          <h3>Staff Details</h3>
+
+          <div class="compact-row"><b>👤</b> {{ selectedMember.name }}</div>
+          <div class="compact-row"><b>✉️</b> {{ selectedMember.email }}</div>
+          <div class="compact-row"><b>🧑‍💼</b> {{ selectedMember.role }}</div>
+          <div class="compact-row"><b>📞</b> {{ selectedMember.phone }}</div>
+          <div class="compact-row"><b>📊</b> {{ selectedMember.status }}</div>
+          <div class="compact-row"><b>🏠</b> {{ selectedMember.address }}</div>
+
+        </div>
+
       </div>
 
     </div>
 
-    <!-- Simple Add Modal (scaffold) -->
-    <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
-      <div class="modal-box">
-        <div class="modal-header">
-          <h2 class="modal-title">Add Staff Member</h2>
-          <button class="modal-close" @click="showAddModal = false">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
+    <!-- ADD MODAL -->
+    <div v-if="showAddModal" class="modal-overlay compact-modal">
+      <div class="modal-content compact-modal-content">
 
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Full Name</label>
-            <input v-model="newStaff.name" type="text" placeholder="e.g. Sarah Greenfield" />
+        <h4>Add Staff Member</h4>
+
+        <form @submit.prevent="addStaff">
+
+          <div class="form-row">
+            <label>Name</label>
+            <input v-model="newStaff.name" required />
           </div>
-          <div class="form-group">
+
+          <div class="form-row">
             <label>Email</label>
-            <input v-model="newStaff.email" type="email" placeholder="e.g. sarah@digitalgreen.com" />
+            <input v-model="newStaff.email" required />
           </div>
-          <div class="form-group">
+
+          <div class="form-row">
             <label>Role</label>
             <select v-model="newStaff.roleKey">
               <option value="reviewer">Staff Reviewer</option>
@@ -59,12 +105,14 @@
               <option value="admin">Admin</option>
             </select>
           </div>
-        </div>
 
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="showAddModal = false">Cancel</button>
-          <button class="btn-confirm" @click="addStaff">Add Member</button>
-        </div>
+          <div class="modal-actions compact-actions">
+            <button type="submit">Save</button>
+            <button type="button" @click="showAddModal = false">Cancel</button>
+          </div>
+
+        </form>
+
       </div>
     </div>
 
@@ -72,188 +120,208 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import StaffListTable   from '../../components/Admin/Stafflisttable .vue'
-import StaffDetailPanel from '../../components/Admin/Staffdetailpanel.vue'
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
 
-const showAddModal  = ref(false)
+// STATE
+const staffList = ref([])
 const selectedMember = ref(null)
+const showAddModal = ref(false)
 
-const newStaff = ref({ name: '', email: '', roleKey: 'reviewer' })
+const newStaff = ref({
+  name: '',
+  email: '',
+  roleKey: 'reviewer'
+})
 
-/* ── Sample data ── */
+// ROLE MAP
 const roleLabels = {
   reviewer: 'Staff Reviewer',
-  lead:     'Review Lead',
-  manager:  'Manager',
-  admin:    'Admin',
+  lead: 'Review Lead',
+  manager: 'Manager',
+  admin: 'Admin'
 }
-const staffList = ref([
-  {
-    id: 1, staffId: '#MSR-4921',
-    name: 'Marcus Thorne', email: 'm.thorne@digitalgreen.com',
-    role: 'Staff Reviewer', roleKey: 'reviewer',
-    status: 'active', statusLabel: 'Staff Reviewer',
-    avatar: '',
-    lastLogin: '2 hours ago',
-    managedOrders: '15 orders today',
-    permissionLevel: 'Full Operational Access',
-    recentLogs: [
-      'Approved 5 new inventory arrivals from Green Valley Farms.',
-      'Updated price listings for Organic Kale.',
-    ],
-  },
-  {
-    id: 2, staffId: '#MSR-3310',
-    name: 'Elena Rodriguez', email: 'e.rodriguez@digitalgreen.com',
-    role: 'Review Lead', roleKey: 'lead',
-    status: 'active', statusLabel: 'Active',
-    avatar: '',
-    lastLogin: '30 minutes ago',
-    managedOrders: '28 orders today',
-    permissionLevel: 'Full Operational Access',
-    recentLogs: [
-      'Reviewed and approved Khmer Roots Collective onboarding.',
-      'Flagged 2 SKUs for quality inspection.',
-    ],
-  },
-  {
-    id: 3, staffId: '#MSR-2884',
-    name: 'Simon Hayes', email: 's.hayes@digitalgreen.com',
-    role: 'Staff Reviewer', roleKey: 'reviewer',
-    status: 'inactive', statusLabel: 'Inactive',
-    avatar: '',
-    lastLogin: '3 days ago',
-    managedOrders: '0 orders today',
-    permissionLevel: 'Read-Only Access',
-    recentLogs: [
-      'No recent activity.',
-    ],
-  },
-  {
-    id: 4, staffId: '#MSR-1102',
-    name: 'Amara Osei', email: 'a.osei@digitalgreen.com',
-    role: 'Manager', roleKey: 'manager',
-    status: 'active', statusLabel: 'Active',
-    avatar: '',
-    lastLogin: '1 hour ago',
-    managedOrders: '42 orders today',
-    permissionLevel: 'Full Operational Access',
-    recentLogs: [
-      'Approved bulk order from Mekong Organic Hub.',
-      'Generated weekly provider report.',
-    ],
-  },
-])
 
-/* Select first member by default */
-selectedMember.value = staffList.value[0]
+// FETCH STAFF (ONLY role = staff)
+const fetchStaff = async () => {
+  try {
+    const res = await axios.get('http://localhost:3000/users', {
+      params: { role: 'staff' }
+    })
 
-function addStaff() {
-  if (!newStaff.value.name || !newStaff.value.email) return
-  const id = staffList.value.length + 1
-  staffList.value.push({
-    id,
-    staffId: `#MSR-${1000 + id}`,
-    name: newStaff.value.name,
-    email: newStaff.value.email,
-    role: roleLabels[newStaff.value.roleKey],
-    roleKey: newStaff.value.roleKey,
-    status: 'active', statusLabel: 'Active',
-    avatar: '',
-    lastLogin: 'Just now',
-    managedOrders: '0 orders today',
-    permissionLevel: 'Read-Only Access',
-    recentLogs: ['Account created.'],
-  })
-  newStaff.value = { name: '', email: '', roleKey: 'reviewer' }
-  showAddModal.value = false
+    staffList.value = res.data.map(u => ({
+      id: u.id,
+      staffId: `#STF-${1000 + u.id}`,
+      name: u.name,
+      phone: u.phone || 'N/A',
+      email: u.email,
+      role: roleLabels[u.roleKey] || u.role,
+      roleKey: u.roleKey,
+      address: u.address || 'N/A',
+      status: u.status || 'Active',
+      avatar: u.imageUrl || `https://randomuser.me/api/portraits/men/${u.id % 100}.jpg`
+    }))
+
+    selectedMember.value = staffList.value[0] || null
+
+  } catch (err) {
+    console.error(err)
+  }
 }
+
+// SELECT
+const selectStaff = (s) => {
+  selectedMember.value = s
+}
+
+// ADD STAFF
+const addStaff = async () => {
+  try {
+    await axios.post('http://localhost:3000/users', {
+      ...newStaff.value,
+      role: 'staff'
+    })
+
+    await fetchStaff()
+
+    newStaff.value = { name: '', email: '', roleKey: 'reviewer' }
+    showAddModal.value = false
+
+  } catch (err) {
+    alert('Failed to add staff')
+  }
+}
+
+onMounted(fetchStaff)
 </script>
 
 <style scoped>
-/* Page wrapper */
-.staff-page { display: flex; flex-direction: column; gap: 20px; }
+/* SAME DESIGN SYSTEM AS PROVIDER PAGE */
 
-/* Header */
-.page-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
+/* PAGE */
+.provider-management-page {
+  padding: 2rem;
+  background: #f8fafc;
+  min-height: 100vh;
 }
-.page-title {
-  font-size: 26px; font-weight: 800; color: #111827; letter-spacing: -.4px;
-}
-.page-sub { font-size: 12.5px; color: #6b7280; margin-top: 4px; }
 
-.btn-add {
-  display: flex; align-items: center; gap: 4px;
-  background: #1a3d2a; color: #fff;
-  border: none; border-radius: 10px;
-  padding: 10px 20px; font-size: 13px; font-weight: 700;
-  cursor: pointer; white-space: nowrap;
-  transition: background .14s;
+/* HEADER */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
 }
-.btn-add:hover { background: #2d6a4f; }
 
-/* Two-column body */
-.staff-body {
-  display: flex; gap: 20px; align-items: flex-start;
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #14532d;
 }
-.table-col  { flex: 1; min-width: 0; }
-.detail-col { width: 280px; flex-shrink: 0; }
 
-/* Modal */
+.subtitle {
+  color: #64748b;
+}
+
+/* BUTTON */
+.apply-filter-btn {
+  background: #14532d;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+/* LAYOUT */
+.main-content {
+  display: flex;
+  gap: 2rem;
+}
+
+.table-section {
+  flex: 2;
+  background: white;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.details-section {
+  flex: 1;
+}
+
+/* TABLE */
+.provider-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.provider-table th {
+  text-align: left;
+  padding: 0.5rem;
+  color: #64748b;
+}
+
+.provider-table td {
+  padding: 0.5rem;
+}
+
+.provider-table tr.selected {
+  background: #f1f5f9;
+}
+
+/* USER CELL */
+.farm-owner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+/* DETAILS */
+.details-card {
+  background: white;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+/* MODAL */
 .modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.4); backdrop-filter: blur(2px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 200;
-}
-.modal-box {
-  background: #fff; border-radius: 16px;
-  width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
-  overflow: hidden;
-}
-.modal-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 22px; border-bottom: 1px solid #f3f4f3;
-}
-.modal-title { font-size: 16px; font-weight: 800; color: #111827; }
-.modal-close {
-  border: none; background: none; font-size: 16px;
-  color: #6b7280; cursor: pointer; padding: 4px;
-}
-.modal-close:hover { color: #111827; }
-
-.modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
-.form-group { display: flex; flex-direction: column; gap: 5px; }
-.form-group label { font-size: 12px; font-weight: 600; color: #374151; }
-.form-group input, .form-group select {
-  height: 38px; border: 1px solid #e5e7eb; border-radius: 8px;
-  padding: 0 12px; font-size: 13px; color: #111827;
-  background: #f9fafb; outline: none;
-  transition: border-color .14s, box-shadow .14s;
-}
-.form-group input:focus, .form-group select:focus {
-  border-color: #2d6a4f; box-shadow: 0 0 0 3px rgba(45,106,79,.1);
-  background: #fff;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.modal-footer {
-  display: flex; gap: 10px; justify-content: flex-end;
-  padding: 14px 22px; border-top: 1px solid #f3f4f3;
+.modal-content {
+  background: white;
+  padding: 1rem;
+  border-radius: 10px;
+  width: 300px;
 }
-.btn-cancel {
-  padding: 9px 18px; border: 1.5px solid #e5e7eb;
-  border-radius: 8px; background: #fff;
-  font-size: 13px; font-weight: 600; color: #374151;
-  cursor: pointer; transition: background .12s;
+
+/* FORM */
+.form-row {
+  margin-bottom: 0.5rem;
 }
-.btn-cancel:hover { background: #f3f4f6; }
-.btn-confirm {
-  padding: 9px 20px; border: none; border-radius: 8px;
-  background: #1a3d2a; color: #fff;
-  font-size: 13px; font-weight: 700; cursor: pointer;
-  transition: background .12s;
+
+input, select {
+  width: 100%;
+  padding: 0.4rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
 }
-.btn-confirm:hover { background: #2d6a4f; }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
 </style>
