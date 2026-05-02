@@ -1,13 +1,13 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Product } from './product.entity';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { Product } from './product.entity'
+import { HttpService } from '@nestjs/axios'
+import { firstValueFrom } from 'rxjs'
 
 @Injectable()
 export class ProductService {
-  private readonly logger = new Logger(ProductService.name);
+  private readonly logger = new Logger(ProductService.name)
 
   constructor(
     @InjectRepository(Product)
@@ -15,78 +15,81 @@ export class ProductService {
     private readonly httpService: HttpService,
   ) {}
 
-  // 🌐 Get random image from external API
+  // 🌐 Random image fallback
   async getRandomImage(): Promise<string> {
-    const response = await firstValueFrom(
+    const res = await firstValueFrom(
       this.httpService.get<{ message: string }>(
         'https://dog.ceo/api/breeds/image/random',
       ),
-    );
+    )
 
-    return response.data.message;
+    return res.data.message
   }
 
-  // ➕ CREATE product
+  // ➕ CREATE
   async create(data: Partial<Product>) {
-    try {
-      // auto-generate image if not provided
-      if (!data.imageUrl) {
-        data.imageUrl = await this.getRandomImage();
-      }
-
-      const product = this.productRepository.create(data);
-      const savedProduct = await this.productRepository.save(product);
-
-      this.logger.log(`Product created with ID: ${savedProduct.id}`);
-      console.log('Created product:', savedProduct);
-
-      return savedProduct;
-    } catch (error) {
-      this.logger.error('Failed to create product', error);
-      throw error;
+    if (!data.imageUrl) {
+      data.imageUrl = await this.getRandomImage()
     }
+
+    const product = this.productRepository.create(data)
+    const saved = await this.productRepository.save(product)
+
+    this.logger.log(`Created product ID: ${saved.id}`)
+    return saved
   }
 
-  // 📦 GET ALL products
+  // 📦 FIND ALL
   async findAll() {
-    try {
-      const products = await this.productRepository.find();
-
-      this.logger.log(`Loaded ${products.length} products`);
-      console.log('All products:', products);
-
-      return products;
-    } catch (error) {
-      this.logger.error('Failed to load products', error);
-      throw error;
-    }
+    const products = await this.productRepository.find()
+    this.logger.log(`Loaded ${products.length} products`)
+    return products
   }
 
-  // 🔍 GET ONE product
+  // 🔍 FIND ONE
   async findOne(id: number) {
     const product = await this.productRepository.findOne({
       where: { id },
-    });
+    })
 
     if (!product) {
-      this.logger.warn(`Product not found: ID ${id}`);
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('Product not found')
     }
 
-    return product;
+    return product
   }
 
-  // ❌ DELETE product
-  async remove(id: number) {
-    const product = await this.findOne(id);
-    await this.productRepository.remove(product);
+  // ✏️ UPDATE (FIXED)
+  async update(id: number, data: Partial<Product>) {
+    const product = await this.findOne(id)
 
-    this.logger.log(`Deleted product ID: ${id}`);
+    product.name = data.name ?? product.name
+    product.price = data.price ?? product.price
+    product.stock = data.stock ?? product.stock
+    product.category = data.category ?? product.category
+    product.description = data.description ?? product.description
+    product.discount = data.discount ?? product.discount
+
+    if (data.imageUrl) {
+      product.imageUrl = data.imageUrl
+    }
+
+    const updated = await this.productRepository.save(product)
+
+    this.logger.log(`Updated product ID: ${id}`)
+    return updated
+  }
+
+  // ❌ DELETE
+  async remove(id: number) {
+    const product = await this.findOne(id)
+    await this.productRepository.remove(product)
+
+    this.logger.log(`Deleted product ID: ${id}`)
 
     return {
-      message: 'Product deleted successfully',
+      message: 'Product deleted',
       id,
-    };
+    }
   }
-
 }

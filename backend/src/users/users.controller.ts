@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Get, Delete, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Delete,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { users } from './users.entity';
@@ -12,12 +20,35 @@ export class UsersController {
   ) {}
 
   // =========================
-  // GET ALL USERS (for table)
+  // GET USERS (ALL OR FILTER BY ROLE)
   // =========================
   @Get()
-  async findAll() {
+  async findAll(@Query('role') role?: string) {
+    const query = this.usersRepository.createQueryBuilder('users');
+
+    if (role) {
+      query.where('users.role = :role', { role });
+    }
+
+    return query
+      .select([
+        'users.id',
+        'users.name',
+        'users.email',
+        'users.phone',
+        'users.role',
+        'users.createat',
+      ])
+      .getMany();
+  }
+
+  // =========================
+  // CLEAN PROVIDERS ENDPOINT (IMPORTANT)
+  // =========================
+  @Get('providers')
+  async getProviders() {
     return this.usersRepository.find({
-      select: ['id', 'name', 'email', 'phone', 'role', 'createat'],
+      where: { role: 'provider' },
     });
   }
 
@@ -30,6 +61,9 @@ export class UsersController {
     return { message: 'User deleted successfully' };
   }
 
+  // =========================
+  // REGISTER USER
+  // =========================
   @Post('register')
   async register(
     @Body()
@@ -38,48 +72,34 @@ export class UsersController {
       email: string;
       phone: string;
       password: string;
-      role: string;
+      role?: string;
     },
   ) {
     const { name, email, phone, password, role } = body;
 
-    // validation
     if (!name || !email || !phone || !password) {
       return { message: 'All fields are required.' };
     }
 
-    // check email exists
     const existingUser = await this.usersRepository.findOne({
-      where: { email },
+      where: { email: email },
     });
+
     if (existingUser) {
       return { message: 'Email already registered.' };
     }
 
-    // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // create user
     const newUser = this.usersRepository.create({
-      name,
-      email,
-      phone,
+      name: name,
+      email: email,
+      phone: phone,
       role: role || 'customer',
       password: hashedPassword,
     });
 
-    // save to MySQL ✅
     await this.usersRepository.save(newUser);
-
-    // Log registration to backend console
-    console.log('[REGISTER] New user:', {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      phone: newUser.phone,
-      role: newUser.role,
-      createat: newUser.createat,
-    });
 
     return {
       message: 'Registration successful!',

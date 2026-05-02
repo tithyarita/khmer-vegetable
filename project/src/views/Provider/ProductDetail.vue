@@ -196,6 +196,15 @@ const loadProduct = (productId) => {
   }
 }
 
+onMounted(() => {
+  const productId = route.params.id || route.query.id
+  if (productId) {
+    loadProduct(productId)
+  } else {
+    router.push('/provider-products')
+  }
+})
+
 const capitalizeCategory = (category) => {
   return category.charAt(0).toUpperCase() + category.slice(1)
 }
@@ -237,7 +246,7 @@ const saveProduct = async (productData) => {
     alert('Product updated successfully!')
   } catch (error) {
     console.error('Error saving product:', error)
-    alert('Error updating product: ' + error.message)
+    alert('Error updating product: ' + (error?.message || error))
   }
 }
 

@@ -271,10 +271,8 @@ const resetForm = () => {
 const handleImageUpload = (event) => {
   const file = event.target.files[0]
   if (file) {
-    // Store the actual file object for API upload
-    formData.value.imageFile = file
-    
-    // Also create a preview URL for display
+    formData.value.imageFile = file // Only store File object
+    // Create preview for display only
     const reader = new FileReader()
     reader.onload = (e) => {
       formData.value.image = e.target.result

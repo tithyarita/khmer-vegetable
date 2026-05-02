@@ -4,204 +4,205 @@ import axios from 'axios'
 
 const API_BASE_URL = 'http://localhost:3000'
 
-const transformProductImage = (product) => {
-  if (product.imageUrl && !product.imageUrl.startsWith('http')) {
-    // Convert relative path to absolute URL
-    product.image = `${API_BASE_URL}${product.imageUrl}`
-  } else if (product.imageUrl) {
-    product.image = product.imageUrl
-  } else {
-    product.image = 'https://via.placeholder.com/200?text=No+Image'
-  }
-  return product
-}
-
 export const useProductStore = defineStore('product', () => {
-  // State
+  // ================= STATE =================
   const products = ref([])
+  const selectedProduct = ref(null)
   const loading = ref(false)
   const error = ref(null)
-  const selectedProduct = ref(null)
 
-  // API client instance
-  const apiClient = axios.create({
+  // ================= API =================
+  const api = axios.create({
     baseURL: API_BASE_URL,
-    headers: {
-      'Content-Type': 'application/json',
-    },
   })
 
-  // Actions
+  // ================= HELPERS =================
+  const formatImage = (product) => {
+    if (!product) return product
+
+    if (product.imageUrl && !product.imageUrl.startsWith('http')) {
+      product.image = API_BASE_URL + product.imageUrl
+    } else if (product.imageUrl) {
+      product.image = product.imageUrl
+    } else {
+      product.image = 'https://via.placeholder.com/200'
+    }
+
+    return product
+  }
+
+  // ================= ACTIONS =================
+
+  // GET ALL
   const fetchAllProducts = async () => {
     loading.value = true
     error.value = null
+
     try {
-      const response = await apiClient.get('/products')
-      // Transform image URLs from backend responses
-      products.value = response.data.map(transformProductImage)
+      const res = await api.get('/products')
+      products.value = res.data.map(formatImage)
       return products.value
     } catch (err) {
-      error.value = err.message || 'Failed to fetch products'
-      console.error('Error fetching products:', err)
+      error.value = err.message
+      console.error(err)
       return []
     } finally {
       loading.value = false
     }
   }
 
+  // GET ONE
   const fetchProductById = async (id) => {
     loading.value = true
     error.value = null
+
     try {
-      const response = await apiClient.get(`/products/${id}`)
-      selectedProduct.value = transformProductImage(response.data)
+      const res = await api.get(`/products/${id}`)
+      selectedProduct.value = formatImage(res.data)
       return selectedProduct.value
     } catch (err) {
-      error.value = err.message || `Failed to fetch product with id ${id}`
-      console.error('Error fetching product:', err)
+      error.value = err.message
+      console.error(err)
       return null
     } finally {
       loading.value = false
     }
   }
 
-  const createProduct = async (productData) => {
+  // CREATE
+  const createProduct = async (data) => {
     loading.value = true
     error.value = null
+
     try {
       const formData = new FormData()
-      
-      // Add text fields
-      formData.append('name', productData.name)
-      formData.append('price', productData.price)
-      // Stock must be sent as a number
-      formData.append('stock', Number(productData.stock))
-      formData.append('category', productData.category)
-      formData.append('description', productData.description || '')
-      formData.append('discount', productData.discount || 0)
-      
-      // Add image file if present
-      if (productData.imageFile instanceof File) {
-        formData.append('image', productData.imageFile)
+
+      formData.append('name', data.name)
+      formData.append('price', Number(data.price))
+      formData.append('stock', Number(data.stock))
+      formData.append('category', data.category)
+      formData.append('description', data.description || '')
+      formData.append('discount', data.discount || 0)
+
+      if (data.imageFile instanceof File) {
+        formData.append('image', data.imageFile)
       }
 
-      const response = await apiClient.post('/products', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const res = await api.post('/products', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       })
-      
-      const newProduct = transformProductImage(response.data)
+
+      const newProduct = formatImage(res.data)
+
+      // update UI
       products.value.push(newProduct)
+
       return newProduct
     } catch (err) {
-      error.value = err.response?.data?.message || err.message || 'Failed to create product'
-      console.error('Error creating product:', err)
+      error.value = err.response?.data?.message || err.message
+      console.error(err)
       throw err
     } finally {
       loading.value = false
     }
   }
 
-  const updateProduct = async (id, productData) => {
+  // 🔥 UPDATE (FIXED)
+  const updateProduct = async (id, data) => {
     loading.value = true
     error.value = null
+
     try {
       const formData = new FormData()
-      
-      // Add text fields
-      formData.append('name', productData.name)
-      formData.append('price', productData.price)
-      // Stock must be sent as a number
-      formData.append('stock', Number(productData.stock))
-      formData.append('category', productData.category)
-      formData.append('description', productData.description || '')
-      formData.append('discount', productData.discount || 0)
-      
-      // Add image file if present and it's a new file
-      if (productData.imageFile instanceof File) {
-        formData.append('image', productData.imageFile)
+
+      formData.append('name', data.name)
+      formData.append('price', Number(data.price))
+      formData.append('stock', Number(data.stock))
+      formData.append('category', data.category)
+      formData.append('description', data.description || '')
+      formData.append('discount', data.discount ?? 0)
+
+      // only send image if changed
+      if (data.imageFile instanceof File) {
+        formData.append('image', data.imageFile)
       }
 
-      const response = await apiClient.put(`/products/${id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      // ✅ SEND TO BACKEND
+      const res = await api.put(`/products/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       })
-      
-      // Update in local state with transformed image URL
-      const updatedProduct = transformProductImage(response.data)
-      const index = products.value.findIndex(p => p.id === id)
-      if (index !== -1) {
-        products.value[index] = updatedProduct
+
+      const updated = formatImage(res.data)
+
+      // ✅ SYNC UI WITH BACKEND
+      await fetchAllProducts()
+
+      // update selected product
+      if (selectedProduct.value?.id === id) {
+        selectedProduct.value = updated
       }
-      
-      return updatedProduct
+
+      return updated
     } catch (err) {
-      error.value = err.response?.data?.message || err.message || `Failed to update product with id ${id}`
-      console.error('Error updating product:', err)
+      error.value = err.response?.data?.message || err.message
+      console.error('Update failed:', err)
       throw err
     } finally {
       loading.value = false
     }
   }
 
+  // DELETE
   const deleteProduct = async (id) => {
     loading.value = true
     error.value = null
+
     try {
-      await apiClient.delete(`/products/${id}`)
-      
-      // Remove from local state
+      await api.delete(`/products/${id}`)
+
+      // update UI
       products.value = products.value.filter(p => p.id !== id)
-      
+
       return true
     } catch (err) {
-      error.value = err.message || `Failed to delete product with id ${id}`
-      console.error('Error deleting product:', err)
+      error.value = err.message
+      console.error(err)
       throw err
     } finally {
       loading.value = false
     }
   }
 
-  const clearError = () => {
-    error.value = null
-  }
+  // ================= UTIL =================
+  const clearError = () => (error.value = null)
+  const clearSelectedProduct = () => (selectedProduct.value = null)
 
-  const clearSelectedProduct = () => {
-    selectedProduct.value = null
-  }
-
-  // Computed properties
+  // ================= COMPUTED =================
   const productCount = computed(() => products.value.length)
 
-  const getProductById = computed(() => (id) => {
-    return products.value.find(p => p.id === id)
-  })
+  const getProductById = computed(() => (id) =>
+    products.value.find(p => p.id === id)
+  )
 
-  const getProductsByCategory = computed(() => (category) => {
-    return products.value.filter(p => p.category === category)
-  })
+  const searchProducts = computed(() => (q) => {
+    if (!q) return products.value
+    const query = q.toLowerCase()
 
-  const searchProducts = computed(() => (query) => {
-    if (!query) return products.value
-    const lowerQuery = query.toLowerCase()
-    return products.value.filter(p => 
-      p.name.toLowerCase().includes(lowerQuery) ||
-      p.category.toLowerCase().includes(lowerQuery) ||
-      (p.description && p.description.toLowerCase().includes(lowerQuery))
+    return products.value.filter(p =>
+      p.name.toLowerCase().includes(query) ||
+      p.category.toLowerCase().includes(query) ||
+      (p.description || '').toLowerCase().includes(query)
     )
   })
 
   return {
-    // State
+    // state
     products,
+    selectedProduct,
     loading,
     error,
-    selectedProduct,
-    
-    // Actions
+
+    // actions
     fetchAllProducts,
     fetchProductById,
     createProduct,
@@ -209,11 +210,10 @@ export const useProductStore = defineStore('product', () => {
     deleteProduct,
     clearError,
     clearSelectedProduct,
-    
-    // Computed
+
+    // computed
     productCount,
     getProductById,
-    getProductsByCategory,
     searchProducts,
   }
 })
