@@ -96,14 +96,8 @@
                 <div class="row">
                   <div class="col-md-6 mb-3">
                     <div class="info-item">
-                      <p class="info-label mb-1"><i class="bi bi-calendar3"></i> Last Updated</p>
-                      <p class="info-value">{{ product.addedDate || 'N/A' }}</p>
-                    </div>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <div class="info-item">
-                      <p class="info-label mb-1"><i class="bi bi-check2-circle text-success"></i> Status</p>
-                      <p class="info-value"><span class="badge bg-success">Active</span></p>
+                      <p class="info-label mb-1"><i class="bi bi-check2-circle" :class="product.stock > 0 ? 'text-success' : 'text-danger'"></i> Status</p>
+                      <p class="info-value"><span :class="['badge', product.stock > 0 ? 'bg-success' : 'bg-danger']">{{ product.stock > 0 ? 'Active' : 'Inactive' }}</span></p>
                     </div>
                   </div>
                 </div>
@@ -179,14 +173,14 @@ const loadProduct = (productId) => {
     if (foundProduct) {
       // Ensure all properties exist
       product.value = {
-        id: foundProduct.id || '',
-        name: foundProduct.name || '',
-        price: foundProduct.price || 0,
-        stock: foundProduct.stock || '',
-        category: foundProduct.category || '',
-        image: foundProduct.image || '',
-        addedDate: foundProduct.addedDate || '',
-        description: foundProduct.description || ''
+        id: foundProduct.id ?? '',
+        name: foundProduct.name ?? '',
+        price: foundProduct.price ?? 0,
+        stock: foundProduct.stock ?? 0,
+        category: foundProduct.category ?? '',
+        image: foundProduct.image ?? '',
+        addedDate: foundProduct.addedDate ?? '',
+        description: foundProduct.description ?? ''
       }
       console.log('Product loaded:', product.value)
     } else {

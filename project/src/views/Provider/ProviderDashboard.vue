@@ -42,7 +42,7 @@
             </div>
             <div class="card-body">
               <div class="row g-3">
-                <div v-for="product in products" :key="product.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div v-for="product in products" :key="product.id" class="col-12 col-sm-6 col-md-4 col-lg-3" @click="viewProductDetail(product.id)" style="cursor: pointer;">
                   <ProductCard :product="product" />
                 </div>
               </div>
@@ -55,56 +55,45 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useProductStore } from '../../stores/productStore'
 import SideBar from '../../components/provider_com/sideBar.vue'
 import PageHeader from '../../components/provider_com/pageHeader.vue'
 import AnalyseBar from '../../components/provider_com/analyseBar.vue'
 import ProductsSellAnalysis from '../../components/provider_com/ProductsSellAnalysis.vue'
 import ProductCard from '../../components/provider_com/productCard.vue'
 import TopCustomers from '../../components/provider_com/TopCustomers.vue'
-import tomatoesImg from '../../assets/img-provider/tomatoes.jpg'
-import carrotImg from '../../assets/img-provider/carrot.jpg'
-import cabbageImg from '../../assets/img-provider/cabbage.jpg'
-import onionImg from '../../assets/img-provider/onion.jpg'
 
-const router = useRouter() 
+const router = useRouter()
+const productStore = useProductStore()
+const products = ref([])
 
-const products = ref([
-  {
-    id: 1,
-    name: 'Small Japanese Tomatoes',
-    price: 10,
-    unit: 'kg',
-    image: tomatoesImg
-  },
-  {
-    id: 2,
-    name: 'Long Carrot',
-    price: 7.50,
-    unit: 'kg',
-    image: carrotImg
-  },
-  {
-    id: 3,
-    name: 'Green Cabbages',
-    price: 6,
-    unit: 'kg',
-    image: cabbageImg
-  },
-  {
-    id: 4,
-    name: 'Onions',
-    price: 8,
-    unit: 'kg',
-    image: onionImg
+onMounted(async () => {
+  try {
+    // Fetch products from API
+    if (!productStore.products || productStore.products.length === 0) {
+      await productStore.fetchAllProducts()
+    }
+    // Show first 4 products
+    products.value = productStore.products.slice(0, 4)
+  } catch (error) {
+    console.error('Error loading products:', error)
   }
-])
+})
 
 const goToProducts = () => {
-  router.push('/provider-products?sort=popular')
+  router.push('/provider/products')
+}
+
+const viewProductDetail = (productId) => {
+  router.push({
+    name: 'productDetail',
+    params: { id: productId }
+  })
 }
 </script>
+
 
 <style scoped>
 .provider-dashboard {
