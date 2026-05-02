@@ -129,12 +129,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useProductStore } from '../../stores/productStore'
 import SideBar from '../../components/provider_com/sideBar.vue'
 import PageHeader from '../../components/provider_com/pageHeader.vue'
 import PopupCard from '../../components/provider_com/popupCard.vue'
 
 const router = useRouter()
 const route = useRoute()
+const productStore = useProductStore()
 const showModal = ref(false)
 const product = ref({
   id: '',
@@ -147,17 +149,19 @@ const product = ref({
   description: ''
 })
 
-const STORAGE_KEY = 'khmer_products'
-
-onMounted(() => {
+onMounted(async () => {
   // Get product ID from route params or query
   const productId = route.params.id || route.query.id
   
   if (productId) {
+    // Fetch products from store if not already loaded
+    if (!productStore.products || productStore.products.length === 0) {
+      await productStore.fetchAllProducts()
+    }
     loadProduct(productId)
   } else {
     // If no product ID, redirect back to products
-    router.push('/provider-products')
+    router.push('/provider/products')
   }
 })
 
@@ -165,18 +169,13 @@ const loadProduct = (productId) => {
   try {
     if (!productId) {
       alert('No product ID found')
-      router.push('/provider-products')
+      router.push('/provider/products')
       return
     }
 
-    const stored = localStorage.getItem(STORAGE_KEY)
-    const products = stored ? JSON.parse(stored) : []
+    // Find product from store
+    const foundProduct = productStore.products.find(p => String(p.id) === String(productId))
     
-    if (!Array.isArray(products)) {
-      throw new Error('Invalid products data format')
-    }
-    
-    const foundProduct = products.find(p => p.id === productId)
     if (foundProduct) {
       // Ensure all properties exist
       product.value = {
@@ -189,14 +188,17 @@ const loadProduct = (productId) => {
         addedDate: foundProduct.addedDate || '',
         description: foundProduct.description || ''
       }
+      console.log('Product loaded:', product.value)
     } else {
+      console.error('Product not found with ID:', productId)
+      console.log('Available products:', productStore.products)
       alert('Product not found')
-      router.push('/provider-products')
+      router.push('/provider/products')
     }
   } catch (error) {
     console.error('Error loading product:', error)
     alert('Error loading product: ' + error.message)
-    router.push('/provider-products')
+    router.push('/provider/products')
   }
 }
 
@@ -209,7 +211,7 @@ const handleImageError = (event) => {
 }
 
 const goBack = () => {
-  router.push('/provider-products')
+  router.push('/provider/products')
 }
 
 const editProduct = () => {
@@ -228,55 +230,31 @@ const closeModal = () => {
   }, 300)
 }
 
-const saveProduct = (productData) => {
+const saveProduct = async (productData) => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    const products = stored ? JSON.parse(stored) : []
+    // Update product through the store
+    await productStore.updateProduct(productData.id, productData)
     
-    const index = products.findIndex(p => p.id === productData.id)
-    if (index !== -1) {
-      products[index] = { ...productData }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(products))
-      
-      // Update the product reference
-      product.value = { ...productData }
-      
-      // Close modal and show success
-      showModal.value = false
-      
-      // Reload data after a short delay to ensure everything is updated
-      setTimeout(() => {
-        const productId = route.params.id || route.query.id
-        loadProduct(productId)
-      }, 200)
-      
-      alert('Product updated successfully!')
-    } else {
-      alert('Error: Product not found in database')
-    }
+    // Reload the product data
+    loadProduct(productData.id)
+    
+    // Close modal and show success
+    showModal.value = false
+    alert('Product updated successfully!')
   } catch (error) {
     console.error('Error saving product:', error)
     alert('Error updating product: ' + error.message)
   }
 }
 
-const deleteProduct = () => {
+const deleteProduct = async () => {
   if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      const products = stored ? JSON.parse(stored) : []
-      
       const productId = product.value.id
-      const filteredProducts = products.filter(p => p.id !== productId)
-      
-      // Make sure we actually removed something
-      if (filteredProducts.length < products.length) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredProducts))
-        alert('Product deleted successfully!')
-        router.push('/provider-products')
-      } else {
-        alert('Error: Product not found')
-      }
+      // Delete product through the store
+      await productStore.deleteProduct(productId)
+      alert('Product deleted successfully!')
+      router.push('/provider/products')
     } catch (error) {
       console.error('Error deleting product:', error)
       alert('Error deleting product: ' + error.message)

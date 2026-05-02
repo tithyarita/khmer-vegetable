@@ -285,10 +285,16 @@ const openAddProductModal = () => {
 }
 
 const viewProductDetail = (productId) => {
-  router.push({
-    name: 'productDetail',
-    params: { id: productId }
-  })
+  console.log('Navigating to product detail with ID:', productId)
+  console.log('Route name: productDetail')
+  try {
+    router.push({
+      name: 'productDetail',
+      params: { id: productId }
+    }).catch(err => console.error('Router error:', err))
+  } catch (err) {
+    console.error('Error in viewProductDetail:', err)
+  }
 }
 
 const openEditProductModal = (product) => {
