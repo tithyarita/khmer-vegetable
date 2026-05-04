@@ -83,13 +83,14 @@ const handleLogout = () => {
 
 <style scoped>
 .sidebar {
-  background-color: #f8f9fa;
-  border-right: 1px solid #dee2e6;
+  background-color: #fff;
+  border-right: 1px solid #e8e8e8;
   min-height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Mobile: Sidebar as offcanvas */
@@ -125,9 +126,9 @@ const handleLogout = () => {
 }
 
 .sidebar-header {
-  background-color: #2d5016 !important;
-  border-bottom: 1px solid #dee2e6;
-  min-height: 70px;
+  background-color: #1a3d2a !important;
+  border-bottom: 1px solid #e8e8e8;
+  min-height: 52px;
   display: flex;
   align-items: center;
   flex-shrink: 0;
@@ -136,7 +137,7 @@ const handleLogout = () => {
 .sidebar-header h5 {
   margin: 0;
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 16px;
   color: white;
   margin-left: 15px;
 }
@@ -149,8 +150,8 @@ const handleLogout = () => {
 }
 
 .sidebar-footer {
-  border-top: 1px solid #dee2e6;
-  background-color: #f8f9fa;
+  border-top: 1px solid #e8e8e8;
+  background-color: #fff;
   flex-shrink: 0;
   padding: 0;
 }
@@ -159,8 +160,8 @@ const handleLogout = () => {
   cursor: pointer;
   border-left: 4px solid transparent;
   background-color: transparent;
-  transition: all 0.3s ease;
-  color: #495057;
+  transition: all 0.2s;
+  color: #6b7280;
   font-weight: 500;
   text-decoration: none;
   display: flex;
@@ -173,16 +174,16 @@ const handleLogout = () => {
 }
 
 .logout-btn:hover {
-  background-color: #e9ecef;
-  color: #2d5016;
-  border-left-color: #2d5016;
+  background-color: #f3f4f3;
+  color: #1a3d2a;
+  border-left-color: #1a3d2a;
 }
 
 .menu-item {
   cursor: pointer;
   border-left: 4px solid transparent;
-  transition: all 0.3s ease;
-  color: #495057;
+  transition: all 0.2s;
+  color: #6b7280;
   font-weight: 500;
   text-decoration: none;
   display: flex;
@@ -192,14 +193,14 @@ const handleLogout = () => {
 }
 
 .menu-item:hover {
-  background-color: #e9ecef;
-  color: #2d5016;
+  background-color: #f3f4f3;
+  color: #1a3d2a;
 }
 
 .menu-item.active {
-  background-color: #e8f5e9;
-  border-left-color: #2d5016;
-  color: #2d5016;
+  background-color: #f0f7f0;
+  border-left-color: #1a3d2a;
+  color: #1a3d2a;
   font-weight: 600;
 }
 

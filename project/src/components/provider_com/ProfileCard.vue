@@ -145,58 +145,52 @@ function handleFarm(e) {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* ── Provider Card ── */
 .provider-card {
-  background: linear-gradient(145deg, #f9fdf9 0%, #e8f5e9 100%);
-  border: 1px solid #c8e6c9;
-  border-radius: 14px;
-  padding: 22px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 18px 20px 16px;
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .provider-card::before {
-  content: '';
-  position: absolute;
-  top: -30px;
-  right: -30px;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  border: 20px solid rgba(46, 125, 50, 0.07);
-  pointer-events: none;
+  display: none;
 }
 
 .verified-badge {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: #2e7d32;
-  margin-bottom: 16px;
+  color: #1a3d2a;
+  margin-bottom: 12px;
 }
 
 .verified-dot {
   display: inline-block;
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #4caf50;
-  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.25);
+  background: #1a3d2a;
+  box-shadow: none;
 }
 
 .provider-top {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 18px;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 .avatar-wrap {
@@ -206,17 +200,17 @@ function handleFarm(e) {
 }
 
 .avatar-circle {
-  width: 68px;
-  height: 68px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
-  border: 3px solid #2e7d32;
+  background: #f0f7f0;
+  border: 2px solid #1a3d2a;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  font-weight: 600;
-  color: #1b5e20;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2d6a4f;
   overflow: hidden;
 }
 
@@ -224,10 +218,10 @@ function handleFarm(e) {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: #2e7d32;
+  background: #1a3d2a;
   border: 2px solid #fff;
   display: flex;
   align-items: center;
@@ -237,66 +231,65 @@ function handleFarm(e) {
 .provider-info { flex: 1; }
 
 .provider-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
   margin-bottom: 2px;
 }
 
 .provider-sub {
-  font-size: 11.5px;
-  color: #6b7280;
+  font-size: 11px;
+  color: #9ca3af;
 }
 
 .green-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: #e8f5e9;
-  color: #2e7d32;
-  font-size: 10px;
-  font-weight: 600;
+  gap: 3px;
+  background: #f0f7f0;
+  color: #1a3d2a;
+  font-size: 9.5px;
+  font-weight: 700;
   padding: 3px 8px;
-  border-radius: 20px;
-  margin-top: 6px;
+  border-radius: 6px;
+  margin-top: 4px;
 }
 
 .badge-dot {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: #4caf50;
+  background: #1a3d2a;
 }
 
 .id-meta {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  border-top: 1px solid #c8e6c9;
-  padding-top: 14px;
+  border-top: 1px solid #e8e8e8;
+  padding-top: 12px;
   margin-top: auto;
 }
 
-.meta-item { display: flex; flex-direction: column; gap: 3px; }
+.meta-item { display: flex; flex-direction: column; gap: 2px; }
 
 .meta-lbl {
   font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
+  font-weight: 700;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
   color: #9ca3af;
 }
 
 .meta-val {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #1a1a1a;
-  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111827;
 }
 
 /* ── Farm Card ── */
 .farm-card {
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
   position: relative;
   cursor: pointer;
@@ -304,16 +297,18 @@ function handleFarm(e) {
   display: flex;
   flex-direction: column;
   transition: box-shadow 0.2s;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .farm-card:hover {
-  box-shadow: 0 0 0 2px #4caf50;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .farm-bg {
   position: absolute;
   inset: 0;
-  background: #d1e8d1;
+  background: #f3f4f3;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -346,28 +341,27 @@ function handleFarm(e) {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #f0f7f0;
-  border: 2px dashed #a5d6a7;
-  border-radius: 14px;
+  background: #fafbfa;
+  border: 1px solid #e8e8e8;
 }
 
 .farm-empty p {
-  font-size: 12.5px;
-  color: #4caf50;
-  font-weight: 500;
+  font-size: 12px;
+  color: #2d6a4f;
+  font-weight: 600;
 }
 
 .farm-empty span {
-  font-size: 11px;
+  font-size: 10px;
   color: #9ca3af;
 }
 
 .upload-icon-box {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: #fff;
-  border: 1.5px dashed #a5d6a7;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #f0f7f0;
+  border: 1px solid #e8e8e8;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -378,50 +372,50 @@ function handleFarm(e) {
   position: relative;
   z-index: 2;
   margin-top: auto;
-  padding: 18px 18px 16px;
+  padding: 16px 18px 14px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 .farm-badge-float {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   background: rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(6px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #fff;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  padding: 3px 9px;
-  border-radius: 20px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 3px 8px;
+  border-radius: 6px;
   width: fit-content;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .farm-badge-dot {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
   background: #69f0ae;
 }
 
 .farm-name-float {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: #fff;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
   line-height: 1.2;
 }
 
 .farm-loc-float {
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.8);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 /* Change photo btn */
@@ -431,16 +425,15 @@ function handleFarm(e) {
   right: 12px;
   z-index: 3;
   display: none;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   color: #fff;
   background: rgba(0, 0, 0, 0.38);
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 7px;
-  padding: 5px 11px;
+  border-radius: 6px;
+  padding: 5px 10px;
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
   transition: background 0.15s;
 }
 

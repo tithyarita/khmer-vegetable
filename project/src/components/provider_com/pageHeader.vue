@@ -39,24 +39,25 @@ defineProps({
 }
 
 .page-header {
-  min-height: 70px;
+  min-height: 52px;
   padding: 0 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   flex-shrink: 0;
-  background-color: #2d5016 !important;
+  background-color: #1a3d2a !important;
   animation: slideInDown 0.4s ease-out;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .page-header h5 {
   font-weight: 700;
-  font-size: 1.25rem;
-  letter-spacing: 0.5px;
+  font-size: 18px;
+  letter-spacing: 0px;
   color: white;
   align-items: center;
-  margin-top:5px;
+  margin: 0;
 }
 
 .profile {

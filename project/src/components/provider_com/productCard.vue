@@ -58,21 +58,24 @@ const handleImageError = (e) => {
 <style scoped>
 /* Card Mode Styles */
 .product-card {
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
   overflow: hidden;
-  transition: transform 0.3s ease;
+  transition: box-shadow 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .product-card:hover {
-  transform: translateY(-3px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .product-image {
   width: 100%;
   height: 200px;
   overflow: hidden;
-  background: #e9ecef;
+  background: #f3f4f3;
 }
 
 .product-image img {
@@ -82,22 +85,22 @@ const handleImageError = (e) => {
 }
 
 .product-info {
-  padding: 15px;
+  padding: 14px 16px;
 }
 
 .product-name {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #212529;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
   line-height: 1.4;
 }
 
 .product-price {
-  margin: 8px 0 0 0;
-  font-size: 0.95rem;
+  margin: 6px 0 0 0;
+  font-size: 12px;
   font-weight: 600;
-  color: #212529;
+  color: #2d6a4f;
 }
 
 /* Row Mode Styles */
@@ -173,20 +176,20 @@ const handleImageError = (e) => {
 
 .view-detail-btn {
   padding: 6px 12px;
-  border: 1px solid #daa520;
+  border: 1px solid #1a3d2a;
   background: white;
-  color: #daa520;
-  border-radius: 3px;
+  color: #1a3d2a;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.2s;
   text-decoration: none;
   display: inline-block;
 }
 
 .view-detail-btn:hover {
-  background: #daa520;
+  background: #1a3d2a;
   color: white;
 }
 

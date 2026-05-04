@@ -157,24 +157,27 @@ function deleteBank(index) {
 <style scoped>
 .card {
   background: #fff;
-  border-radius: 14px;
-  border: 1px solid #e0e0e0;
-  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  padding: 18px 20px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .section-title {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
 }
 
 .section-hint {
-  font-size: 11px;
+  font-size: 10px;
   color: #9ca3af;
 }
 
@@ -188,21 +191,21 @@ function deleteBank(index) {
 .bank-item {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px;
-  background: #fafafa;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fafbfa;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #e8e8e8;
   position: relative;
 }
 
 .bank-icon {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e8f5e9;
+  background: #f0f7f0;
   border-radius: 8px;
 }
 
@@ -212,12 +215,14 @@ function deleteBank(index) {
 
 .bank-name {
   margin: 0;
-  font-weight: 500;
+  font-weight: 600;
+  color: #111827;
+  font-size: 13px;
 }
 
 .bank-acc {
   margin: 0;
-  font-size: 12px;
+  font-size: 11px;
   color: #6b7280;
 }
 
@@ -262,11 +267,33 @@ function deleteBank(index) {
 /* ADD */
 .bank-add {
   display: flex;
-  gap: 10px;
-  padding: 12px;
-  border: 2px dashed #ccc;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 2px dashed #e8e8e8;
   border-radius: 8px;
   cursor: pointer;
+  background: #fafbfa;
+  transition: all 0.2s;
+}
+
+.bank-add:hover {
+  border-color: #1a3d2a;
+  background: #f0f7f0;
+}
+
+.add-circle {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a3d2a;
+  color: white;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 /* MODAL */

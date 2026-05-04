@@ -78,6 +78,7 @@ const handleImageError = (event) => {
   flex: 1;
   overflow-y: auto;
   background: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .table-responsive {
@@ -86,17 +87,17 @@ const handleImageError = (event) => {
 }
 
 .table {
-  font-size: 0.9rem;
+  font-size: 13px;
 }
 
 .table thead th {
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #d0d0d0;
-  font-weight: 600;
-  color: #333;
-  font-size: 0.8rem;
+  background-color: #f9faf9;
+  border-bottom: 1px solid #e8e8e8;
+  font-weight: 700;
+  color: #9ca3af;
+  font-size: 9.5px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   padding: 12px;
   position: sticky;
   top: 0;
@@ -136,18 +137,18 @@ const handleImageError = (event) => {
 }
 
 .product-row {
-  border-bottom: 1px solid #e0e0e0;
-  transition: all 0.3s ease;
+  border-bottom: 1px solid #e8e8e8;
+  transition: all 0.2s;
 }
 
 .product-row:hover {
-  background-color: #f9f9f9;
+  background-color: #fafbfa;
 }
 
 .product-row td {
   padding: 12px;
   vertical-align: middle;
-  color: #333;
+  color: #6b7280;
   border: none;
 }
 
