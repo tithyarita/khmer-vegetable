@@ -1,118 +1,131 @@
 <template>
-  <div class="provider-management-page">
+  <div class="staff-page">
+    <!-- STAFF SUMMARY CARD (like Elite Providers) -->
+    <div class="staff-summary-card">
+      <div class="card-header">
+        <h3 class="card-title">Top Staff</h3>
+        <a href="#" class="view-all">View All</a>
+      </div>
+      <div class="staff-list">
+        <div v-for="(s, i) in topStaff" :key="s.id" class="staff-row-summary">
+          <div :class="['rank-badge', `rank-badge--${i}`]">
+            <i class="bi bi-award-fill" v-if="i === 0"></i>
+            <span v-else>{{ i + 1 }}</span>
+          </div>
+          <div class="staff-info">
+            <p class="staff-name">{{ s.name }}</p>
+            <p class="staff-role">{{ s.role }}</p>
+          </div>
+          <div class="staff-status">
+            <span :class="['status-tag', `status-tag--${s.status.toLowerCase()}`]">{{ s.status }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- HEADER -->
-    <div class="header-row">
-      <div>
-        <h1 class="title">Staff Management</h1>
-        <p class="subtitle">
-          Manage staff accounts and permissions across the marketplace ecosystem.
-        </p>
-      </div>
+    <div class="header">
+      <h1>Staff Management</h1>
+      <p>Manage staff accounts and permissions</p>
+    </div>
 
-      <button class="apply-filter-btn" @click="showAddModal = true">
-        + Add Staff Member
-      </button>
+    <!-- FILTER -->
+    <div class="filter-bar">
+      <input v-model="search" placeholder="Search staff..." />
     </div>
 
     <!-- MAIN -->
-    <div class="main-content">
+    <div class="layout">
 
-      <!-- TABLE -->
-      <div class="table-section">
+      <!-- LEFT: LIST -->
+      <div class="list-card">
 
-        <table class="provider-table compact-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>STAFF</th>
-              <th>EMAIL</th>
-              <th>ROLE</th>
-            </tr>
-          </thead>
+        <div class="list-header">STAFF</div>
 
-          <tbody>
-            <tr
-              v-for="s in staffList"
-              :key="s.id"
-              @click="selectStaff(s)"
-              :class="{ selected: selectedMember?.id === s.id }"
-              style="font-size:0.85rem; height:32px;"
-            >
-              <td>{{ s.staffId }}</td>
+        <div
+          v-for="s in filteredStaff"
+          :key="s.id"
+          class="staff-row"
+        >
+          <div class="staff-left">
+            <img :src="s.avatar" />
+            <div>
+              <div class="name">{{ s.name }}</div>
+              <div class="email">{{ s.email }}</div>
+            </div>
+          </div>
 
-              <td>
-                <div class="farm-owner" style="gap:0.3rem;">
-                  <img :src="s.avatar" class="avatar" />
-                  <div>
-                    <div class="farm-name">{{ s.name }}</div>
-                    <div class="owner-name">{{ s.role }}</div>
-                  </div>
-                </div>
-              </td>
+          <div class="role">{{ s.role }}</div>
 
-              <td>{{ s.email }}</td>
-              <td>{{ s.role }}</td>
-            </tr>
-          </tbody>
-        </table>
+          <div class="actions">
+            <button @click="viewStaff(s)">View</button>
+            <button @click="openEdit(s)">Edit</button>
+          </div>
+        </div>
 
       </div>
 
-      <!-- DETAILS -->
-      <div class="details-section" v-if="selectedMember">
+      <!-- RIGHT: PROFILE -->
+      <div v-if="selected" class="profile">
 
-        <div class="details-card compact-details">
-          <h3>Staff Details</h3>
+        <div class="profile-card">
+          <img :src="selected.avatar" class="avatar-large" />
 
-          <div class="compact-row"><b>👤</b> {{ selectedMember.name }}</div>
-          <div class="compact-row"><b>✉️</b> {{ selectedMember.email }}</div>
-          <div class="compact-row"><b>🧑‍💼</b> {{ selectedMember.role }}</div>
-          <div class="compact-row"><b>📞</b> {{ selectedMember.phone }}</div>
-          <div class="compact-row"><b>📊</b> {{ selectedMember.status }}</div>
-          <div class="compact-row"><b>🏠</b> {{ selectedMember.address }}</div>
+          <h3>{{ selected.name }}</h3>
+          <p>{{ selected.email }}</p>
 
+          <div class="badges">
+            <span>{{ selected.role }}</span>
+            <span>{{ selected.status }}</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h4>Activity</h4>
+          <p><b>Last Login:</b> 2 hours ago</p>
+          <p><b>Orders Managed:</b> 15 today</p>
+          <p><b>Access:</b> Full</p>
+        </div>
+
+        <div class="danger-card">
+          <h4>Security</h4>
+          <p>Revoke access or reset permissions</p>
+          <button>Revoke Access</button>
         </div>
 
       </div>
 
     </div>
 
-    <!-- ADD MODAL -->
-    <div v-if="showAddModal" class="modal-overlay compact-modal">
-      <div class="modal-content compact-modal-content">
+    <!-- EDIT MODAL -->
+    <!-- VIEW MODAL -->
+    <div v-if="showView" class="modal">
+      <div class="modal-box">
+        <h3>Staff Information</h3>
+        <div class="view-staff-info">
+          <img :src="viewStaffData.avatar" class="avatar-large" style="margin-bottom: 1rem;" />
+          <div><b>Name:</b> {{ viewStaffData.name }}</div>
+          <div><b>Email:</b> {{ viewStaffData.email }}</div>
+          <div><b>Role:</b> {{ viewStaffData.role }}</div>
+          <div><b>Status:</b> {{ viewStaffData.status }}</div>
+        </div>
+        <div class="modal-actions">
+          <button @click="showView=false">Close</button>
+        </div>
+      </div>
+    </div>
 
-        <h4>Add Staff Member</h4>
-
-        <form @submit.prevent="addStaff">
-
-          <div class="form-row">
-            <label>Name</label>
-            <input v-model="newStaff.name" required />
-          </div>
-
-          <div class="form-row">
-            <label>Email</label>
-            <input v-model="newStaff.email" required />
-          </div>
-
-          <div class="form-row">
-            <label>Role</label>
-            <select v-model="newStaff.roleKey">
-              <option value="reviewer">Staff Reviewer</option>
-              <option value="lead">Review Lead</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-
-          <div class="modal-actions compact-actions">
-            <button type="submit">Save</button>
-            <button type="button" @click="showAddModal = false">Cancel</button>
-          </div>
-
-        </form>
-
+    <!-- EDIT MODAL -->
+    <div v-if="showEdit" class="modal">
+      <div class="modal-box">
+        <h3>Edit Staff</h3>
+        <input v-model="editForm.name" placeholder="Name" />
+        <input v-model="editForm.email" placeholder="Email" />
+        <input v-model="editForm.role" placeholder="Role" />
+        <div class="modal-actions">
+          <button @click="saveEdit">Save</button>
+          <button @click="showEdit=false">Cancel</button>
+        </div>
       </div>
     </div>
 
@@ -120,208 +133,343 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
-// STATE
-const staffList = ref([])
-const selectedMember = ref(null)
-const showAddModal = ref(false)
+const staff = ref([])
+const selected = ref(null)
 
-const newStaff = ref({
-  name: '',
-  email: '',
-  roleKey: 'reviewer'
+const search = ref('')
+const showEdit = ref(false)
+const showView = ref(false)
+const editForm = ref({})
+const viewStaffData = ref({})
+
+// Top staff logic (e.g., by status or custom sort)
+const topStaff = computed(() => {
+  // Example: top 3 active staff, sorted by name (customize as needed)
+  return staff.value
+    .filter(s => s.status === 'Active')
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, 3)
 })
 
-// ROLE MAP
-const roleLabels = {
-  reviewer: 'Staff Reviewer',
-  lead: 'Review Lead',
-  manager: 'Manager',
-  admin: 'Admin'
-}
-
-// FETCH STAFF (ONLY role = staff)
+// FETCH
 const fetchStaff = async () => {
-  try {
-    const res = await axios.get('http://localhost:3000/users', {
-      params: { role: 'staff' }
-    })
+  const res = await axios.get('http://localhost:3000/users', {
+    params: { role: 'staff' }
+  })
 
-    staffList.value = res.data.map(u => ({
-      id: u.id,
-      staffId: `#STF-${1000 + u.id}`,
-      name: u.name,
-      phone: u.phone || 'N/A',
-      email: u.email,
-      role: roleLabels[u.roleKey] || u.role,
-      roleKey: u.roleKey,
-      address: u.address || 'N/A',
-      status: u.status || 'Active',
-      avatar: u.imageUrl || `https://randomuser.me/api/portraits/men/${u.id % 100}.jpg`
-    }))
+  staff.value = res.data.map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.roleKey || 'Staff',
+    status: u.status || 'Active',
+    avatar: `https://randomuser.me/api/portraits/men/${u.id % 100}.jpg`
+  }))
 
-    selectedMember.value = staffList.value[0] || null
-
-  } catch (err) {
-    console.error(err)
-  }
+  selected.value = staff.value[0]
 }
 
-// SELECT
-const selectStaff = (s) => {
-  selectedMember.value = s
+// FILTER
+const filteredStaff = computed(() =>
+  staff.value.filter(s =>
+    s.name.toLowerCase().includes(search.value.toLowerCase())
+  )
+)
+
+// VIEW
+const viewStaff = (s) => {
+  viewStaffData.value = { ...s }
+  showView.value = true
+  selected.value = s
 }
 
-// ADD STAFF
-const addStaff = async () => {
-  try {
-    await axios.post('http://localhost:3000/users', {
-      ...newStaff.value,
-      role: 'staff'
-    })
+// EDIT
+const openEdit = (s) => {
+  editForm.value = { ...s }
+  showEdit.value = true
+}
 
-    await fetchStaff()
-
-    newStaff.value = { name: '', email: '', roleKey: 'reviewer' }
-    showAddModal.value = false
-
-  } catch (err) {
-    alert('Failed to add staff')
-  }
+const saveEdit = async () => {
+  await axios.post(`http://localhost:3000/users/update/${editForm.value.id}`, editForm.value)
+  await fetchStaff()
+  showEdit.value = false
 }
 
 onMounted(fetchStaff)
 </script>
 
 <style scoped>
-/* SAME DESIGN SYSTEM AS PROVIDER PAGE */
-
-/* PAGE */
-.provider-management-page {
-  padding: 2rem;
-  background: #f8fafc;
-  min-height: 100vh;
+/* View Modal */
+.view-staff-info {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
 }
-
-/* HEADER */
-.header-row {
+.staff-summary-card {
+  background: #fff;
+  border-radius: 14px;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px #0001;
+  padding: 1.2rem 1.5rem 1.2rem 1.5rem;
+}
+.staff-summary-card .card-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
 }
-
-.title {
-  font-size: 2rem;
+.staff-summary-card .card-title {
+  font-size: 1.2rem;
   font-weight: 700;
   color: #14532d;
 }
+.staff-summary-card .view-all {
+  font-size: 0.95rem;
+  color: #10b981;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.staff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.staff-row-summary {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.staff-row-summary:last-child {
+  border-bottom: none;
+}
+.rank-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e2f8ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  margin-right: 1rem;
+  color: #14532d;
+  font-size: 1rem;
+}
+.rank-badge--0 {
+  background: #10b981;
+  color: #fff;
+}
+.staff-info {
+  flex: 1;
+  min-width: 0;
+}
+.staff-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+.staff-role {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+.staff-status {
+  text-align: right;
+}
+.status-tag {
+  font-size: 0.85rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 8px;
+  background: #e0e7ef;
+  color: #374151;
+  font-weight: 500;
+}
+.status-tag--active {
+  background: #d1fae5;
+  color: #059669;
+}
+.status-tag--inactive {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.staff-page {
+  padding: 2rem;
+  background: #f8fafc;
+}
 
-.subtitle {
+/* HEADER */
+.header h1 {
+  color: #14532d;
+}
+.header p {
   color: #64748b;
 }
 
-/* BUTTON */
-.apply-filter-btn {
-  background: #14532d;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
+/* FILTER */
+.filter-bar {
+  margin: 1rem 0;
+}
+.filter-bar input {
+  width: 300px;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
 }
 
 /* LAYOUT */
-.main-content {
+.layout {
   display: flex;
   gap: 2rem;
 }
 
-.table-section {
-  flex: 2;
+/* LIST */
+.list-card {
+  flex: 1.2;
   background: white;
-  padding: 1rem;
   border-radius: 12px;
+  padding: 1rem;
 }
 
-.details-section {
-  flex: 1;
+.list-header {
+  font-weight: bold;
+  margin-bottom: 1rem;
 }
 
-/* TABLE */
-.provider-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.provider-table th {
-  text-align: left;
-  padding: 0.5rem;
-  color: #64748b;
-}
-
-.provider-table td {
-  padding: 0.5rem;
-}
-
-.provider-table tr.selected {
-  background: #f1f5f9;
-}
-
-/* USER CELL */
-.farm-owner {
+.staff-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
+  padding: 0.6rem;
+  border-bottom: 1px solid #eee;
 }
 
-.avatar {
-  width: 24px;
-  height: 24px;
+.staff-left {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.staff-left img {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
 }
 
-/* DETAILS */
-.details-card {
+.name {
+  font-weight: 600;
+}
+
+.email {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.role {
+  font-size: 0.8rem;
+  background: #e2f8ec;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+}
+
+.actions button {
+  margin-left: 5px;
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.actions button:first-child {
+  background: #14532d;
+  color: white;
+}
+
+.actions button:last-child {
+  background: #f59e42;
+  color: white;
+}
+
+/* PROFILE */
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-card {
+  background: linear-gradient(135deg, #064e3b, #065f46);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.avatar-large {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+}
+
+.badges span {
+  background: #10b981;
+  padding: 0.2rem 0.6rem;
+  margin: 0.2rem;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+/* INFO */
+.info-card {
   background: white;
   padding: 1rem;
   border-radius: 12px;
 }
 
+/* DANGER */
+.danger-card {
+  background: #fff1f2;
+  padding: 1rem;
+  border-radius: 12px;
+}
+.danger-card button {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+}
+
 /* MODAL */
-.modal-overlay {
+.modal {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.3);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
 }
 
-.modal-content {
+.modal-box {
   background: white;
   padding: 1rem;
-  border-radius: 10px;
+  border-radius: 12px;
   width: 300px;
 }
 
-/* FORM */
-.form-row {
-  margin-bottom: 0.5rem;
-}
-
-input, select {
+.modal-box input {
   width: 100%;
+  margin-bottom: 0.5rem;
   padding: 0.4rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
-  margin-top: 0.5rem;
 }
 </style>
