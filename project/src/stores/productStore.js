@@ -107,7 +107,7 @@ export const useProductStore = defineStore('product', () => {
     }
   }
 
-  // 🔥 UPDATE (FIXED)
+  // UPDATE
   const updateProduct = async (id, data) => {
     loading.value = true
     error.value = null
@@ -127,14 +127,14 @@ export const useProductStore = defineStore('product', () => {
         formData.append('image', data.imageFile)
       }
 
-      // ✅ SEND TO BACKEND
+      //SEND TO BACKEND
       const res = await api.put(`/products/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
 
       const updated = formatImage(res.data)
 
-      // ✅ SYNC UI WITH BACKEND
+      // SYNC UI WITH BACKEND
       await fetchAllProducts()
 
       // update selected product
