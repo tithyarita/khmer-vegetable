@@ -96,14 +96,8 @@
                 <div class="row">
                   <div class="col-md-6 mb-3">
                     <div class="info-item">
-                      <p class="info-label mb-1"><i class="bi bi-calendar3"></i> Last Updated</p>
-                      <p class="info-value">{{ product.addedDate || 'N/A' }}</p>
-                    </div>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <div class="info-item">
-                      <p class="info-label mb-1"><i class="bi bi-check2-circle text-success"></i> Status</p>
-                      <p class="info-value"><span class="badge bg-success">Active</span></p>
+                      <p class="info-label mb-1"><i class="bi bi-check2-circle" :class="product.stock > 0 ? 'text-success' : 'text-danger'"></i> Status</p>
+                      <p class="info-value"><span :class="['badge', product.stock > 0 ? 'bg-success' : 'bg-danger']">{{ product.stock > 0 ? 'Active' : 'Inactive' }}</span></p>
                     </div>
                   </div>
                 </div>
@@ -130,9 +124,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useProductStore } from '../../stores/productStore'
-import SideBar from '../../components/provider_com/sideBar.vue'
-import PageHeader from '../../components/provider_com/pageHeader.vue'
-import PopupCard from '../../components/provider_com/popupCard.vue'
+import SideBar from '../../components/provider_com/SideBar.vue'
+import PageHeader from '../../components/provider_com/PageHeader.vue'
+import PopupCard from '../../components/provider_com/PopupCard.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -149,24 +143,56 @@ const product = ref({
   description: ''
 })
 
-const loadProduct = async (productId) => {
+onMounted(async () => {
+  // Get product ID from route params or query
+  const productId = route.params.id || route.query.id
+  
+  if (productId) {
+    // Fetch products from store if not already loaded
+    if (!productStore.products || productStore.products.length === 0) {
+      await productStore.fetchAllProducts()
+    }
+    loadProduct(productId)
+  } else {
+    // If no product ID, redirect back to products
+    router.push('/provider/products')
+  }
+})
+
+const loadProduct = (productId) => {
   try {
     if (!productId) {
       alert('No product ID found')
-      router.push('/provider-products')
+      router.push('/provider/products')
       return
     }
-    const loaded = await productStore.fetchProductById(productId)
-    if (loaded) {
-      product.value = { ...loaded }
+
+    // Find product from store
+    const foundProduct = productStore.products.find(p => String(p.id) === String(productId))
+    
+    if (foundProduct) {
+      // Ensure all properties exist
+      product.value = {
+        id: foundProduct.id ?? '',
+        name: foundProduct.name ?? '',
+        price: foundProduct.price ?? 0,
+        stock: foundProduct.stock ?? 0,
+        category: foundProduct.category ?? '',
+        image: foundProduct.image ?? '',
+        addedDate: foundProduct.addedDate ?? '',
+        description: foundProduct.description ?? ''
+      }
+      console.log('Product loaded:', product.value)
     } else {
+      console.error('Product not found with ID:', productId)
+      console.log('Available products:', productStore.products)
       alert('Product not found')
-      router.push('/provider-products')
+      router.push('/provider/products')
     }
   } catch (error) {
     console.error('Error loading product:', error)
     alert('Error loading product: ' + error.message)
-    router.push('/provider-products')
+    router.push('/provider/products')
   }
 }
 
@@ -188,7 +214,7 @@ const handleImageError = (event) => {
 }
 
 const goBack = () => {
-  router.push('/provider-products')
+  router.push('/provider/products')
 }
 
 const editProduct = () => {
@@ -209,9 +235,13 @@ const closeModal = () => {
 
 const saveProduct = async (productData) => {
   try {
+    // Update product through the store
     await productStore.updateProduct(productData.id, productData)
-    // Update the product reference
-    await loadProduct(productData.id)
+    
+    // Reload the product data
+    loadProduct(productData.id)
+    
+    // Close modal and show success
     showModal.value = false
     alert('Product updated successfully!')
   } catch (error) {
@@ -220,23 +250,14 @@ const saveProduct = async (productData) => {
   }
 }
 
-const deleteProduct = () => {
+const deleteProduct = async () => {
   if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      const products = stored ? JSON.parse(stored) : []
-      
       const productId = product.value.id
-      const filteredProducts = products.filter(p => p.id !== productId)
-      
-      // Make sure we actually removed something
-      if (filteredProducts.length < products.length) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredProducts))
-        alert('Product deleted successfully!')
-        router.push('/provider-products')
-      } else {
-        alert('Error: Product not found')
-      }
+      // Delete product through the store
+      await productStore.deleteProduct(productId)
+      alert('Product deleted successfully!')
+      router.push('/provider/products')
     } catch (error) {
       console.error('Error deleting product:', error)
       alert('Error deleting product: ' + error.message)

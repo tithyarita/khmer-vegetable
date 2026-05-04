@@ -100,63 +100,13 @@
   </div>
 </template>
 
-<script>
-// Normal <script> - Define default data here
-export default {
-  name: 'FreshVegetables',
-  props: {
-    products: {
-      type: Array,
-      default: () => [
-        {
-          id: 1,
-          name: "Organic Curly Kale Bunch",
-          category: "Leafy Greens",
-          price: "2.50",
-          originalPrice: "3.20",
-          rating: 4.9,
-          badge: "HOT",
-          image: "https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=600"
-        },
-        {
-          id: 2,
-          name: "Fresh Garden Radish (Bunch)",
-          category: "Root Veg",
-          price: "1.99",
-          originalPrice: "2.50",
-          rating: 4.8,
-          badge: "SALE",
-          image: "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=600"
-        },
-        {
-          id: 3,
-          name: "Sweet Red Bell Peppers (3 Pack)",
-          category: "Vegetables",
-          price: "3.45",
-          originalPrice: "4.00",
-          rating: 4.5,
-          image: "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=600"
-        },
-        {
-          id: 4,
-          name: "Baby Spinach Leaves 200g",
-          category: "Leafy Greens",
-          price: "2.80",
-          rating: 4.7,
-          image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600"
-        }
-      ]
-    }
-  }
-}
-</script>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useProductStore } from '../../stores/productStore'
 import ProductCard from './Card.vue'
 
-const props = defineProps()   // Empty because props are defined in normal <script>
-
+const productStore = useProductStore()
 const view = ref('grid')
 const sortBy = ref('featured')
 const maxPrice = ref(150)
@@ -165,6 +115,7 @@ const activeCategory = ref(null)
 const activeTag = ref(null)
 const page = ref(1)
 const perPage = 6
+const allProducts = ref([])
 
 const categories = [
   { id: 'vegetables', name: 'Vegetables', icon: '🥬', count: 12 },
@@ -172,8 +123,30 @@ const categories = [
 
 const tags = ['Organic', 'Fresh', 'Healthy', 'Snacks', 'Dairy']
 
+onMounted(async () => {
+  try {
+    // Fetch products from API
+    if (!productStore.products || productStore.products.length === 0) {
+      await productStore.fetchAllProducts()
+    }
+    // Transform products for display
+    allProducts.value = productStore.products.map(p => ({
+      id: p.id,
+      name: p.name,
+      category: p.category || 'Vegetables',
+      price: String(p.price),
+      originalPrice: String(parseFloat(p.price) * 1.2),
+      rating: 4.5,
+      image: p.image || 'https://via.placeholder.com/300',
+      stock: p.stock
+    }))
+  } catch (error) {
+    console.error('Error loading products:', error)
+  }
+})
+
 const filteredProducts = computed(() => {
-  let list = props.products.filter(p => parseFloat(p.price) <= appliedMaxPrice.value)
+  let list = allProducts.value.filter(p => parseFloat(p.price) <= appliedMaxPrice.value)
 
   if (activeTag.value) {
     list = list.filter(p => p.name.toLowerCase().includes(activeTag.value.toLowerCase()))

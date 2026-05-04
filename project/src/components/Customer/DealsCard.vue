@@ -46,41 +46,36 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
+import { useProductStore } from '../../stores/productStore'
+
+const productStore = useProductStore()
+const deals = ref([])
 
 // convert initial time to seconds
 function toSeconds(d, h, m, s = 0) {
   return d * 86400 + h * 3600 + m * 60 + s;
 }
 
-const deals = ref([
-  {
-    name: "Weekly Seasonal Harvest Box",
-    emoji: "🥕",
-    watermark: "Season Veggies",
-    price: "19.99",
-    orig: "28.00",
-    save: 29,
-    timeLeft: toSeconds(12, 8, 34),
-  },
-  {
-    name: "Mega Organic Veggie Box",
-    emoji: "🥗",
-    watermark: "Organic Only",
-    price: "24.00",
-    orig: "45.00",
-    save: 47,
-    timeLeft: toSeconds(3, 14, 22),
-  },
-  {
-    name: "Winter Root Medley Box",
-    emoji: "🌽",
-    watermark: "Root Harvest",
-    price: "15.50",
-    orig: "22.00",
-    save: 30,
-    timeLeft: toSeconds(1, 22, 5),
-  },
-]);
+onMounted(async () => {
+  try {
+    // Fetch products from API
+    if (!productStore.products || productStore.products.length === 0) {
+      await productStore.fetchAllProducts()
+    }
+    // Transform first 3 products as deals
+    deals.value = productStore.products.slice(0, 3).map((p, index) => ({
+      name: p.name,
+      emoji: ['🥕', '🥗', '🌽'][index % 3],
+      watermark: p.category || 'Fresh Produce',
+      price: String(p.price),
+      orig: String(parseFloat(p.price) * 1.4),
+      save: Math.min(p.discount || 20, 40),
+      timeLeft: toSeconds(12 - index, 8 - (index * 2), 34),
+    }))
+  } catch (error) {
+    console.error('Error loading deals:', error)
+  }
+})
 
 function formatTime(total) {
   const d = Math.floor(total / 86400);

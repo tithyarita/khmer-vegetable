@@ -54,74 +54,54 @@
 </template>
 
 <script>
+import { ref, onMounted } from 'vue'
+import { useProductStore } from '../../stores/productStore'
+
 export default {
   name: "ProductCards",
 
-  data() {
-    return {
-      products: [
-        {
-          id: 1,
-          name: "Organic Curly Kale Bunch",
-          category: "Leafy Greens",
-          price: "2.50",
-          originalPrice: "3.20",
-          rating: 4.9,
-          badge: "HOT",
-          label: "ORGANIC\nSAFE WORK",
-          image: "https://images.unsplash.com/photo-1524179091875-bf99a9a6af57?w=400&q=80"
-        },
-        {
-          id: 2,
-          name: "Fresh Garden Radish (Bunch)",
-          category: "Root Veg",
-          price: "1.99",
-          originalPrice: "2.50",
-          rating: 4.8,
-          badge: "SALE",
-          label: null,
-          image: "https://images.unsplash.com/photo-1585278407894-e2a1386378d9?w=400&q=80"
-        },
-        {
-          id: 3,
-          name: "Sweet Red Bell Peppers (3 Pack)",
-          category: "Vegetables",
-          price: "3.45",
-          originalPrice: "4.00",
-          rating: 4.5,
-          badge: null,
-          label: null,
-          image: "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400&q=80"
-        },
-        {
-          id: 4,
-          name: "Organic Heirloom Broccoli Crown",
-          category: "Cruciferous",
-          price: "2.99",
-          originalPrice: "3.50",
-          rating: 5.0,
-          badge: "NEW",
-          label: null,
-          image: "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400&q=80"
+  setup() {
+    const productStore = useProductStore()
+    const products = ref([])
+
+    onMounted(async () => {
+      try {
+        // Fetch products from API
+        if (!productStore.products || productStore.products.length === 0) {
+          await productStore.fetchAllProducts()
         }
-      ]
-    };
-  },
+        // Transform products for display
+        products.value = productStore.products.slice(0, 8).map(p => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          price: p.price,
+          originalPrice: p.price * 1.2, // Add markup for display
+          rating: 4.5,
+          badge: p.discount > 0 ? "SALE" : "HOT",
+          image: p.image || 'https://via.placeholder.com/300',
+        }))
+      } catch (error) {
+        console.error('Error loading products:', error)
+      }
+    })
 
-  methods: {
-    badgeClass(badge) {
-      return {
-        "badge-hot": badge === "HOT",
-        "badge-sale": badge === "SALE",
-        "badge-new": badge === "NEW"
-      };
-    },
+    const badgeClass = (badge) => {
+      return badge === 'HOT' ? 'badge-hot' : badge === 'SALE' ? 'badge-sale' : 'badge-new'
+    }
 
-    addToCart(product) {
-      console.log("Added to cart:", product.name);
+    const addToCart = (product) => {
+      console.log('Added to cart:', product.name)
+      // TODO: Implement cart functionality
+    }
+
+    return {
+      products,
+      badgeClass,
+      addToCart,
     }
   }
-};
+}
 </script>
 
 <style scoped>

@@ -141,10 +141,10 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductStore } from '../../stores/productStore'
-import SideBar from '../../components/provider_com/sideBar.vue'
-import PageHeader from '../../components/provider_com/pageHeader.vue'
-import ProductTable from '../../components/provider_com/productTable.vue'
-import PopupCard from '../../components/provider_com/popupCard.vue'
+import SideBar from '../../components/provider_com/SideBar.vue'
+import PageHeader from '../../components/provider_com/PageHeader.vue'
+import ProductTable from '../../components/provider_com/ProductTable.vue'
+import PopupCard from '../../components/provider_com/PopupCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -285,10 +285,16 @@ const openAddProductModal = () => {
 }
 
 const viewProductDetail = (productId) => {
-  router.push({
-    name: 'productDetail',
-    params: { id: productId }
-  })
+  console.log('Navigating to product detail with ID:', productId)
+  console.log('Route name: productDetail')
+  try {
+    router.push({
+      name: 'productDetail',
+      params: { id: productId }
+    }).catch(err => console.error('Router error:', err))
+  } catch (err) {
+    console.error('Error in viewProductDetail:', err)
+  }
 }
 
 const openEditProductModal = (product) => {

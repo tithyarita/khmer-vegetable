@@ -128,8 +128,8 @@
 
 <script setup>
 import { ref, computed, reactive } from 'vue'
-import SideBar from "@/components/provider_com/sideBar.vue"
-import PageHeader from "@/components/provider_com/pageHeader.vue"
+import SideBar from "@/components/provider_com/SideBar.vue"
+import PageHeader from "@/components/provider_com/PageHeader.vue"
 
 // --- Sample Data ---
 const orders = ref([

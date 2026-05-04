@@ -57,6 +57,7 @@ const routes = [
       { path: 'profile', component: ProfileSettingProvider },
       {
         path: 'product/:id',
+        name: 'productDetail',
         component: ProductDetail,
         props: true,
       },

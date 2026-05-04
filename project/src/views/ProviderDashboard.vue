@@ -41,10 +41,10 @@
 
 <script setup>
 import { ref } from 'vue'
-import SideBar from '@/components/provider_com/sideBar.vue'
-import AnalyseBar from '@/components/provider_com/analyseBar.vue'
-import ProductsSellAnalysis from '@/components/provider_com/productsSellAnalysis.vue'
-import ProductCard from '@/components/provider_com/productCard.vue'
+import SideBar from '@/components/provider_com/SideBar.vue'
+import AnalyseBar from '@/components/provider_com/AnalyseBar.vue'
+import ProductsSellAnalysis from '@/components/provider_com/ProductsSellAnalysis.vue'
+import ProductCard from '@/components/provider_com/ProductCard.vue'
 
 const products = ref([
   {
