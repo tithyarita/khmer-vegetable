@@ -31,6 +31,8 @@ import ProfileView from '../views/Staff/Profile.vue'
 
 import ApllicationDetailsView from '../views/Staff/ProviderReviewDetail.vue'
 
+import ProviderOrders from '../views/Provider/ProviderOrders.vue'
+
 // Admin
 
 import AdminLayout from '../Layout/AdminLayout.vue'
@@ -110,6 +112,14 @@ const router = createRouter({
       name: 'ProviderProducts',
 
       component: ProviderProduct,
+
+    },
+    {
+      path: '/provider-orders',
+
+      name: 'ProviderOrders',
+
+      component: ProviderOrders,
 
     },
 

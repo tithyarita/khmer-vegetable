@@ -52,7 +52,7 @@ onMounted(() => {
 }
 
 .sidebar-wrapper {
-  width: 320px;
+  width: 240px;
   flex-shrink: 0;
   background: #fff;
   border-right: 1px solid #e0e0e0;
