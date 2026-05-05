@@ -40,6 +40,15 @@
                 <h2 class="section-title">{{ sectionTitle }}</h2>
                 <span class="result-count">{{ filteredOrders.length }} result{{ filteredOrders.length !== 1 ? 's' : '' }}</span>
               </div>
+              <button class="sort-btn" @click="toggleSort" :title="sortOrder === 'desc' ? 'Oldest first' : 'Newest first'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M7 12h10M11 18h2"/>
+                </svg>
+                <span>{{ sortOrder === 'desc' ? 'Newest first' : 'Oldest first' }}</span>
+                <svg class="sort-arrow" :class="{ flipped: sortOrder === 'asc' }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M7 10l5 5 5-5"/>
+                </svg>
+              </button>
             </div>
 
             <!-- Search Bar -->
@@ -357,6 +366,11 @@ const activeFilter = ref('all')
 const searchQuery = ref('')
 const showDetailModal = ref(false)
 const selectedOrder = ref(null)
+const sortOrder = ref('desc') // 'desc' = newest first, 'asc' = oldest first
+
+const toggleSort = () => {
+  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
+}
 
 const setFilter = (key) => {
   activeFilter.value = key
@@ -393,6 +407,11 @@ const filteredOrders = computed(() => {
       o.customerName.toLowerCase().includes(query)
     )
   }
+
+  result = [...result].sort((a, b) => {
+    const diff = a.createdAt - b.createdAt
+    return sortOrder.value === 'desc' ? -diff : diff
+  })
 
   return result
 })
@@ -610,6 +629,44 @@ const formatFullDate = (date) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.sort-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: #f0f9f0;
+}
+
+.sort-btn svg:first-child {
+  width: 14px;
+  height: 14px;
+}
+
+.sort-arrow {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
+}
+
+.sort-arrow.flipped {
+  transform: rotate(180deg);
 }
 
 .header-left {
