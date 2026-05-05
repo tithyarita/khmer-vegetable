@@ -60,43 +60,52 @@ const formatNumber = (num) => {
 <style scoped>
 .analyse-bar {
   padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .card-item {
-  background: white;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  transition: box-shadow 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .card-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .card-body {
-  padding: 1.25rem;
+  padding: 16px 18px 14px;
 }
 
 .card-icon {
-  width: 60px;
-  height: 60px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
+  font-size: 14px;
   color: white;
   flex-shrink: 0;
+  background: #1a3d2a !important;
+  border-radius: 8px;
 }
 
 .card-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #212529;
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+  letter-spacing: -1px;
 }
 
 .card-label {
-  font-size: 0.9rem;
-  color: #6c757d;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
 @media (max-width: 1199px) {

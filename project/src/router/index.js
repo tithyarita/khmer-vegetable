@@ -1,64 +1,41 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+// ==================== Layouts ====================
+import StaffLayout from '../Layout/StaffLayout.vue'
+import AdminLayout from '../Layout/AdminLayout.vue'
 
-
-
-// Public
-
+// ==================== Public ====================
 import HomeView from '../views/HomeView.vue'
 import CartView from '../views/CartView.vue'
 import FavoritesView from '../views/FavoritesView.vue'
 
-// Provider
-
+// ==================== Provider ====================
 import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
-
 import ProviderProduct from '../views/Provider/ProviderProduct.vue'
-
 import ProductDetail from '../views/Provider/ProductDetail.vue'
-
 import ProfileSettingProvider from '../views/Provider/ProfileSettingProvider.vue'
+import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
+import ProviderOrders from '../views/Provider/ProviderOrders.vue'
 
-import ProviderRevenue from '../views/Provider/ProviderRevenue.vue' 
-
-import StaffLayout from '../Layout/StaffLayout.vue'
-
+// ==================== Staff ====================
 import DashboardView from '../views/Staff/Dashboardview.vue'
-
 import ApplicationsView from '../views/Staff/Applicationsview.vue'
-
 import ProfileView from '../views/Staff/Profile.vue'
 
 import ApllicationDetailsView from '../views/Staff/ProviderReviewDetail.vue'
 
-import ProviderOrders from '../views/Provider/ProviderOrders.vue'
-
-// Admin
-
-import AdminLayout from '../Layout/AdminLayout.vue'
-
+// ==================== Admin ====================
 import AdminDashboard from '../views/Admin/admindashboard.vue'
-
 import StaffManagement from '../views/Admin/StaffManagement.vue'
-
 import ProviderManagement from '../views/Admin/ProviderManagement.vue'
-
 import UserManagement from '../views/Admin/UserManagement.vue'
-
 import ProductManagement from '../views/Admin/ProductManagement.vue'
-
 import OrdersManagement from '../views/Admin/OrdersManagement.vue'
-
 import Reports from '../views/Admin/Report.vue'
-
 import AdminSetting from '../views/Admin/AdminSetting.vue'
 
-
-
-// User (Auth)
-
+// ==================== Auth ====================
 import UserRegister from '../views/User/resgister.vue'
-
 import UserLogin from '../views/User/login.vue'
 
 
@@ -97,7 +74,7 @@ const router = createRouter({
 
     {
 
-      path: '/provider-dashboard',
+      path: '/provider/dashboard',
 
       name: 'ProviderDashboard',
 
@@ -107,27 +84,19 @@ const router = createRouter({
 
     {
 
-      path: '/provider-products',
+      path: '/provider/products',
 
       name: 'ProviderProducts',
 
       component: ProviderProduct,
 
     },
-    {
-      path: '/provider-orders',
-
-      name: 'ProviderOrders',
-
-      component: ProviderOrders,
-
-    },
 
     {
 
-      path: '/product-detail/:id',
+      path: '/provider/product/:id',
 
-      name: 'ProductDetail',
+      name: 'productDetail',
 
       component: ProductDetail,
 
@@ -137,7 +106,7 @@ const router = createRouter({
 
     {
 
-      path: '/provider-revenue',
+      path: '/provider/revenue',
 
       name: 'ProviderRevenue',
 
@@ -147,12 +116,17 @@ const router = createRouter({
 
     {
 
-      path: '/provider-profile',
+      path: '/provider/profile',
 
       name: 'ProviderProfile',
 
       component: ProfileSettingProvider,
 
+    },
+    {
+      path: '/provider/orders',
+      name: 'ProviderOrders',
+      component: ProviderOrders,
     },
 
     {
@@ -214,138 +188,27 @@ const router = createRouter({
 
     },
 
-
-
-    // Admin
-
-    {
-
-      path: '/admin',
-
-      component: AdminLayout,
-
-      children: [
-
-        {
-
-          path: '',
-
-          redirect: '/admin/dashboard',
-
-        },
-
-        {
-
-          path: 'dashboard',
-
-          name: 'AdminDashboard',
-
-          component: AdminDashboard,
-
-        },
-
-        {
-
-          path: 'staff',
-
-          name: 'AdminStaff',
-
-          component: StaffManagement,
-
-        },
-
-        {
-
-          path: 'providers',
-
-          name: 'AdminProviders',
-
-          component: ProviderManagement,
-
-        },
-
-        {
-
-          path: 'users',
-
-          name: 'AdminUsers',
-
-          component: UserManagement,
-
-        },
-
-        {
-
-          path: 'products',
-
-          name: 'AdminProducts',
-
-          component: ProductManagement,
-
-        },
-
-        {
-
-          path: 'orders',
-
-          name: 'AdminOrders',
-
-          component: OrdersManagement,
-
-        },
-
-        {
-
-          path: 'reports',
-
-          name: 'AdminReports',
-
-          component: Reports,
-
-        },
-
-        {
-
-          path: 'settings',
-
-          name: 'AdminSettings',
-
-          component: AdminSetting,
-
-        },
-
-      ],
-
-    },
-
-
-
-    // User (Auth)
-
-    {
-
-      path: '/user/register',
-
-      name: 'UserRegister',
-
-      component: UserRegister,
-
-    },
-
-    {
-
-      path: '/user/login',
-
-      name: 'UserLogin',
-
-      component: UserLogin,
-
-    },
-
+  // -------- Admin --------
+  {
+    path: '/admin',
+    component: AdminLayout,
+    children: [
+      { path: '', redirect: '/admin/dashboard' },
+      { path: 'dashboard', component: AdminDashboard },
+      { path: 'staff', component: StaffManagement },
+      { path: 'providers', component: ProviderManagement },
+      { path: 'users', component: UserManagement },
+      { path: 'products', component: ProductManagement },
+      { path: 'orders', component: OrdersManagement },
+      { path: 'reports', component: Reports },
+      { path: 'settings', component: AdminSetting },
+    ],
+  },
+
+  // -------- Auth --------
+  { path: '/user/login', name: 'Login', component: UserLogin },
+  { path: '/user/register', name: 'Register', component: UserRegister },
   ],
-
 })
-
-
 
 export default router

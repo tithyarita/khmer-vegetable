@@ -1,178 +1,250 @@
-
 <template>
-    <div class="provider-management-page">
-        <div class="header-row">
-            <div>
-                <h1 class="title">Providers Management</h1>
-                <p class="subtitle">Manage and monitor all providers across the digital greenhouse ecosystem.</p>
-            </div>
-            <button class="add-provider-btn">+ Add Provider</button>
-        </div>
-        <div class="filter-row">
-            <input class="search-input" type="text" placeholder="Search by farm name or owner..." v-model="search" />
-            <div class="status-filter">
-                <label for="status">STATUS:</label>
-                <select id="status" v-model="status">
-                    <option>All Statuses</option>
-                    <option>Approved</option>
-                    <option>Pending</option>
-                    <option>Suspended</option>
-                </select>
-                <button class="apply-filter-btn">Apply Filters</button>
-            </div>
-        </div>
-        <div class="main-content">
-            <div class="table-section">
-                <table class="provider-table">
-                    <thead>
-                        <tr>
-                            <th>PROVIDER ID</th>
-                            <th>FARM & OWNER</th>
-                            <th>LOCATION</th>
-                            <th>STATUS</th>
-                            <th>ACTIONS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="provider in paginatedProviders" :key="provider.id" :class="{selected: provider.id === selectedProvider.id}" @click="selectProvider(provider)">
-                            <td>#PR0-{{ provider.id }}</td>
-                            <td>
-                                <div class="farm-owner">
-                                    <img :src="provider.avatar" class="avatar" />
-                                    <div>
-                                        <div class="farm-name">{{ provider.farm }}</div>
-                                        <div class="owner-name">{{ provider.owner }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ provider.location }}</td>
-                            <td>
-                                <span :class="['status-badge', provider.status.toLowerCase()]">{{ provider.status }}</span>
-                            </td>
-                            <td>
-                                <span class="action-icon" title="View"><svg width="18" height="18" fill="none"><circle cx="9" cy="9" r="8" stroke="#888"/><circle cx="9" cy="9" r="3" fill="#888"/></svg></span>
-                                <span class="action-icon" title="Edit"><svg width="18" height="18" fill="none"><rect x="3" y="13" width="12" height="2" rx="1" fill="#888"/><rect x="7" y="3" width="4" height="8" rx="2" fill="#888"/></svg></span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="pagination-row">
-                    <span>Showing {{ paginatedProviders.length }} of {{ providers.length }} Providers</span>
-                    <div class="pagination">
-                        <button :disabled="page === 1" @click="page--">&lt;</button>
-                        <button v-for="p in totalPages" :key="p" :class="{active: p === page}" @click="page = p">{{ p }}</button>
-                        <button :disabled="page === totalPages" @click="page++">&gt;</button>
-                    </div>
-                </div>
-            </div>
-            <div class="details-section" v-if="selectedProvider">
-                <div class="details-card">
-                    <div class="details-header">
-                        <h2>Provider Details</h2>
-                        <span class="edit-icon" title="Edit"><svg width="18" height="18" fill="none"><rect x="3" y="13" width="12" height="2" rx="1" fill="#888"/><rect x="7" y="3" width="4" height="8" rx="2" fill="#888"/></svg></span>
-                    </div>
-                    <img :src="selectedProvider.avatar" class="details-avatar" />
-                    <div class="details-title-row">
-                        <div class="details-title">{{ selectedProvider.farm }}</div>
-                        <span class="elite-badge">ELITE PROVIDER</span>
-                    </div>
-                    <div class="details-owner-info">
-                        <div class="owner-label">OWNER INFORMATION</div>
-                        <div class="owner-info-row"><b>👤</b> {{ selectedProvider.owner }}</div>
-                        <div class="owner-info-row"><b>✉️</b> {{ selectedProvider.email }}</div>
-                        <div class="owner-info-row"><b>📞</b> {{ selectedProvider.phone }}</div>
-                    </div>
-                    <div class="about-label">ABOUT THE FARM</div>
-                    <div class="about-text">{{ selectedProvider.about }}</div>
-                    <div class="inventory-label">FEATURED INVENTORY</div>
-                    <div class="inventory-tags">
-                        <span v-for="item in selectedProvider.inventory" :key="item" class="inventory-tag">{{ item }}</span>
-                    </div>
-                    <button class="modify-status-btn">✓ Modify Status</button>
-                    <button class="full-history-btn">View Full History</button>
-                </div>
-                <div class="vitality-card">
-                    <div class="vitality-header">PROVIDER VITALITY <span class="vitality-icon">↗</span></div>
-                    <div class="vitality-desc">Provider score is in the top 5% of the marketplace for quality and delivery speed.</div>
-                </div>
-            </div>
-        </div>
+  <div class="provider-management-page">
+
+    <!-- HEADER -->
+    <div class="header-row">
+      <div>
+        <h1 class="title">Providers Management</h1>
+        <p class="subtitle">
+          Manage and monitor all providers across the ecosystem.
+        </p>
+      </div>
     </div>
+
+    <!-- FILTER -->
+    <div class="filter-row">
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Search by name..."
+        v-model="search"
+      />
+
+      <div class="status-filter">
+        <label>Status:</label>
+
+        <select v-model="status">
+          <option>All Statuses</option>
+          <option>provider</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main-content">
+
+      <!-- TABLE -->
+      <div class="table-section">
+
+        <table class="provider-table compact-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>FARM & OWNER</th>
+              <th>EMAIL</th>
+              <th>PHONE</th>
+              <th>ROLE</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="p in paginatedProviders"
+              :key="p.id"
+              @click="selectProvider(p)"
+              :class="{ selected: selectedProvider?.id === p.id }"
+              style="font-size:0.85rem; height:32px;"
+            >
+              <td>#PR0-{{ p.id }}</td>
+              <td>
+                <div class="farm-owner" style="gap:0.3rem;">
+                  <img :src="p.avatar" class="avatar" style="width:22px;height:22px;" />
+                  <div>
+                    <div class="farm-name" style="font-size:0.9em;">{{ p.name }}</div>
+                    <div class="owner-name" style="font-size:0.8em; color:#888;">{{ p.role }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>{{ p.email }}</td>
+              <td>{{ p.phone }}</td>
+              <td>{{ p.role }}</td>
+              <td>
+                <button class="edit-btn compact-edit" @click.stop="editProvider(p)">Edit</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- PAGINATION -->
+        <div class="pagination-row">
+          <span>
+            Showing {{ paginatedProviders.length }} of {{ filteredProviders.length }}
+          </span>
+
+          <div class="pagination">
+            <button :disabled="page === 1" @click="page--">&lt;</button>
+
+            <button
+              v-for="n in totalPages"
+              :key="n"
+              :class="{ active: page === n }"
+              @click="page = n"
+            >
+              {{ n }}
+            </button>
+
+            <button :disabled="page === totalPages" @click="page++">&gt;</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- DETAILS -->
+      <div class="details-section" v-if="selectedProvider">
+
+        <div class="details-card compact-details">
+          <h3>Provider</h3>
+          <div class="compact-row"><b>👤</b> {{ selectedProvider.name }}</div>
+          <div class="compact-row"><b>✉️</b> {{ selectedProvider.email }}</div>
+          <div class="compact-row"><b>📞</b> {{ selectedProvider.phone }}</div>
+          <div class="compact-row"><b>🧑‍💼</b> {{ selectedProvider.role }}</div>
+          <div class="compact-row"><b>🆔</b> {{ selectedProvider.id }}</div>
+          <div class="compact-row"><b>📊</b> {{ selectedProvider.status || 'N/A' }}</div>
+          <div class="compact-row"><b>🏠</b> {{ selectedProvider.address || 'N/A' }}</div>
+        </div>
+
+        <!-- Edit Modal -->
+        <div v-if="showEditModal" class="modal-overlay compact-modal">
+          <div class="modal-content compact-modal-content">
+            <h4>Edit Provider</h4>
+            <form @submit.prevent="submitEdit">
+              <div class="form-row">
+                <label>Name</label>
+                <input v-model="editForm.name" required />
+              </div>
+              <div class="form-row">
+                <label>Email</label>
+                <input v-model="editForm.email" required />
+              </div>
+              <div class="form-row">
+                <label>Phone</label>
+                <input v-model="editForm.phone" required />
+              </div>
+              <div class="form-row">
+                <label>Role</label>
+                <input v-model="editForm.role" required />
+              </div>
+              <div class="form-row">
+                <label>Address</label>
+                <input v-model="editForm.address" />
+              </div>
+              <div class="modal-actions compact-actions">
+                <button type="submit">Save</button>
+                <button type="button" @click="showEditModal = false">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 
-const providers = ref([
-    {
-        id: '1189',
-        farm: 'Urban Greens Tech',
-        owner: 'Alice Chen',
-        location: 'New York, USA',
-        status: 'Approved',
-        avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-        email: 'alice@urbangreens.com',
-        phone: '+1 (555) 123-4567',
-        about: 'Urban Greens Tech is a leader in vertical farming, providing fresh greens to the city.',
-        inventory: ['Kale', 'Heirloom Carrots', 'Wild Arugula', 'Swiss Chard']
-    },
-    {
-        id: '8821',
-        farm: 'Green Valley Organics',
-        owner: 'Marcus Sterling',
-        location: 'Vermont, USA',
-        status: 'Suspended',
-        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-        email: 'm.sterling@greenvalley.co',
-        phone: '+1 (555) 092-1234',
-        about: 'Specializing in regenerative agriculture techniques to produce the highest nutrient-density leafy greens in the Vermont valley.',
-        inventory: ['Kale', 'Heirloom Carrots', 'Wild Arugula', 'Swiss Chard']
-    },
-    {
-        id: '9912',
-        farm: 'Roots & Shoots Collective',
-        owner: 'Sarah Jenkins',
-        location: 'Oregon, USA',
-        status: 'Pending',
-        avatar: 'https://randomuser.me/api/portraits/women/65.jpg',
-        email: 'sarah@rootsandshoots.com',
-        phone: '+1 (555) 987-6543',
-        about: 'Roots & Shoots Collective brings together small organic farms for a big impact.',
-        inventory: ['Kale', 'Heirloom Carrots']
-    }
-])
+// ================= STATE =================
+const providers = ref([])
+const selectedProvider = ref(null)
 
 const search = ref('')
 const status = ref('All Statuses')
 const page = ref(1)
-const pageSize = 4
-const selectedProvider = ref(providers.value[1])
+const pageSize = 5
 
-const filteredProviders = computed(() => {
-    let result = providers.value
-    if (search.value) {
-        result = result.filter(p =>
-            p.farm.toLowerCase().includes(search.value.toLowerCase()) ||
-            p.owner.toLowerCase().includes(search.value.toLowerCase())
-        )
-    }
-    if (status.value !== 'All Statuses') {
-        result = result.filter(p => p.status === status.value)
-    }
-    return result
-})
+// ================= FETCH PROVIDERS =================
+const fetchProviders = async () => {
+  try {
+    const res = await axios.get('http://localhost:3000/users', {
+      params: { role: 'provider' }
+    })
 
-const totalPages = computed(() => Math.ceil(filteredProviders.value.length / pageSize))
-const paginatedProviders = computed(() => {
-    const start = (page.value - 1) * pageSize
-    return filteredProviders.value.slice(start, start + pageSize)
-})
+    providers.value = res.data.map(u => ({
+      ...u,
+      avatar: `https://randomuser.me/api/portraits/men/${u.id % 100}.jpg`
+    }))
 
-function selectProvider(provider) {
-    selectedProvider.value = provider
+    selectedProvider.value = providers.value[0] || null
+
+  } catch (err) {
+    console.error('Error loading providers:', err)
+  }
 }
-</script>
 
+// ================= FILTER =================
+const filteredProviders = computed(() => {
+  let data = providers.value
+
+  if (search.value) {
+    data = data.filter(p =>
+      p.name?.toLowerCase().includes(search.value.toLowerCase())
+    )
+  }
+
+  return data
+})
+
+// ================= PAGINATION =================
+const totalPages = computed(() =>
+  Math.ceil(filteredProviders.value.length / pageSize)
+)
+
+const paginatedProviders = computed(() => {
+  const start = (page.value - 1) * pageSize
+  return filteredProviders.value.slice(start, start + pageSize)
+})
+
+// ================= SELECT =================
+
+const showEditModal = ref(false)
+const editForm = ref({})
+
+const selectProvider = (p) => {
+  selectedProvider.value = p
+}
+
+// ================= EDIT =================
+const editProvider = (p) => {
+  editForm.value = { ...p }
+  showEditModal.value = true
+}
+
+const submitEdit = async () => {
+  try {
+    const id = editForm.value.id
+    const res = await axios.post(`http://localhost:3000/users/update/${id}`, editForm.value)
+    // Update local provider list
+    const idx = providers.value.findIndex(pr => pr.id === id)
+    if (idx !== -1) {
+      providers.value[idx] = { ...editForm.value }
+    }
+    if (selectedProvider.value && selectedProvider.value.id === id) {
+      selectedProvider.value = { ...editForm.value }
+    }
+    showEditModal.value = false
+    alert('Provider updated!')
+  } catch (err) {
+    alert('Failed to update provider!')
+  }
+}
+
+// ================= INIT =================
+onMounted(fetchProviders)
+</script>
 <style scoped>
 .provider-management-page {
     padding: 2rem 2rem 2rem 2rem;
@@ -195,34 +267,42 @@ function selectProvider(provider) {
     color: #64748b;
     font-size: 1rem;
 }
-.add-provider-btn {
-    background: #14532d;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 0.7rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 0.5rem;
+/* Compact Table Styles */
+/* Extra Compact Table Styles */
+.provider-table.compact-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  margin-bottom: 0.5rem;
+  font-size: 0.87rem;
 }
-.filter-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+.provider-table.compact-table th, .provider-table.compact-table td {
+  padding: 0.18rem 0.3rem;
+  text-align: left;
 }
-.search-input {
-    flex: 1;
-    padding: 0.7rem 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 1rem;
+.provider-table.compact-table th {
+  color: #333;
+  font-weight: 600;
+  background: #f6f6f6;
+  font-size: 0.92em;
 }
-.status-filter {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+.provider-table.compact-table td {
+  vertical-align: middle;
+}
+.edit-btn.compact-edit {
+  background: #f59e42;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.12rem 0.55rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.edit-btn.compact-edit:hover {
+  background: #e07b1a;
 }
 .apply-filter-btn {
     background: #e5e7eb;
@@ -257,6 +337,23 @@ function selectProvider(provider) {
 }
 .provider-table td {
     padding: 0.7rem 0.5rem;
+
+.view-btn, .edit-btn {
+  margin: 0 0.25rem;
+  padding: 0.3rem 0.8rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.view-btn {
+  background: #38bdf8;
+  color: #fff;
+}
+.edit-btn {
+  background: #f59e42;
+  color: #fff;
+}
     vertical-align: middle;
     font-size: 1rem;
 }
@@ -267,29 +364,6 @@ function selectProvider(provider) {
     display: flex;
     align-items: center;
     gap: 0.7rem;
-}
-.avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #e5e7eb;
-}
-.farm-name {
-    font-weight: 600;
-    color: #14532d;
-}
-.owner-name {
-    color: #64748b;
-    font-size: 0.95rem;
-}
-.status-badge {
-    display: inline-block;
-    padding: 0.2rem 0.8rem;
-    border-radius: 12px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #fff;
 }
 .status-badge.approved {
     background: #22c55e;
@@ -331,12 +405,21 @@ function selectProvider(provider) {
     flex-direction: column;
     gap: 1.2rem;
 }
-.details-card {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px #0001;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
+/* Compact Details Card */
+/* Extra Compact Details Card */
+.details-card.compact-details {
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px #0001;
+  padding: 0.7rem 0.8rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.87rem;
+}
+.compact-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.18rem;
 }
 .details-header {
     display: flex;
@@ -470,3 +553,63 @@ function selectProvider(provider) {
     cursor: pointer;
 }
 </style>
+
+/* Modal styles */
+/* Compact Modal Styles */
+/* Extra Compact Modal Styles */
+.modal-overlay.compact-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content.compact-modal-content {
+  background: #fff;
+  padding: 0.7rem 0.9rem;
+  border-radius: 5px;
+  min-width: 180px;
+  box-shadow: 0 1px 4px #0002;
+  font-size: 0.87rem;
+}
+.compact-modal-content h4 {
+  margin: 0 0 0.4rem 0;
+  font-size: 1rem;
+}
+.form-row {
+  margin-bottom: 0.3rem;
+}
+.form-row label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.1rem;
+  font-size: 0.89em;
+}
+.form-row input {
+  width: 100%;
+  padding: 0.18rem 0.35rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.87rem;
+}
+.modal-actions.compact-actions {
+  margin-top: 0.3rem;
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+.modal-actions.compact-actions button {
+  padding: 0.13rem 0.6rem;
+  font-size: 0.87rem;
+  border-radius: 4px;
+  border: none;
+  background: #f59e42;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.modal-actions.compact-actions button:hover {
+  background: #e07b1a;
+}

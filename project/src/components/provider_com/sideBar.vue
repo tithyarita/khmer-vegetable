@@ -1,48 +1,70 @@
 <template>
-  <div class="sidebar">
-    <!-- Header -->
-    <div class="sidebar-header bg-success text-white p-4">
-      <h5 class="mb-0">Logo</h5>
+  <div>
+    <!-- Sidebar -->
+    <div class="sidebar" :class="{ 'sidebar-open': isSidebarOpen, 'sidebar-closed': !isSidebarOpen }">
+      <!-- Header -->
+      <div class="sidebar-header bg-success text-white p-4">
+        <h5 class="mb-0">Logo</h5>
+      </div>
+
+      <!-- Menu Items -->
+      <div class="sidebar-menu">
+        <router-link 
+          v-for="item in menuItems"
+          :key="item.id"
+          :to="item.route"
+          class="menu-item p-3 d-flex align-items-center gap-3"
+          :class="{ 'active': isActive(item.route) }"
+          @click="closeSidebarOnMobile"
+        >
+          <i :class="item.icon" class="menu-icon"></i>
+          <span class="menu-label">{{ item.label }}</span>
+        </router-link>
+      </div>
+
+      <!-- Logout Section -->
+      <div class="sidebar-footer">
+        <button @click="handleLogout" class="logout-btn p-3 d-flex align-items-center gap-3 w-100">
+          <i class="bi bi-box-arrow-right menu-icon"></i>
+          <span class="menu-label">Logout</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Menu Items -->
-    <div class="sidebar-menu">
-      <router-link 
-        v-for="item in menuItems"
-        :key="item.id"
-        :to="item.route"
-        class="menu-item p-3 d-flex align-items-center gap-3"
-        :class="{ 'active': isActive(item.route) }"
-      >
-        <i :class="item.icon" class="menu-icon"></i>
-        <span class="menu-label">{{ item.label }}</span>
-      </router-link>
-    </div>
-
-    <!-- Logout Section -->
-    <div class="sidebar-footer">
-      <button @click="handleLogout" class="logout-btn p-3 d-flex align-items-center gap-3 w-100">
-        <i class="bi bi-box-arrow-right menu-icon"></i>
-        <span class="menu-label">Logout</span>
-      </button>
-    </div>
+    <!-- Sidebar Backdrop (Mobile) -->
+    <div 
+      v-if="isSidebarOpen" 
+      class="sidebar-backdrop d-lg-none" 
+      @click="closeSidebar"
+    ></div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
 
+// Get sidebar state from parent component via provide/inject
+const isSidebarOpen = inject('isSidebarOpen', ref(false))
+const closeSidebar = inject('closeSidebar', () => {})
+
 const menuItems = ref([
-  { id: 1, icon: 'bi bi-speedometer2', label: 'Dashboard', route: '/provider-dashboard' },
-  { id: 2, icon: 'bi bi-box-seam', label: 'Products', route: '/provider-products' },
-  { id: 3, icon: 'bi bi-bag-check', label: 'Orders', route: '/provider-orders' },
-  { id: 4, icon: 'bi bi-graph-up', label: 'Revenue', route: '/provider-revenue' },
-  { id: 5, icon: 'bi bi-person', label: 'Profile', route: '/provider-profile' }
+  { id: 1, icon: 'bi bi-speedometer2', label: 'Dashboard', route: '/provider/dashboard' },
+  { id: 2, icon: 'bi bi-box-seam', label: 'Products', route: '/provider/products' },
+  { id: 3, icon: 'bi bi-bag-check', label: 'Orders', route: '/provider/orders' },
+  { id: 4, icon: 'bi bi-graph-up', label: 'Revenue', route: '/provider/revenue' },
+  { id: 5, icon: 'bi bi-person', label: 'Profile', route: '/provider/profile' }
 ])
+
+const closeSidebarOnMobile = () => {
+  // Close sidebar on mobile after clicking a menu item
+  if (window.innerWidth < 992) {
+    closeSidebar()
+  }
+}
 
 const isActive = (itemRoute) => {
   return route.path === itemRoute
@@ -61,18 +83,52 @@ const handleLogout = () => {
 
 <style scoped>
 .sidebar {
-  background-color: #f8f9fa;
-  border-right: 1px solid #dee2e6;
+  background-color: #fff;
+  border-right: 1px solid #e8e8e8;
   min-height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Mobile: Sidebar as offcanvas */
+@media (max-width: 991px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 260px;
+    z-index: 1050;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    transform: translateX(-100%);
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar.sidebar-closed {
+    transform: translateX(-100%);
+  }
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
 }
 
 .sidebar-header {
-  background-color: #2d5016 !important;
-  border-bottom: 1px solid #dee2e6;
-  min-height: 70px;
+  background-color: #1a3d2a !important;
+  border-bottom: 1px solid #e8e8e8;
+  min-height: 52px;
   display: flex;
   align-items: center;
   flex-shrink: 0;
@@ -81,7 +137,7 @@ const handleLogout = () => {
 .sidebar-header h5 {
   margin: 0;
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 16px;
   color: white;
   margin-left: 15px;
 }
@@ -94,8 +150,8 @@ const handleLogout = () => {
 }
 
 .sidebar-footer {
-  border-top: 1px solid #dee2e6;
-  background-color: #f8f9fa;
+  border-top: 1px solid #e8e8e8;
+  background-color: #fff;
   flex-shrink: 0;
   padding: 0;
 }
@@ -104,8 +160,8 @@ const handleLogout = () => {
   cursor: pointer;
   border-left: 4px solid transparent;
   background-color: transparent;
-  transition: all 0.3s ease;
-  color: #495057;
+  transition: all 0.2s;
+  color: #6b7280;
   font-weight: 500;
   text-decoration: none;
   display: flex;
@@ -118,16 +174,16 @@ const handleLogout = () => {
 }
 
 .logout-btn:hover {
-  background-color: #e9ecef;
-  color: #2d5016;
-  border-left-color: #2d5016;
+  background-color: #f3f4f3;
+  color: #1a3d2a;
+  border-left-color: #1a3d2a;
 }
 
 .menu-item {
   cursor: pointer;
   border-left: 4px solid transparent;
-  transition: all 0.3s ease;
-  color: #495057;
+  transition: all 0.2s;
+  color: #6b7280;
   font-weight: 500;
   text-decoration: none;
   display: flex;
@@ -137,14 +193,14 @@ const handleLogout = () => {
 }
 
 .menu-item:hover {
-  background-color: #e9ecef;
-  color: #2d5016;
+  background-color: #f3f4f3;
+  color: #1a3d2a;
 }
 
 .menu-item.active {
-  background-color: #e8f5e9;
-  border-left-color: #2d5016;
-  color: #2d5016;
+  background-color: #f0f7f0;
+  border-left-color: #1a3d2a;
+  color: #1a3d2a;
   font-weight: 600;
 }
 
@@ -159,50 +215,58 @@ const handleLogout = () => {
   text-overflow: ellipsis;
 }
 
-@media (max-width: 768px) {
+/* Desktop: Normal sidebar (lg and up) */
+@media (min-width: 992px) {
   .sidebar {
-    display: flex;
-    flex-direction: column;
-    max-height: 200px;
-    border-right: none;
-    border-bottom: 1px solid #dee2e6;
+    width: 250px;
+    position: static;
+    transform: none !important;
   }
 
-  .sidebar-menu {
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
+  .sidebar-open,
+  .sidebar-closed {
+    transform: none !important;
   }
 
-  .menu-item {
-    min-width: 120px;
-    padding: 0.75rem 1rem !important;
-    border-left: none;
-    border-bottom: 4px solid transparent;
-  }
-
-  .menu-item:hover {
-    border-bottom-color: #2d5016;
-  }
-
-  .menu-item.active {
-    border-left: none;
-    border-bottom-color: #2d5016;
-  }
-
-  .menu-label {
-    font-size: 0.85rem;
+  .sidebar-backdrop {
+    display: none !important;
   }
 }
 
-@media (max-width: 576px) {
-  .menu-item {
-    min-width: 100px;
-    padding: 0.5rem 0.75rem !important;
+/* Small adjustments for smaller tablets */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 230px;
   }
 
-  .menu-label {
-    font-size: 0.75rem;
+  .sidebar-header h5 {
+    font-size: 1.1rem;
+    margin-left: 10px;
+  }
+
+  .menu-item {
+    padding: 0.6rem 1rem !important;
+    font-size: 0.95rem;
+  }
+
+  .menu-icon {
+    font-size: 1.1rem;
+  }
+}
+
+/* Phone sizes */
+@media (max-width: 576px) {
+  .sidebar {
+    width: 200px;
+  }
+
+  .sidebar-header h5 {
+    font-size: 1rem;
+  }
+
+  .menu-item {
+    padding: 0.5rem 0.8rem !important;
+    font-size: 0.9rem;
   }
 
   .menu-icon {
@@ -210,3 +274,4 @@ const handleLogout = () => {
   }
 }
 </style>
+

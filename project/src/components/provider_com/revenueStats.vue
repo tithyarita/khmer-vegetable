@@ -61,109 +61,118 @@ const stats = ref([
 <style scoped>
 .revenue-stats {
   padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .stat-card {
-  background: white;
-  border-radius: 16px;
-  transition: all 0.3s ease;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  transition: box-shadow 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .card-body {
-  padding: 1.25rem;
+  padding: 16px 18px 14px;
 }
 
 .stat-icon {
-  width: 60px;
-  height: 60px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
+  font-size: 14px;
   color: white;
   flex-shrink: 0;
+  background: #1a3d2a !important;
+  border-radius: 8px;
 }
 
 .stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #212529;
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+  letter-spacing: -1px;
 }
 
 .stat-label {
-  font-size: 0.85rem;
-  color: #6c757d;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #9ca3af;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .stat-sublabel {
-  font-size: 0.75rem;
-  color: #adb5bd;
+  font-size: 11px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-top: 2px;
 }
 
 @media (max-width: 1199px) {
   .stat-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
   }
 
   .stat-value {
-    font-size: 1.25rem;
+    font-size: 24px;
   }
 
   .stat-label {
-    font-size: 0.8rem;
+    font-size: 8.5px;
   }
 
   .card-body {
-    padding: 1rem;
+    padding: 14px 16px 12px;
   }
 }
 
 @media (max-width: 768px) {
   .stat-icon {
-    width: 45px;
-    height: 45px;
-    font-size: 1.25rem;
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
   }
 
   .stat-value {
-    font-size: 1rem;
+    font-size: 20px;
   }
 
   .stat-label {
-    font-size: 0.75rem;
+    font-size: 8px;
   }
 
   .card-body {
-    padding: 0.875rem;
+    padding: 12px 14px 10px;
   }
 }
 
 @media (max-width: 576px) {
   .stat-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
   }
 
   .stat-value {
-    font-size: 0.9rem;
+    font-size: 18px;
   }
 
   .stat-label {
-    font-size: 0.7rem;
+    font-size: 7.5px;
   }
 
   .card-body {
-    padding: 0.75rem;
+    padding: 10px 12px 8px;
     gap: 0.75rem !important;
   }
 }

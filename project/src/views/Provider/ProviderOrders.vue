@@ -13,7 +13,7 @@
 
         <!-- Content Wrapper -->
         <div class="content-wrapper">
-          <!-- Stats Cards with Enhanced Design -->
+          <!-- Stats Cards -->
           <div class="stats-grid">
             <div
               v-for="card in statCards"
@@ -34,21 +34,24 @@
 
           <!-- Orders Section -->
           <div class="orders-section">
+            <!-- Section Header -->
             <div class="section-header">
-              <h2 class="section-title">{{ sectionTitle }}</h2>
-              <span class="result-count">{{ filteredOrders.length }} orders</span>
+              <div class="header-left">
+                <h2 class="section-title">{{ sectionTitle }}</h2>
+                <span class="result-count">{{ filteredOrders.length }} result{{ filteredOrders.length !== 1 ? 's' : '' }}</span>
+              </div>
             </div>
 
             <!-- Search Bar -->
             <div class="search-bar">
-              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <path d="m21 21-4.35-4.35"></path>
               </svg>
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Search order ID or customer..."
+                placeholder="Search order ID, customer name..."
                 class="search-input"
                 @input="handleSearch"
               />
@@ -56,14 +59,17 @@
                 v-if="searchQuery"
                 class="clear-search-btn"
                 @click="clearSearch"
-                title="Clear search"
+                aria-label="Clear search"
               >
-                ✕
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
               </button>
             </div>
 
             <!-- Orders Table -->
-            <div class="table-wrapper">
+            <div class="table-container">
               <table class="orders-table">
                 <thead>
                   <tr>
@@ -76,59 +82,54 @@
                     <th>Action</th>
                   </tr>
                 </thead>
-
                 <tbody>
                   <tr v-if="filteredOrders.length === 0" class="empty-row">
                     <td colspan="7">
                       <div class="empty-state">
-                        <svg viewBox="0 0 64 64" fill="none">
-                          <rect x="8" y="16" width="40" height="36" rx="2" stroke="currentColor" stroke-width="2"/>
-                          <path d="M8 20h40" stroke="currentColor" stroke-width="2"/>
+                        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor">
+                          <rect x="8" y="16" width="40" height="36" rx="2" stroke-width="2"/>
+                          <path d="M8 20h40" stroke-width="2"/>
                           <circle cx="16" cy="28" r="2" fill="currentColor"/>
                           <circle cx="24" cy="28" r="2" fill="currentColor"/>
                           <circle cx="32" cy="28" r="2" fill="currentColor"/>
                         </svg>
-                        <p>No orders found</p>
+                        <h3>No orders found</h3>
+                        <p>Try adjusting your search or filters</p>
                       </div>
                     </td>
                   </tr>
-
                   <tr
                     v-for="order in filteredOrders"
                     :key="order.id"
                     class="order-row"
                     :class="`status-${order.status}`"
                   >
-                    <td class="order-id">
+                    <td class="col-order-id">
                       <span class="id-badge">{{ order.id }}</span>
                     </td>
-
-                    <td class="customer-name">
-                      <span class="name-text">{{ order.customerName }}</span>
-                      <span class="customer-id">{{ order.customerId }}</span>
+                    <td class="col-customer">
+                      <div class="customer-info">
+                        <span class="customer-name">{{ order.customerName }}</span>
+                        <span class="customer-id">{{ order.customerId }}</span>
+                      </div>
                     </td>
-
-                    <td class="items-count">
-                      <span class="item-badge">{{ order.items.length }} item{{ order.items.length !== 1 ? 's' : '' }}</span>
+                    <td class="col-items">
+                      <span class="item-count">{{ order.items.length }}</span>
                     </td>
-
-                    <td class="total-price">
-                      <span class="price-text">${{ order.total }}</span>
+                    <td class="col-total">
+                      <span class="price">${{ order.total }}</span>
                     </td>
-
-                    <td class="created-date">
+                    <td class="col-date">
                       {{ formatDate(order.createdAt) }}
                     </td>
-
-                    <td class="status-cell">
+                    <td class="col-status">
                       <span class="status-badge" :class="`badge-${order.status}`">
                         {{ getStatusLabel(order.status) }}
                       </span>
                     </td>
-
-                    <td class="action-cell">
+                    <td class="col-action">
                       <button
-                        class="action-btn view-detail-btn"
+                        class="btn-view-detail"
                         @click="openDetailModal(order)"
                         title="View order details"
                       >
@@ -136,7 +137,7 @@
                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                           <circle cx="12" cy="12" r="3"></circle>
                         </svg>
-                        View Detail
+                        View
                       </button>
                     </td>
                   </tr>
@@ -158,7 +159,7 @@
               <h2 class="modal-title">Order Details</h2>
               <p class="modal-subtitle">{{ selectedOrder.id }}</p>
             </div>
-            <button class="modal-close-btn" @click="closeDetailModal">
+            <button class="modal-close-btn" @click="closeDetailModal" aria-label="Close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -169,7 +170,7 @@
           <!-- Modal Body -->
           <div class="modal-body">
             <!-- Customer Info Card -->
-            <div class="info-card">
+            <div class="info-card card-customer">
               <h3 class="card-title">Customer Information</h3>
               <div class="info-grid">
                 <div class="info-item">
@@ -184,7 +185,7 @@
             </div>
 
             <!-- Order Info Card -->
-            <div class="info-card">
+            <div class="info-card card-order">
               <h3 class="card-title">Order Information</h3>
               <div class="info-grid">
                 <div class="info-item">
@@ -199,7 +200,7 @@
             </div>
 
             <!-- Products Card -->
-            <div class="info-card">
+            <div class="info-card card-products">
               <h3 class="card-title">Products</h3>
               <div class="products-list">
                 <div
@@ -223,15 +224,11 @@
               </div>
             </div>
 
-            <!-- Summary Card -->
+            <!-- Summary Card (no tax) -->
             <div class="info-card summary-card">
               <div class="summary-row">
                 <span class="summary-label">Subtotal</span>
                 <span class="summary-value">${{ calculateSubtotal() }}</span>
-              </div>
-              <div class="summary-row">
-                <span class="summary-label">Tax</span>
-                <span class="summary-value">$0</span>
               </div>
               <div class="summary-row total">
                 <span class="summary-label">Total</span>
@@ -239,33 +236,12 @@
               </div>
             </div>
 
-            <!-- Status & Actions -->
-            <div class="modal-actions">
-              <div class="status-info">
-                <span class="status-label">Status:</span>
-                <span class="status-badge" :class="`badge-${selectedOrder.status}`">
-                  {{ getStatusLabel(selectedOrder.status) }}
-                </span>
-              </div>
-              <div class="action-buttons">
-                <button
-                  v-if="selectedOrder.status === 'pending'"
-                  class="action-primary"
-                  @click="updateStatus(selectedOrder, 'delivering')"
-                >
-                  Mark as Delivering
-                </button>
-                <button
-                  v-if="selectedOrder.status === 'delivering'"
-                  class="action-primary"
-                  @click="updateStatus(selectedOrder, 'completed')"
-                >
-                  Mark as Completed
-                </button>
-                <button class="action-secondary" @click="closeDetailModal">
-                  Close
-                </button>
-              </div>
+            <!-- Status display only — no action buttons -->
+            <div class="modal-status-bar">
+              <span class="status-label">Status</span>
+              <span class="status-badge" :class="`badge-${selectedOrder.status}`">
+                {{ getStatusLabel(selectedOrder.status) }}
+              </span>
             </div>
           </div>
         </div>
@@ -287,8 +263,8 @@
 
 <script setup>
 import { ref, computed, reactive } from 'vue'
-import SideBar from "@/components/provider_com/sideBar.vue"
-import PageHeader from "@/components/provider_com/pageHeader.vue"
+import SideBar from "@/components/provider_com/SideBar.vue"
+import PageHeader from "@/components/provider_com/PageHeader.vue"
 
 // --- Sample Data ---
 const orders = ref([
@@ -457,23 +433,8 @@ const calculateSubtotal = () => {
   return selectedOrder.value.items.reduce((sum, item) => sum + item.price, 0)
 }
 
-// --- Update Status ---
-const updateStatus = (order, newStatus) => {
-  const originalOrder = orders.value.find(o => o.id === order.id)
-  if (originalOrder) {
-    originalOrder.status = newStatus
-    if (newStatus === 'completed') {
-      originalOrder.completedAt = new Date()
-    }
-    showToast(`Order ${order.id} marked as ${getStatusLabel(newStatus)}`, 'success')
-    closeDetailModal()
-  }
-}
-
 // --- Search Functions ---
-const handleSearch = () => {
-  // Real-time search filtering via computed property
-}
+const handleSearch = () => {}
 
 const clearSearch = () => {
   searchQuery.value = ''
@@ -528,6 +489,7 @@ const formatFullDate = (date) => {
   --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.12);
 }
 
+/* ===== LAYOUT ===== */
 .provider-orders {
   background: var(--color-bg-light);
   width: 100%;
@@ -565,7 +527,7 @@ const formatFullDate = (date) => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-width: 1260px;
+  flex: 1;
 }
 
 /* ===== STATS GRID ===== */
@@ -578,10 +540,10 @@ const formatFullDate = (date) => {
 .stat-card {
   background: var(--color-bg-white);
   border-radius: 12px;
-  padding: 20px;
+  padding: 18px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -601,13 +563,13 @@ const formatFullDate = (date) => {
 }
 
 .stat-icon {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: white;
   flex-shrink: 0;
 }
@@ -615,92 +577,103 @@ const formatFullDate = (date) => {
 .stat-content {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .stat-number {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--color-text-primary);
   line-height: 1;
 }
 
 .stat-label {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--color-text-secondary);
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 /* ===== ORDERS SECTION ===== */
 .orders-section {
   background: var(--color-bg-white);
-  border-radius: 16px;
-  padding: 28px;
+  border-radius: 12px;
+  padding: 24px;
   box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+}
+
+.header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
 }
 
 .section-title {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0;
 }
 
 .result-count {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--color-text-secondary);
   background: var(--color-bg-light);
-  padding: 6px 12px;
-  border-radius: 20px;
+  padding: 4px 10px;
+  border-radius: 16px;
   font-weight: 500;
 }
 
 /* ===== SEARCH BAR ===== */
 .search-bar {
   position: relative;
-  margin-bottom: 24px;
 }
 
 .search-icon {
   position: absolute;
-  left: 14px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   color: #999;
   pointer-events: none;
 }
 
 .search-input {
   width: 100%;
-  padding: 11px 14px 11px 40px;
+  padding: 10px 12px 10px 36px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
-  font-size: 0.95rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
   transition: all 0.2s;
-  background: var(--color-bg-light);
+  background: var(--color-bg-white);
+  font-family: 'DM Sans', sans-serif;
+}
+
+.search-input::placeholder {
+  color: #bbb;
 }
 
 .search-input:focus {
   outline: none;
   border-color: var(--color-primary);
-  background: var(--color-bg-white);
   box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
 }
 
 .clear-search-btn {
   position: absolute;
-  right: 12px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
   width: 28px;
@@ -708,29 +681,39 @@ const formatFullDate = (date) => {
   border: none;
   background: transparent;
   color: #999;
-  font-size: 1.2rem;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 6px;
+  padding: 0;
 }
 
 .clear-search-btn:hover {
   color: var(--color-text-primary);
   background: var(--color-bg-light);
-  border-radius: 6px;
+}
+
+.clear-search-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
 }
 
 /* ===== TABLE ===== */
-.table-wrapper {
+.table-container {
   overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-white);
 }
 
 .orders-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+  table-layout: fixed;
 }
 
 .orders-table thead {
@@ -739,168 +722,150 @@ const formatFullDate = (date) => {
 }
 
 .orders-table th {
-  padding: 14px 16px;
-  text-align: left;
+  padding: 12px;
+  text-align: center;
   color: var(--color-text-secondary);
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
+
+.orders-table th:first-child { text-align: left; }
+.orders-table th:nth-child(2) { text-align: left; }
+
+.orders-table th:nth-child(1) { width: 14.28%; }
+.orders-table th:nth-child(2) { width: 14.28%; }
+.orders-table th:nth-child(3) { width: 14.28%; }
+.orders-table th:nth-child(4) { width: 14.28%; }
+.orders-table th:nth-child(5) { width: 14.28%; }
+.orders-table th:nth-child(6) { width: 14.28%; }
+.orders-table th:nth-child(7) { width: 14.28%; }
 
 .order-row {
   border-bottom: 1px solid var(--color-border);
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease;
+  border-left: 3px solid transparent;
 }
 
-.order-row:hover {
-  background: var(--color-bg-light);
-}
-
-.order-row.status-pending {
-  border-left: 3px solid var(--color-pending);
-}
-
-.order-row.status-delivering {
-  border-left: 3px solid var(--color-delivering);
-}
-
-.order-row.status-completed {
-  border-left: 3px solid var(--color-completed);
-}
+.order-row:hover { background: var(--color-bg-light); }
+.order-row.status-pending { border-left-color: var(--color-pending); }
+.order-row.status-delivering { border-left-color: var(--color-delivering); }
+.order-row.status-completed { border-left-color: var(--color-completed); }
 
 .order-row td {
-  padding: 16px;
+  padding: 12px;
   vertical-align: middle;
   color: var(--color-text-primary);
 }
 
-.order-id {
-  font-weight: 600;
-}
+.col-order-id { text-align: left; }
+.col-customer { text-align: left; }
+.col-items { text-align: center; }
+.col-total { text-align: center; }
+.col-date { text-align: center; }
+.col-status { text-align: center; }
+.col-action { text-align: center; }
 
-.id-badge {
+.col-order-id .id-badge {
   display: inline-block;
-  padding: 6px 10px;
+  padding: 5px 8px;
   background: var(--color-bg-light);
-  border-radius: 6px;
+  border-radius: 5px;
   font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.col-customer .customer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .customer-name {
-  min-width: 150px;
-}
-
-.name-text {
   display: block;
   font-weight: 500;
   color: var(--color-text-primary);
+  font-size: 0.9rem;
 }
 
 .customer-id {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--color-text-secondary);
-  margin-top: 2px;
 }
 
-.items-count {
-  text-align: center;
-}
-
-.item-badge {
+.col-items .item-count {
   display: inline-block;
-  padding: 6px 12px;
-  background: #e8f4f8;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  padding: 4px 10px;
+  background: #e3f2fd;
   color: #01579b;
-}
-
-.total-price {
+  border-radius: 12px;
   font-weight: 600;
-  font-size: 1rem;
-}
-
-.price-text {
-  color: var(--color-primary);
-}
-
-.created-date {
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-  white-space: nowrap;
-}
-
-.status-cell {
+  font-size: 0.8rem;
   text-align: center;
+  min-width: 35px;
+}
+
+.col-total .price {
+  font-weight: 600;
+  color: var(--color-primary);
+  font-size: 0.95rem;
+}
+
+.col-date {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 .status-badge {
   display: inline-block;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  padding: 5px 10px;
+  border-radius: 14px;
+  font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   white-space: nowrap;
 }
 
-.badge-pending {
-  background: #fff3e0;
-  color: #e65100;
-}
+.badge-pending   { background: #fff3e0; color: #e65100; }
+.badge-delivering { background: #e3f2fd; color: #1565c0; }
+.badge-completed  { background: #e8f5e9; color: #2e7d32; }
 
-.badge-delivering {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-
-.badge-completed {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.action-cell {
-  text-align: center;
-}
-
-.action-btn {
+.btn-view-detail {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  background: #2196F3;
+  color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 0.85rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
   cursor: pointer;
   transition: all 0.2s;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
   white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(33, 150, 243, 0.2);
 }
 
-.view-detail-btn {
-  background: var(--color-primary);
-  color: white;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
-}
-
-.view-detail-btn:hover {
-  background: #45a049;
+.btn-view-detail:hover {
+  background: #1976D2;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
 }
 
-.view-detail-btn svg {
-  width: 16px;
-  height: 16px;
+.btn-view-detail svg {
+  width: 13px;
+  height: 13px;
 }
 
 .empty-row td {
@@ -915,16 +880,21 @@ const formatFullDate = (date) => {
 }
 
 .empty-state svg {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   margin-bottom: 16px;
   opacity: 0.5;
-  color: var(--color-text-secondary);
+}
+
+.empty-state h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 8px 0 4px;
 }
 
 .empty-state p {
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 0.85rem;
   margin: 0;
 }
 
@@ -932,7 +902,7 @@ const formatFullDate = (date) => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -942,20 +912,20 @@ const formatFullDate = (date) => {
 }
 
 .modal-content {
-  background: var(--color-bg-white);
-  border-radius: 16px;
+  background: #ffffff;
+  border-radius: 14px;
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22);
+  animation: modalSlideIn 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes modalSlideIn {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+    transform: translateY(12px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -963,13 +933,15 @@ const formatFullDate = (date) => {
   }
 }
 
+/* ===== MODAL HEADER ===== */
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 28px;
-  border-bottom: 1px solid var(--color-border);
-  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  padding: 20px 24px;
+  border-bottom: 1px solid #e8eaed;
+  background: #ffffff;
+  border-radius: 14px 14px 0 0;
 }
 
 .modal-title-section {
@@ -977,132 +949,142 @@ const formatFullDate = (date) => {
 }
 
 .modal-title {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--color-text-primary);
-  margin: 0 0 6px 0;
+  margin: 0 0 3px 0;
 }
 
 .modal-subtitle {
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  color: #999;
   margin: 0;
   font-family: 'Courier New', monospace;
   font-weight: 600;
 }
 
 .modal-close-btn {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border: none;
-  background: transparent;
-  color: var(--color-text-secondary);
+  background: #f5f5f5;
+  color: #666;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all 0.15s;
   border-radius: 8px;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .modal-close-btn:hover {
-  background: var(--color-bg-light);
-  color: var(--color-text-primary);
+  background: #ebebeb;
+  color: #1a1a1a;
 }
 
 .modal-close-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
 }
 
+/* ===== MODAL BODY ===== */
 .modal-body {
-  padding: 28px;
+  background: #f8f9fb;
+  padding: 20px 24px 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
+  border-radius: 0 0 14px 14px;
 }
 
+/* ===== INFO CARDS ===== */
 .info-card {
-  background: var(--color-bg-light);
-  border-radius: 12px;
-  padding: 18px;
-  border: 1px solid var(--color-border);
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #e8eaed;
+  border-left: 3px solid #e8eaed;
 }
+
+.card-customer { border-left-color: #4CAF50; }
+.card-order    { border-left-color: #2196F3; }
+.card-products { border-left-color: #FF9800; }
 
 .card-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #999;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin: 0 0 16px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
 }
 
 .info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 
 .info-label {
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
+  font-size: 0.68rem;
+  color: #aaa;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
   font-weight: 600;
 }
 
 .info-value {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--color-text-primary);
   font-weight: 500;
 }
 
+/* ===== PRODUCTS ===== */
 .products-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .product-item {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px;
-  background: var(--color-bg-white);
+  gap: 12px;
+  padding: 10px;
+  background: #f8f9fb;
   border-radius: 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid #e8eaed;
 }
 
 .product-image {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  background: var(--color-bg-light);
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid #e8eaed;
 }
 
 .product-emoji {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
 }
 
 .product-details {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .product-header {
@@ -1115,127 +1097,94 @@ const formatFullDate = (date) => {
   font-weight: 600;
   color: var(--color-text-primary);
   font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
 }
 
 .product-price {
   font-weight: 700;
   color: var(--color-primary);
+  font-size: 0.9rem;
 }
 
 .product-specs {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--color-text-secondary);
 }
 
 .spec {
   display: inline-block;
-  padding: 2px 8px;
-  background: var(--color-bg-light);
-  border-radius: 4px;
+  padding: 2px 6px;
+  background: #ffffff;
+  border-radius: 3px;
   font-weight: 500;
+  border: 1px solid #e8eaed;
 }
 
+/* ===== SUMMARY ===== */
 .summary-card {
-  border-top: 2px solid var(--color-border);
-  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  background: #ffffff;
+  border-left: none !important;
 }
 
 .summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--color-border);
+  padding: 9px 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .summary-row:last-child {
   border-bottom: none;
+  padding-top: 12px;
 }
 
 .summary-row.total {
-  padding: 16px 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  border-bottom: none;
+  padding: 12px 0 0;
+  border-top: 1.5px solid #e8eaed;
 }
 
 .summary-label {
   color: var(--color-text-secondary);
   font-weight: 500;
+  font-size: 0.88rem;
+}
+
+.summary-row.total .summary-label {
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-size: 0.95rem;
 }
 
 .summary-value {
   font-weight: 600;
   color: var(--color-text-primary);
+  font-size: 0.9rem;
 }
 
-.modal-actions {
-  padding-top: 12px;
-  border-top: 1px solid var(--color-border);
+.summary-row.total .summary-value {
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 1rem;
 }
 
-.status-info {
+/* ===== STATUS BAR (read-only, no buttons) ===== */
+.modal-status-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 12px;
-  background: var(--color-bg-light);
-  border-radius: 8px;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e8eaed;
 }
 
 .status-label {
+  font-size: 0.72rem;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: #aaa;
   text-transform: uppercase;
-  font-size: 0.8rem;
-  letter-spacing: 0.3px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.action-primary,
-.action-secondary {
-  flex: 1;
-  min-width: 140px;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-transform: uppercase;
-}
-
-.action-primary {
-  background: var(--color-primary);
-  color: white;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
-}
-
-.action-primary:hover {
-  background: #45a049;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
-}
-
-.action-secondary {
-  background: var(--color-bg-light);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-}
-
-.action-secondary:hover {
-  background: var(--color-border);
+  letter-spacing: 0.5px;
 }
 
 /* ===== TOAST ===== */
@@ -1243,62 +1192,43 @@ const formatFullDate = (date) => {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  padding: 14px 20px;
-  border-radius: 10px;
-  font-size: 0.9rem;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
   font-weight: 600;
   color: white;
   z-index: 9999;
   box-shadow: var(--shadow-lg);
   display: flex;
   align-items: center;
-  gap: 10px;
-  animation: toastSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes toastSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px) translateX(100px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) translateX(0);
-  }
+  gap: 8px;
 }
 
 .toast-icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
-.toast-success {
-  background: var(--color-completed);
-}
+.toast-success { background: var(--color-completed); }
+.toast-error   { background: #F44336; }
+.toast-warning { background: var(--color-pending); }
 
-.toast-error {
-  background: #F44336;
-}
-
-.toast-warning {
-  background: var(--color-pending);
-}
-
+/* ===== TRANSITIONS ===== */
 .modal-enter-active,
 .modal-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modal-enter-from,
 .modal-leave-to {
   opacity: 0;
-  transform: scale(0.95);
+  transform: scale(0.97);
 }
 
 .toast-enter-active,
 .toast-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .toast-enter-from,
@@ -1308,111 +1238,34 @@ const formatFullDate = (date) => {
 }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .content-wrapper { padding: 20px 24px; }
+  .orders-section { padding: 20px; }
+}
+
 @media (max-width: 768px) {
-  .content-wrapper {
-    padding: 16px 16px;
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .stat-card {
-    padding: 14px;
-    border-radius: 10px;
-  }
-
-  .section-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .orders-table th,
-  .orders-table td {
-    padding: 12px 10px;
-    font-size: 0.8rem;
-  }
-
-  .action-btn {
-    padding: 6px 12px;
-    font-size: 0.75rem;
-  }
-
-  .modal-content {
-    border-radius: 12px;
-    max-height: 95vh;
-  }
-
-  .modal-header {
-    padding: 20px;
-  }
-
-  .modal-body {
-    padding: 20px;
-    gap: 16px;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .action-primary,
-  .action-secondary {
-    min-width: 100px;
-    font-size: 0.85rem;
-  }
+  .sidebar-wrapper { display: none; }
+  .content-wrapper { padding: 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .stat-card { padding: 12px; }
+  .stat-number { font-size: 1.2rem; }
+  .section-header { flex-direction: column; align-items: flex-start; }
+  .orders-table th, .orders-table td { padding: 10px; }
+  .btn-view-detail { padding: 5px 8px; font-size: 0.65rem; }
+  .modal-content { max-height: 95vh; }
+  .info-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
-  .sidebar-wrapper {
-    display: none;
-  }
-
-  .orders-container {
-    flex-direction: column;
-  }
-
-  .content-wrapper {
-    padding: 12px 12px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .stat-card {
-    padding: 12px;
-  }
-
-  .stat-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-  }
-
-  .stat-number {
-    font-size: 1.2rem;
-  }
-
-  .orders-table {
-    font-size: 0.75rem;
-  }
-
-  .orders-table th,
-  .orders-table td {
-    padding: 8px;
-  }
-
-  .view-detail-btn {
-    padding: 6px 8px;
-    font-size: 0.7rem;
-  }
-
-  .modal-content {
-    max-width: 95vw;
-  }
+  .content-wrapper { padding: 12px; gap: 16px; }
+  .stats-grid { grid-template-columns: 1fr; gap: 10px; }
+  .stat-card { padding: 10px; }
+  .stat-icon { width: 40px; height: 40px; font-size: 1.2rem; }
+  .orders-table { font-size: 0.8rem; }
+  .orders-table th, .orders-table td { padding: 8px; }
+  .btn-view-detail { padding: 4px 6px; font-size: 0.6rem; }
+  .modal-content { max-width: 95vw; }
+  .modal-header { padding: 14px 16px; }
+  .modal-body { padding: 14px 16px 18px; gap: 10px; }
 }
 </style>
