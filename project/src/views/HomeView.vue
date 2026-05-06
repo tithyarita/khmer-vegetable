@@ -39,7 +39,7 @@ import Farm from '../components/Customer/FarmerCard.vue'
 import Card from '../components/Customer/Card.vue'
 import Deals from '../components/Customer/DealsCard.vue'
 import Footer from '../components/Customer/Footer.vue'
-import FashDeal from './User/FashDeal.vue'
+import FashDeal from './User/fashDeals.vue'
 </script>
 
 <style scoped>
