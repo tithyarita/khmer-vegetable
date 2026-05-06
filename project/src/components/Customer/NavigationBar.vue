@@ -75,8 +75,14 @@
 </template>
 
 <script>
+import { useCartStore } from '../../stores/cartStore'
+
 export default {
   name: 'NavigationBar',
+  setup() {
+    const cartStore = useCartStore()
+    return { cartStore }
+  },
   data() {
     return {
       query: '',
@@ -84,6 +90,14 @@ export default {
       active: 'Home',
       isFavorited: false,
       categories: ['Home', 'Tracker Orders', 'My Orders'],
+    }
+  },
+  computed: {
+    count() {
+      return this.cartStore.cartCount
+    },
+    favoriteCount() {
+      return 0 // TODO: connect to favorites store
     }
   },
   methods: {

@@ -4,11 +4,12 @@
       <div
         class="farmer-card"
         v-for="(farmer, index) in farmers"
-        :key="farmer.name"
+        :key="index"
         :style="{ animationDelay: `${0.1 + index * 0.1}s` }"
       >
-        <div class="avatar-wrap">
-          <div class="avatar">{{ farmer.emoji }}</div>
+        <!-- Avatar Image -->
+        <div class="avatar">
+          <img :src="farmer.image" :alt="farmer.name" />
         </div>
 
         <div class="farmer-name">{{ farmer.name }}</div>
@@ -18,71 +19,68 @@
 
         <p class="farmer-desc">{{ farmer.desc }}</p>
       </div>
-
-
-      
     </div>
   </section>
 </template>
 
 <script setup>
 import { ref } from "vue";
+import Profile from "../../assets/images/profile.png";
 
 const farmers = ref([
   {
-    emoji: "👨‍🌾",
-    name: "Pu Sok",
+    image: Profile,
+    name: "G Davit",
     farm: "Green Valley Farms",
     desc: "Specializes in organic leafy greens and crisp heirloom lettuces harvested daily.",
   },
   {
-    emoji: "👩‍🌾",
-    name: "Farmer Sarah",
-    farm: "Rooted Earth Homestead",
-    desc: "Dedicated to growing nutrient-rich root vegetables and seasonal heritage tubers.",
-  },
-  {
-    emoji: "👨‍🌾",
-    name: "Pu Sok",
+    image: Profile,
+    name: "G Davit",
     farm: "Green Valley Farms",
     desc: "Specializes in organic leafy greens and crisp heirloom lettuces harvested daily.",
   },
   {
-    emoji: "👩‍🌾",
-    name: "Farmer Sarah",
-    farm: "Rooted Earth Homestead",
-    desc: "Dedicated to growing nutrient-rich root vegetables and seasonal heritage tubers.",
+    image: Profile,
+    name: "G Davit",
+    farm: "Green Valley Farms",
+    desc: "Specializes in organic leafy greens and crisp heirloom lettuces harvested daily.",
+  },
+  {
+    image: Profile,
+    name: "G Davit",
+    farm: "Green Valley Farms",
+    desc: "Specializes in organic leafy greens and crisp heirloom lettuces harvested daily.",
   },
 ]);
 </script>
 
 <style scoped>
-/* ── Base Reset ── */
+/* RESET */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* ── SECTION ── */
+/* SECTION */
 .farmers-section {
   width: 100%;
   max-width: 1080px;
   margin: 0 auto;
   padding: 24px 16px;
   font-family: 'Manrope', sans-serif;
-  color: #1c1c1e; /* FIX: global text color */
+  color: #1c1c1e;
 }
 
-/* ── GRID ── */
+/* GRID */
 .farmers-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
-  width: 100%;
 }
 
-/* ── FARMER CARD ── */
+/* CARD */
 .farmer-card {
   background: #fff;
   border-radius: 12px;
@@ -93,33 +91,33 @@ const farmers = ref([
   text-align: center;
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
   transition: transform 0.25s ease;
-  min-width: 0;
   animation: fadeUp 0.6s both;
-  color: #1c1c1e; /* FIX */
 }
 
 .farmer-card:hover {
   transform: translateY(-8px);
 }
 
-/* ── AVATAR ── */
+/* AVATAR (FIXED) */
 .avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
+  overflow: hidden;
   background: #e8f5ee;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 44px;
 }
 
-/* ── TEXT FIXES ── */
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* TEXT */
 .farmer-name {
   font-size: 15px;
   font-weight: 700;
   margin-top: 14px;
-  color: #1c1c1e;
 }
 
 .farmer-farm {
@@ -143,8 +141,7 @@ const farmers = ref([
   line-height: 1.6;
 }
 
-
-/* ── ANIMATION ── */
+/* ANIMATION */
 @keyframes fadeUp {
   from {
     opacity: 0;
@@ -156,25 +153,16 @@ const farmers = ref([
   }
 }
 
-/* ── RESPONSIVE ── */
+/* RESPONSIVE */
 @media (max-width: 1024px) {
   .farmers-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  }
-
-  .support-card {
-    grid-column: 1 / -1;
   }
 }
 
 @media (max-width: 600px) {
   .farmers-grid {
     grid-template-columns: 1fr;
-  }
-
-  .support-card {
-    flex-direction: column;
-    text-align: center;
   }
 }
 </style>

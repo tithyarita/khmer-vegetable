@@ -56,8 +56,16 @@
 </template>
 
 <script>
+import Tomato from '../../assets/images/Tomato3.png'
+import { useCartStore } from '../../stores/cartStore'
 export default {
+
   name: "ProductCards",
+
+  setup() {
+    const cartStore = useCartStore()
+    return { cartStore }
+  },
 
   data() {
     return {
@@ -72,7 +80,7 @@ export default {
           badge: "HOT",
           discount: 22,
           label: "ORGANIC\nSAFE WORK",
-          image: "https://images.unsplash.com/photo-1524179091875-bf99a9a6af57?w=400&q=80"
+          image: Tomato
         },
         {
           id: 2,
@@ -84,7 +92,7 @@ export default {
           badge: "SALE",
           discount: 20,
           label: null,
-          image: "https://images.unsplash.com/photo-1585278407894-e2a1386378d9?w=400&q=80"
+          image: Tomato
         },
         {
           id: 3,
@@ -96,7 +104,7 @@ export default {
           badge: null,
           discount: 14,
           label: null,
-          image: "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400&q=80"
+          image: Tomato
         },
         {
           id: 4,
@@ -107,7 +115,7 @@ export default {
           rating: 5.0,
           badge: "NEW",
           label: null,
-          image: "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400&q=80"
+          image: Tomato
         },
           {
           id: 5,
@@ -118,7 +126,7 @@ export default {
           rating: 5.0,
           badge: "NEW",
           label: null,
-          image: "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400&q=80"
+          image: Tomato
         }
       ]
     };
@@ -135,7 +143,8 @@ export default {
     },
 
     addToCart(product) {
-      console.log("Added to cart:", product.name);
+      this.cartStore.addToCart(product)
+      console.log("Added to cart:", product.name)
     }
   }
 };
