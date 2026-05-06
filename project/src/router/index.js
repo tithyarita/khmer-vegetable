@@ -3,11 +3,17 @@ import { createRouter, createWebHistory } from 'vue-router'
 // ==================== Layouts ====================
 import StaffLayout from '../Layout/StaffLayout.vue'
 import AdminLayout from '../Layout/AdminLayout.vue'
+import CustomerLayout from '../Layout/CustomerLayout.vue'
 
 // ==================== Public ====================
 import HomeView from '../views/HomeView.vue'
 import CartView from '../views/CartView.vue'
 import FavoritesView from '../views/FavoritesView.vue'
+
+// ==================== Customer ====================
+import OrderTracker from '../views/User/OrderTracker.vue'
+import ProductList from '../components/Customer/Productlist.vue'
+
 
 // ==================== Provider ====================
 import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
@@ -37,9 +43,6 @@ import AdminSetting from '../views/Admin/AdminSetting.vue'
 import UserRegister from '../views/User/resgister.vue'
 import UserLogin from '../views/User/login.vue'
 
-// ==================== Application ====================
-import ProviderApplicationForm from '../views/Provider/Providerapplicationform.vue'
-
 // ==================== Routes ====================
 const routes = [
   // -------- Public --------
@@ -47,10 +50,19 @@ const routes = [
   { path: '/cart', name: 'Cart', component: CartView },
   { path: '/favorites', name: 'Favorites', component: FavoritesView },
   { path: '/about', component: () => import('../views/AboutView.vue') },
-
+  // -------- Customer --------
+  {
+    path: '/customer',
+    component: CustomerLayout,
+    children: [
+      {path: 'order-tracker', component: OrderTracker },
+      {path: 'products-list', component: ProductList },
+    ],
+  },
   // -------- Provider --------
   {
     path: '/provider',
+    component: { template: '<router-view />' },
     redirect: '/provider/dashboard',
     children: [
       { path: 'dashboard', component: ProviderDashboard },
@@ -60,7 +72,6 @@ const routes = [
       { path: 'profile', component: ProfileSettingProvider },
       {
         path: 'product/:id',
-        name: 'productDetail',
         component: ProductDetail,
         props: true,
       },
@@ -100,34 +111,12 @@ const routes = [
   // -------- Auth --------
   { path: '/user/login', name: 'Login', component: UserLogin },
   { path: '/user/register', name: 'Register', component: UserRegister },
-  { path: '/apply', name: 'ProviderApplication', component: ProviderApplicationForm },
 ]
 
 // ==================== Router ====================
-
 const router = createRouter({
   history: createWebHistory(),
   routes,
 })
-
-
-// Global navigation guard for role-based dashboard access
-router.beforeEach((to, from) => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (to.path.startsWith('/admin')) {
-    if (!user || user.role !== 'admin') {
-      // Not admin, redirect to login or home
-      return '/user/login';
-    }
-  }
-  if (to.path.startsWith('/provider')) {
-    if (!user || user.role !== 'provider') {
-      // Not provider, redirect to login or home
-      return '/user/login';
-    }
-  }
-  // Allow navigation
-  return true;
-});
 
 export default router
