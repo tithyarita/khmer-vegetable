@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Provider } from './providers.entity';
+import { ProviderApplication } from './provider-application.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Provider])],
+  imports: [TypeOrmModule.forFeature([ProviderApplication])],
 })
 export class ApplicationsModule {}

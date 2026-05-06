@@ -37,6 +37,9 @@ import AdminSetting from '../views/Admin/AdminSetting.vue'
 import UserRegister from '../views/User/resgister.vue'
 import UserLogin from '../views/User/login.vue'
 
+// ==================== Application ====================
+import ProviderApplicationForm from '../views/Provider/Providerapplicationform.vue'
+
 // ==================== Routes ====================
 const routes = [
   // -------- Public --------
@@ -97,6 +100,7 @@ const routes = [
   // -------- Auth --------
   { path: '/user/login', name: 'Login', component: UserLogin },
   { path: '/user/register', name: 'Register', component: UserRegister },
+  { path: '/apply', name: 'ProviderApplication', component: ProviderApplicationForm },
 ]
 
 // ==================== Router ====================
