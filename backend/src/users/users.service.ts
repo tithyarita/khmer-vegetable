@@ -28,7 +28,14 @@ export class UsersService {
 
   async validateUser(email: string, password: string): Promise<users | undefined> {
     const user = await this.usersRepository.findOne({ where: { email } });
-    if (user && await bcrypt.compare(password, user.password)) {
+    if (!user) {
+      console.log('User not found for email:', email);
+      return undefined;
+    }
+    console.log('User found:', user.email, 'Hashed password:', user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log('Password match result:', isMatch);
+    if (isMatch) {
       return user;
     }
     return undefined;

@@ -93,7 +93,7 @@ async function handleLogin(e) {
     )
 
     const user = res.data.user
-    const token = res.data.token
+    const token = res.data.access_token
 
     // ❗ safety check
     if (!user || !user.role) {
@@ -104,15 +104,13 @@ async function handleLogin(e) {
     localStorage.setItem("user", JSON.stringify(user))
     localStorage.setItem("token", token)
 
-    // 🚀 ROLE REDIRECT (THIS FIXES YOUR ISSUE)
+    // 🚀 ROLE REDIRECT
     if (user.role === "admin") {
       router.push("/admin/dashboard")
-    } 
-    else if (user.role === "provider") {
+    } else if (user.role === "provider") {
       router.push("/provider/dashboard")
-    } 
-    else {
-      router.push("/customer/dashboard")
+    } else {
+      router.push("/") // customer goes to homepage
     }
 
   } catch (err) {
