@@ -25,6 +25,7 @@ import ProductDetail from '../views/Provider/ProductDetail.vue'
 import ProfileSettingProvider from '../views/Provider/ProfileSettingProvider.vue'
 import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
 import ProviderOrders from '@/views/Provider/ProviderOrders.vue'
+import ProviderApplicationForm from '../views/Provider/Providerapplicationform.vue'
 
 // ==================== Staff ====================
 import DashboardView from '../views/Staff/Dashboardview.vue'
@@ -81,18 +82,6 @@ const routes = [
     ],
   },
 
-  // -------- Staff --------
-  {
-    path: '/staff',
-    component: StaffLayout,
-    children: [
-      { path: '', redirect: '/staff/dashboard' },
-      { path: 'dashboard', component: DashboardView },
-      { path: 'applications', component: ApplicationsView },
-      { path: 'details', component: ApplicationDetailsView },
-      { path: 'profile', component: ProfileView },
-    ],
-  },
 
   // -------- Admin --------
   {
@@ -122,6 +111,19 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
 
   routes: [
+
+    // -------- Staff --------
+  {
+    path: '/staff',
+    component: StaffLayout,
+    children: [
+      { path: '', redirect: '/staff/dashboard' },
+      { path: 'dashboard', component: DashboardView },
+      { path: 'applications', component: ApplicationsView },
+      { path: 'applications/:id', name: 'ApplicationDetail', component: ApplicationDetailsView }, 
+      { path: 'profile', component: ProfileView },
+    ],
+  },
 
     // Public
 
@@ -393,6 +395,8 @@ const router = createRouter({
       component: UserLogin,
 
     },
+
+    { path: '/apply', name: 'ProviderApplication', component: ProviderApplicationForm },
 
   ],
 

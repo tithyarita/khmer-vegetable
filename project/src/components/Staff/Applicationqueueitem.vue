@@ -42,7 +42,7 @@
 
     <!-- Action button -->
     <div class="qi-action">
-      <router-link to="/staff/details" class="btn-details" @click="$emit('view', applicant)">
+      <router-link :to="`/staff/applications/${id}`" class="btn-details">
         View Details
       </router-link>
 
@@ -54,9 +54,10 @@
 import { computed } from 'vue'
 
 const props = defineProps({
+  id:          { type: Number, required: true },   
   applicant:   { type: Object, required: true },
   farm:        { type: Object, required: true },
-  submittedAt: { type: String, required: true },  // e.g. "Oct 24, 2023 14:22 PM"
+  submittedAt: { type: String, required: true },  
   status:      { type: String, default: 'pending' },
 })
 
