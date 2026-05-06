@@ -100,9 +100,28 @@ const routes = [
 ]
 
 // ==================== Router ====================
+
 const router = createRouter({
   history: createWebHistory(),
   routes,
 })
+
+// Global navigation guard for role-based dashboard access
+router.beforeEach((to, from, next) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (to.path.startsWith('/admin')) {
+    if (!user || user.role !== 'admin') {
+      // Not admin, redirect to login or home
+      return next('/user/login');
+    }
+  }
+  if (to.path.startsWith('/provider')) {
+    if (!user || user.role !== 'provider') {
+      // Not provider, redirect to login or home
+      return next('/user/login');
+    }
+  }
+  next();
+});
 
 export default router
