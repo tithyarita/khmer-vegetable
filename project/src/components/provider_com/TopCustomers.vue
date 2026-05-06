@@ -476,50 +476,57 @@ const getStatusBadgeClass = (status) => {
 
 <style scoped>
 .top-customers-section {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e8e8e8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 h5 {
-  font-weight: 600;
-  color: #212529;
-  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  font-size: 16px;
 }
 
 .btn-link {
-  color: #0d6efd;
-  font-weight: 500;
-  font-size: 0.9rem;
+  color: #1a3d2a;
+  font-weight: 600;
+  font-size: 12px;
 }
 
 .btn-link:hover {
-  color: #0b5ed7;
+  color: #0f2818;
 }
 
 .table {
-  font-size: 0.95rem;
+  font-size: 13px;
 }
 
 .table thead th {
-  background-color: #f8f9fa;
-  font-size: 0.85rem;
-  padding: 1rem;
+  background-color: #f9faf9;
+  font-size: 9.5px;
+  padding: 12px;
   border: none;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
 .table tbody tr {
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s;
 }
 
 .table tbody tr:hover {
-  background-color: #f8f9fa;
+  background-color: #fafbfa;
 }
 
 .table tbody td {
   vertical-align: middle;
-  padding: 1rem;
+  padding: 12px;
+  color: #6b7280;
 }
 
 .customer-info {
@@ -533,37 +540,37 @@ h5 {
 }
 
 .customer-avatar img {
-  width: 40px;
-  height: 40px;
+  width: 35px;
+  height: 35px;
   object-fit: cover;
-  border: 2px solid #e9ecef;
+  border: 1px solid #e8e8e8;
 }
 
 .customer-details p {
-  font-size: 0.9rem;
+  font-size: 12px;
 }
 
 .btn-view-orders {
-  background-color: #0d6efd;
+  background-color: #1a3d2a;
   color: white;
   border: none;
   border-radius: 6px;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  padding: 5px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
 .btn-view-orders:hover {
-  background-color: #0b5ed7;
+  background-color: #0f2818;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(13, 110, 253, 0.25);
+  box-shadow: 0 2px 4px rgba(45, 106, 79, 0.25);
 }
 
 .badge {
-  font-size: 0.75rem;
-  padding: 0.4rem 0.8rem;
-  font-weight: 500;
+  font-size: 9.5px;
+  padding: 3px 8px;
+  font-weight: 700;
 }
 
 /* Modal Styles */
@@ -573,16 +580,17 @@ h5 {
 
 .modal-content {
   border-radius: 12px;
-  border: 1px solid #e9ecef;
+  border: 1px solid #e8e8e8;
 }
 
 .modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #1a3d2a;
   border-radius: 12px 12px 0 0;
 }
 
 .modal-header .modal-title {
   color: white;
+  font-weight: 700;
 }
 
 .modal-header .text-muted {
@@ -590,7 +598,7 @@ h5 {
 }
 
 .modal-body {
-  background-color: #f8f9fa;
+  background-color: #fafbfa;
 }
 
 .summary-item {
