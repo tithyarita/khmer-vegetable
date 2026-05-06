@@ -3,7 +3,6 @@
     <div class="footer-main">
       <div class="container">
 
-        <!-- Brand Column -->
         <div class="footer-col brand-col">
           <h2 class="brand-name">Nest Mart</h2>
           <p class="brand-desc">Cultivating freshness daily. Direct from local sustainable farms to your kitchen.</p>
@@ -24,58 +23,19 @@
           </div>
         </div>
 
-        <!-- Company Column -->
         <div class="footer-col">
-          <h3 class="col-title">Company</h3>
+          <h3 class="col-title">Quick Links</h3>
           <ul class="col-links">
             <li><a href="#">About Us</a></li>
-            <li><a href="#">Our Farmers</a></li>
-            <li><a href="#">Careers</a></li>
-            <li><a href="#">Press</a></li>
-          </ul>
-        </div>
-
-        <!-- Services Column -->
-        <div class="footer-col">
-          <h3 class="col-title">Services</h3>
-          <ul class="col-links">
             <li><a href="#">Delivery Info</a></li>
-            <li><a href="#">Bulk Orders</a></li>
-            <li><a href="#">Sustainability</a></li>
-            <li><a href="#">Gift Cards</a></li>
+            <li><a href="#">Support</a></li>
+            <li><a href="#">Contact</a></li>
           </ul>
-        </div>
-
-        <!-- Support Column -->
-        <div class="footer-col">
-          <h3 class="col-title">Support</h3>
-          <ul class="col-links">
-            <li><a href="#">Contact Support</a></li>
-            <li><a href="#">Returns Policy</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Help Center</a></li>
-          </ul>
-        </div>
-
-        <!-- Newsletter Column -->
-        <div class="footer-col newsletter-col">
-          <h3 class="col-title">Join the Community</h3>
-          <p class="newsletter-desc">Subscribe for seasonal updates and exclusive organic offers.</p>
-          <div class="newsletter-form">
-            <input
-              v-model="email"
-              type="email"
-              placeholder="Email address"
-              class="email-input"
-            />
-            <button class="btn-join" @click="handleJoin">Join</button>
-          </div>
         </div>
 
       </div>
     </div>
 
-    <!-- Bottom Bar -->
     <div class="footer-bottom">
       <div class="container bottom-inner">
         <p class="copyright">© 2024 Nest Mart. All rights reserved. Cultivating freshness daily.</p>
@@ -91,18 +51,7 @@
 
 <script>
 export default {
-  name: 'FooterSection',
-  data() {
-    return {
-      email: ''
-    }
-  },
-  methods: {
-    handleJoin() {
-      console.log('Subscribe:', this.email)
-      this.email = ''
-    }
-  }
+  name: 'FooterSection'
 }
 </script>
 
