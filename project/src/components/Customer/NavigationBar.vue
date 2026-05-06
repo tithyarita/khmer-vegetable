@@ -6,7 +6,7 @@
           <span class="logo-text">Logo</span>
         </div>
 
-        <div class="search">
+        <div class="search" @click="toSearch">
           <svg class="search-icon" width="16" height="16" viewBox="0 0 20 20" fill="none">
             <circle cx="9" cy="9" r="6" stroke="#9CA3AF" stroke-width="1.6"/>
             <path d="M13.5 13.5L17 17" stroke="#9CA3AF" stroke-width="1.6" stroke-linecap="round"/>
@@ -22,16 +22,13 @@
             <span>{{ location }}</span>
           </div>
 
-          <button class="btn-login">Login</button>
-          <button class="btn-register">Register</button>
+          <button class="btn-login" @click="goToLogin">Login</button>
+          <button class="btn-register" @click="goToRegister">Register</button>
         </div>
 
       </div>
     </div>
     <div class="divider"></div>
-    
-
-    <!-- Bottom row -->
     <div class="navbar-bottom">
     <hr>
       <div class="container">
@@ -61,8 +58,6 @@
             </svg>
             <span v-if="favoriteCount > 0" class="badge">{{ favoriteCount }}</span>
           </div>
-
-          <!-- Cart Button -->
           <div class="cart" @click="goToCart">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#2D7A3A" stroke-width="1.8"/>
@@ -86,24 +81,47 @@ export default {
     return {
       query: '',
       location: 'Phnom Penh, Cambodia',
-      active: 'Leafy Greens',
-      count: 2,
-      favoriteCount: 3,
+      active: 'Home',
       isFavorited: false,
-      categories: ['Leafy Greens', 'Root Veg', 'Cruciferous', 'Seasonal'],
+      categories: ['Home', 'Tracker Orders', 'My Orders'],
     }
   },
   methods: {
-    setCategory(cat) {
-      this.active = cat
-    },
-    goToCart() {
-      this.$router.push('/cart')
-    },
-    toggleFavorite() {
-      this.$router.push('/favorites')
+  setCategory(cat) {
+    this.active = cat
+
+    // navigate based on category
+    if (cat === 'Home') {
+      this.$router.push('/')
+    } 
+    else if (cat === 'Tracker Orders') {
+      this.$router.push('/customer/order-tracker')
+    } 
+    else if (cat === 'My Orders') {
+      this.$router.push('/customer/my-orders')
     }
+  },
+
+  toSearch() {
+    this.$router.push('/customer/products-list')
+  },
+
+  goToCart() {
+    this.$router.push('/cart')
+  },
+
+  toggleFavorite() {
+    this.$router.push('/favorites')
+  },
+
+  goToLogin() {
+    this.$router.push('/user/login')
+  },
+
+  goToRegister() {
+    this.$router.push('/user/register')
   }
+}
 }
 </script>
 
@@ -121,42 +139,39 @@ export default {
   flex-direction: column;
 }
 
-/* CENTER CONTENT */
 .container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 0px;
 }
-
-/* TOP */
 .navbar-top {
   width: 100%;
-  padding: 12px 0;
+  padding: 2px 0;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
 }
 
 .logo-text {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
 }
 
 .search {
   flex: 1;
-  max-width: 500px;
+  max-width: 400px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   border: 1.5px solid #e5e7eb;
   border-radius: 999px;
-  padding: 8px 16px;
+  padding: 5px 5px;
   background: #f9fafb;
-  margin: 0 20px;
+  margin: 0 25px;
 }
 
 .search input {
@@ -166,11 +181,10 @@ export default {
   width: 100%;
 }
 
-/* RIGHT */
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
 }
 
 .location {
@@ -191,51 +205,44 @@ export default {
   background: #1a5c27;
   border: none;
   color: white;
-  padding: 8px 18px;
+  padding: 0px 15px;
   border-radius: 999px;
   cursor: pointer;
 }
-
-
 .divider {
   height: 1px;
   background: #e5e7eb;
 }
-
 .navbar-bottom {
   width: 100%;
 }
-
 .categories {
   display: flex;
   list-style: none;
   margin: 0;
   padding: 0;
 }
-
 .categories li {
-  padding: 12px 16px;
+  padding: 0px 10px;
   cursor: pointer;
   color: #6b7280;
 }
-
 .categories li.active {
   color: #2D7A3A;
   font-weight: 600;
   border-bottom: 2px solid #2D7A3A;
 }
 
-/* ACTIONS GROUP */
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
 }
 
 .favorite {
   position: relative;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   background: #e6f4ea;
   border-radius: 50%;
   display: flex;
@@ -244,15 +251,13 @@ export default {
   cursor: pointer;
   transition: background 0.2s;
 }
-
 .favorite:hover {
   background: #d0ecda;
 }
-
 .cart {
   position: relative;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   background: #e6f4ea;
   border-radius: 50%;
   display: flex;
@@ -261,11 +266,9 @@ export default {
   cursor: pointer;
   transition: background 0.2s;
 }
-
 .cart:hover {
   background: #d0ecda;
 }
-
 .badge {
   position: absolute;
   top: -2px;
@@ -280,7 +283,6 @@ export default {
   align-items: center;
   justify-content: center;
 }
-
 .navbar-top .container,
 .navbar-bottom .container {
   display: flex;
