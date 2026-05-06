@@ -9,6 +9,9 @@ import CustomerLayout from '../Layout/CustomerLayout.vue'
 import HomeView from '../views/HomeView.vue'
 import CartView from '../views/CartView.vue'
 import FavoritesView from '../views/FavoritesView.vue'
+import CheckoutView from '../views/CheckoutView.vue'
+import AddressView from '../views/AddressView.vue'
+import ReceiptView from '../views/ReceiptView.vue'
 
 // ==================== Customer ====================
 import OrderTracker from '../views/User/OrderTracker.vue'
@@ -115,8 +118,284 @@ const routes = [
 
 // ==================== Router ====================
 const router = createRouter({
-  history: createWebHistory(),
-  routes,
+
+  history: createWebHistory(import.meta.env.BASE_URL),
+
+  routes: [
+
+    // Public
+
+    {
+      path: '/',
+      name: 'Home',
+      component: HomeView,
+    },
+    {
+      path: '/about',
+      name: 'About',
+      component: () => import('../views/AboutView.vue'),
+    },
+    {
+      path: '/cart',
+      name: 'Cart',
+      component: CartView,
+    },
+    {
+      path: '/favorites',
+      name: 'Favorites',
+      component: FavoritesView,
+    },
+    {
+      path: '/checkout',
+      name: 'Checkout',
+      component: CheckoutView,
+    },
+    {
+      path: '/address',
+      name: 'Address',
+      component: AddressView,
+    },
+    {
+      path: '/receipt',
+      name: 'Receipt',
+      component: ReceiptView,
+    },
+
+
+    // Provider
+
+    {
+
+      path: '/provider-dashboard',
+
+      name: 'ProviderDashboard',
+
+      component: ProviderDashboard,
+
+    },
+
+    {
+
+      path: '/provider-products',
+
+      name: 'ProviderProducts',
+
+      component: ProviderProduct,
+
+    },
+
+    {
+
+      path: '/product-detail/:id',
+
+      name: 'ProductDetail',
+
+      component: ProductDetail,
+
+      props: true,
+
+    },
+
+    {
+
+      path: '/provider-revenue',
+
+      name: 'ProviderRevenue',
+
+      component: ProviderRevenue,
+
+    },
+
+    {
+
+      path: '/provider-profile',
+
+      name: 'ProviderProfile',
+
+      component: ProfileSettingProvider,
+
+    },
+
+    {
+
+      path: '/staff',
+
+      component: StaffLayout,
+
+      children: [
+
+        {
+
+          path: '',
+
+          redirect: '/staff/dashboard',
+
+        },
+
+        {
+
+          path: 'dashboard',
+
+          name: 'StaffDashboard',
+
+          component: DashboardView,
+
+        },
+
+        {
+
+          path: 'applications',
+
+          name: 'Applications',
+
+          component: ApplicationsView,
+
+        },
+
+        {
+
+          path: 'profile',
+
+          name: 'StaffProfile',
+
+          component: ProfileView,
+
+        },
+
+      ],
+
+    },
+
+
+
+    // Admin
+
+    {
+
+      path: '/admin',
+
+      component: AdminLayout,
+
+      children: [
+
+        {
+
+          path: '',
+
+          redirect: '/admin/dashboard',
+
+        },
+
+        {
+
+          path: 'dashboard',
+
+          name: 'AdminDashboard',
+
+          component: AdminDashboard,
+
+        },
+
+        {
+
+          path: 'staff',
+
+          name: 'AdminStaff',
+
+          component: StaffManagement,
+
+        },
+
+        {
+
+          path: 'providers',
+
+          name: 'AdminProviders',
+
+          component: ProviderManagement,
+
+        },
+
+        {
+
+          path: 'users',
+
+          name: 'AdminUsers',
+
+          component: UserManagement,
+
+        },
+
+        {
+
+          path: 'products',
+
+          name: 'AdminProducts',
+
+          component: ProductManagement,
+
+        },
+
+        {
+
+          path: 'orders',
+
+          name: 'AdminOrders',
+
+          component: OrdersManagement,
+
+        },
+
+        {
+
+          path: 'reports',
+
+          name: 'AdminReports',
+
+          component: Reports,
+
+        },
+
+        {
+
+          path: 'settings',
+
+          name: 'AdminSettings',
+
+          component: AdminSetting,
+
+        },
+
+      ],
+
+    },
+
+
+
+    // User (Auth)
+
+    {
+
+      path: '/user/register',
+
+      name: 'UserRegister',
+
+      component: UserRegister,
+
+    },
+
+    {
+
+      path: '/user/login',
+
+      name: 'UserLogin',
+
+      component: UserLogin,
+
+    },
+
+  ],
+
 })
 
 export default router
