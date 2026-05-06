@@ -9,22 +9,23 @@
       <div class="section-inner">
         <div class="section-header">
           <h2 class="section-title">Popular Vegetables</h2>
-          <a href="#" class="see-all">All Deals →</a>
+          <a href="#" class="see-all">All Vegetables →</a>
         </div>
         <Card />
+        <br>
+        <FashDeal />
+        <br>
           <div class="section-header">
-          <h2 class="section-title">Popular Vegetables</h2>
-          <a href="#" class="see-all">All Deals →</a>
+          <h2 class="section-title">Meet Our Farmers</h2>
+          <a href="#" class="see-all">All Farmers →</a>
         </div>
-      
-          
+  
         <Farm />
           <div class="section-header">
-          <h2 class="section-title">Popular Vegetables</h2>
+          <h2 class="section-title">Special Deals</h2>
           <a href="#" class="see-all">All Deals →</a>
         </div>
         <Deals />
-        
       </div>
     </section>
     <Footer />
@@ -38,6 +39,7 @@ import Farm from '../components/Customer/FarmerCard.vue'
 import Card from '../components/Customer/Card.vue'
 import Deals from '../components/Customer/DealsCard.vue'
 import Footer from '../components/Customer/Footer.vue'
+import FashDeal from './User/FashDeal.vue'
 </script>
 
 <style scoped>
@@ -109,7 +111,7 @@ import Footer from '../components/Customer/Footer.vue'
 
 .farmers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 20px;
 }
 
