@@ -528,6 +528,7 @@ const formatFullDate = (date) => {
   flex-shrink: 0;
   background: var(--color-bg-white);
   border-right: 1px solid var(--color-border);
+  overflow: hidden;
 }
 
 .main-content {

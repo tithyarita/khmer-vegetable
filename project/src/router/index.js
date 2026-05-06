@@ -62,7 +62,7 @@ const routes = [
   // -------- Provider --------
   {
     path: '/provider',
-    component: { template: '<router-view />' },
+    // component: { template: '<router-view />' },
     redirect: '/provider/dashboard',
     children: [
       { path: 'dashboard', component: ProviderDashboard },

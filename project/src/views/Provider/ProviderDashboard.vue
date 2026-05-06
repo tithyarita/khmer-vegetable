@@ -120,7 +120,7 @@ const viewProductDetail = (productId) => {
   width: 250px;
   background-color: #f8f9fa;
   border-right: 1px solid #dee2e6;
-  overflow-y: auto;
+  overflow: hidden;
   flex-shrink: 0;
 }
 
