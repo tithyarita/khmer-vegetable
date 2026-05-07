@@ -44,6 +44,7 @@
       <ApplicationQueueItem
         v-for="app in filtered"
         :key="app.id"
+        :id="app.id"
         :applicant="app.applicant"
         :farm="app.farm"
         :submittedAt="app.submittedAt"
@@ -65,9 +66,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Nested route for application details -->
-    <router-view />
 
     <!-- Footer strip -->
     <div class="system-footer">
@@ -127,9 +125,9 @@ const pendingCount = computed(() =>
   applications.filter(a => a.status === 'pending').length
 )
 
-function onView(applicant) {
-  console.log('View details for:', applicant)
-  // TODO: navigate to a detail page or open a modal
+function onView(id) {
+  // Navigation is handled by router-link in the child — this is now a no-op
+  // but you could also do: router.push(`/staff/applications/${id}`)
 }
 </script>
 

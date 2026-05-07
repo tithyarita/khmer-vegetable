@@ -5,7 +5,6 @@
       :key="product.id"
       class="product-card"
     >
-      <!-- Image -->
       <div class="card-image">
         <img :src="product.image" :alt="product.name" />
 
@@ -17,14 +16,17 @@
         >
           {{ product.badge }}
         </span>
-
-        <!-- Label -->
+        <!-- Discount Badge -->
+        <span
+          v-if="product.discount"
+          class="badge badge-discount"
+        >
+          -{{ product.discount }}%
+        </span>
         <div v-if="product.label" class="image-label">
           {{ product.label }}
         </div>
       </div>
-
-      <!-- Body -->
       <div class="card-body">
         <p class="category">{{ product.category }}</p>
         <h3 class="product-name">{{ product.name }}</h3>
@@ -54,155 +56,205 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
-import { useProductStore } from '../../stores/productStore'
-
+import Tomato from '../../assets/images/Tomato3.png'
+import { useCartStore } from '../../stores/cartStore'
 export default {
+
   name: "ProductCards",
 
   setup() {
-    const productStore = useProductStore()
-    const products = ref([])
+    const cartStore = useCartStore()
+    return { cartStore }
+  },
 
-    onMounted(async () => {
-      try {
-        // Fetch products from API
-        if (!productStore.products || productStore.products.length === 0) {
-          await productStore.fetchAllProducts()
-        }
-        // Transform products for display
-        products.value = productStore.products.slice(0, 8).map(p => ({
-          id: p.id,
-          name: p.name,
-          category: p.category,
-          price: p.price,
-          originalPrice: p.price * 1.2, // Add markup for display
-          rating: 4.5,
-          badge: p.discount > 0 ? "SALE" : "HOT",
-          image: p.image || 'https://via.placeholder.com/300',
-        }))
-      } catch (error) {
-        console.error('Error loading products:', error)
-      }
-    })
-
-    const badgeClass = (badge) => {
-      return badge === 'HOT' ? 'badge-hot' : badge === 'SALE' ? 'badge-sale' : 'badge-new'
-    }
-
-    const addToCart = (product) => {
-      console.log('Added to cart:', product.name)
-      // TODO: Implement cart functionality
-    }
-
+  data() {
     return {
-      products,
-      badgeClass,
-      addToCart,
+      products: [
+        {
+          id: 1,
+          name: "Organic Curly Kale Bunch",
+          category: "Leafy Greens",
+          price: "2.50",
+          originalPrice: "3.20",
+          rating: 4.9,
+          badge: "HOT",
+          discount: 22,
+          label: "ORGANIC\nSAFE WORK",
+          image: Tomato
+        },
+        {
+          id: 2,
+          name: "Fresh Garden Radish (Bunch)",
+          category: "Root Veg",
+          price: "1.99",
+          originalPrice: "2.50",
+          rating: 4.8,
+          badge: "SALE",
+          discount: 20,
+          label: null,
+          image: Tomato
+        },
+        {
+          id: 3,
+          name: "Sweet Red Bell Peppers (3 Pack)",
+          category: "Vegetables",
+          price: "3.45",
+          originalPrice: "4.00",
+          rating: 4.5,
+          badge: null,
+          discount: 14,
+          label: null,
+          image: Tomato
+        },
+        {
+          id: 4,
+          name: "Organic Heirloom Broccoli Crown",
+          category: "Cruciferous",
+          price: "2.99",
+          originalPrice: "3.50",
+          rating: 5.0,
+          badge: "NEW",
+          label: null,
+          image: Tomato
+        },
+          {
+          id: 5,
+          name: "Organic Heirloom Broccoli Crown",
+          category: "Cruciferous",
+          price: "2.99",
+          originalPrice: "3.50",
+          rating: 5.0,
+          badge: "NEW",
+          label: null,
+          image: Tomato
+        }
+      ]
+    };
+  },
+
+  methods: {
+    badgeClass(badge) {
+      return {
+        "badge-hot": badge === "HOT",
+        "badge-sale": badge === "SALE",
+        "badge-new": badge === "NEW",
+        "badge-discount": badge === "DISCOUNT"
+      };
+    },
+
+    addToCart(product) {
+      this.cartStore.addToCart(product)
+      console.log("Added to cart:", product.name)
     }
   }
-}
+};
 </script>
 
 <style scoped>
 .product-grid {
-  display: flex;
-  gap: 28px;
-  padding: 40px 32px;
-  max-width: 1320px;
-  margin: 0 auto;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  width: 100%;
 }
 
+/* CARD */
 .product-card {
-  flex: 1 1 260px;
   background: #fff;
-  border-radius: 20px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-  transition: transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  transition: all 0.25s ease;
+  min-width: 0;
+  padding: 20px;
+  border-radius: 12px;
 }
 
 .product-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-6px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.1);
 }
 
+/* IMAGE */
 .card-image {
   position: relative;
-  width: 80%;
+  width: 100%;
   aspect-ratio: 1 / 1;
-  margin: 0 auto;              /* center horizontally */
-  display: flex;
-  justify-content: center;
-  align-items: center;
   overflow: hidden;
-  background: #f9fafb;
-  border-radius: 16px;
+  background: #f3f4f6;
+  border-radius: 12px;
 }
 
 .card-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
-}
-.product-card:hover img {
-  transform: scale(1.05);
+  transition: 0.3s;
 }
 
+.product-card:hover img {
+  transform: scale(1.08);
+}
+
+/* BADGE */
 .badge {
   position: absolute;
-  top: 14px;
-  left: 14px;
-  padding: 6px 14px;
+  top: 10px;
+  left: 10px;
+  padding: 5px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
 }
 
 .badge-hot  { background: #2D7A3A; color: #fff; }
 .badge-sale { background: #F59E0B; color: #fff; }
-.badge-new  { background: #9CA3AF; color: #fff; }
+.badge-new  { background: #6B7280; color: #fff; }
+.badge-discount { background: #DC2626; color: #fff; }
 
+/* LABEL */
 .image-label {
   position: absolute;
-  bottom: 14px;
-  right: 14px;
+  bottom: 10px;
+  right: 10px;
   font-size: 10px;
-  color: rgba(255,255,255,0.75);
+  color: rgba(255,255,255,0.8);
   font-weight: 600;
   white-space: pre-line;
   text-align: right;
-
 }
 
+/* BODY */
 .card-body {
-  padding: 16px 18px 18px;
+  padding: 12px;
 }
 
 .category {
-  font-size: 12px;
+  font-size: 11px;
   color: #9ca3af;
 }
 
 .product-name {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   margin: 4px 0 6px;
+  line-height: 1.3;
 }
 
+/* RATING */
 .rating {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   margin-bottom: 10px;
 }
 
 .rating-text {
-  font-size: 13px;
+  font-size: 12px;
   color: #8B6914;
 }
 
+/* PRICE */
 .price-row {
   display: flex;
   justify-content: space-between;
@@ -215,29 +267,31 @@ export default {
 }
 
 .price {
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 700;
   color: #2D7A3A;
 }
 
 .original-price {
-  font-size: 13px;
+  font-size: 11px;
   color: #9ca3af;
   text-decoration: line-through;
 }
 
+/* BUTTON */
 .btn-add {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: #e6f4ea;
   color: #2D7A3A;
   border-radius: 999px;
-  padding: 10px 18px;
-  font-size: 14px;
+  padding: 6px 12px;
+  font-size: 12px;
   font-weight: 600;
   border: none;
   cursor: pointer;
+  transition: 0.2s;
 }
 
 .btn-add:hover {
@@ -245,18 +299,19 @@ export default {
 }
 
 .plus {
-  font-size: 16px;
+  font-size: 14px;
 }
 
-@media (max-width: 768px) {
-  .product-card {
-    flex: 1 1 45%;
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
 }
 
-@media (max-width: 480px) {
-  .product-card {
-    flex: 1 1 100%;
+@media (max-width: 600px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

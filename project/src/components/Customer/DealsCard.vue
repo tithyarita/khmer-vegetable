@@ -10,7 +10,11 @@
         <div class="card-bg" :class="`card-bg-${i + 1}`"></div>
 
         <div class="card-watermark">{{ deal.watermark }}</div>
-        <div class="card-produce">{{ deal.emoji }}</div>
+
+        <div class="card-produce">
+          <img :src="deal.image" :alt="deal.name" />
+        </div>
+
         <div class="card-overlay"></div>
 
         <div class="card-content">
@@ -46,36 +50,51 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
-import { useProductStore } from '../../stores/productStore'
+import Tomato from '../../assets/images/Tomato3.png'
 
-const productStore = useProductStore()
-const deals = ref([])
 
-// convert initial time to seconds
 function toSeconds(d, h, m, s = 0) {
   return d * 86400 + h * 3600 + m * 60 + s;
 }
 
-onMounted(async () => {
-  try {
-    // Fetch products from API
-    if (!productStore.products || productStore.products.length === 0) {
-      await productStore.fetchAllProducts()
-    }
-    // Transform first 3 products as deals
-    deals.value = productStore.products.slice(0, 3).map((p, index) => ({
-      name: p.name,
-      emoji: ['🥕', '🥗', '🌽'][index % 3],
-      watermark: p.category || 'Fresh Produce',
-      price: String(p.price),
-      orig: String(parseFloat(p.price) * 1.4),
-      save: Math.min(p.discount || 20, 40),
-      timeLeft: toSeconds(12 - index, 8 - (index * 2), 34),
-    }))
-  } catch (error) {
-    console.error('Error loading deals:', error)
-  }
-})
+const deals = ref([
+  {
+    name: "Weekly Seasonal Harvest Box",
+    image: Tomato,
+    watermark: "Season Veggies",
+    price: "19.99",
+    orig: "28.00",
+    save: 29,
+    timeLeft: toSeconds(12, 8, 34),
+  },
+  {
+    name: "Weekly Seasonal Harvest Box",
+    image: Tomato,
+    watermark: "Season Veggies",
+    price: "19.99",
+    orig: "28.00",
+    save: 29,
+    timeLeft: toSeconds(12, 8, 34),
+  },{
+    name: "Weekly Seasonal Harvest Box",
+    image: Tomato,
+    watermark: "Season Veggies",
+    price: "19.99",
+    orig: "28.00",
+    save: 29,
+    timeLeft: toSeconds(12, 8, 34),
+  },
+  {
+    name: "Weekly Seasonal Harvest Box",
+    image: Tomato,
+    watermark: "Season Veggies",
+    price: "19.99",
+    orig: "28.00",
+    save: 29,
+    timeLeft: toSeconds(12, 8, 34),
+  },
+  
+]);
 
 function formatTime(total) {
   const d = Math.floor(total / 86400);
@@ -111,7 +130,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* ── Section ────────────────────────────────── */
 .deals-section {
   width: 100%;
   max-width: 1200px;
@@ -119,28 +137,9 @@ onUnmounted(() => {
   padding: 48px 24px;
 }
 
-.section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 28px;
-}
-
-.section-title {
-  font-size: 32px;
-  color: white;
-}
-
-.see-all {
-  color: #3ddc84;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-
 .deals-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
@@ -162,30 +161,22 @@ onUnmounted(() => {
   inset: 0;
 }
 
-/* backgrounds */
-.card-bg-1 {
-  background: linear-gradient(135deg, #5bbfa0, #1a3d2b);
-}
-.card-bg-2 {
-  background: linear-gradient(135deg, #e8c084, #b87040);
-}
-.card-bg-3 {
-  background: linear-gradient(135deg, #c4a06a, #6b4e20);
+.card-bg-1,
+.card-bg-2,
+.card-bg-3,
+.card-bg-4 {
+  background: white;
 }
 
-.card-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.85));
-}
 
 .card-watermark {
   position: absolute;
   top: 18px;
   left: 50%;
   transform: translateX(-50%);
-  color: rgba(255,255,255,0.2);
+  color: black;
   font-size: 28px;
+
 }
 
 .card-produce {
@@ -194,17 +185,25 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 100px;
+}
+
+.card-produce img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  transition: 0.3s;
+}
+
+.deal-card:hover .card-produce img {
+  transform: scale(1.1);
 }
 
 .card-content {
   position: absolute;
   bottom: 0;
   padding: 20px;
-  color: white;
 }
 
-/* countdown */
 .countdown-row {
   display: flex;
   gap: 8px;
@@ -212,7 +211,7 @@ onUnmounted(() => {
 }
 
 .cd-pill {
-  background: rgba(255,255,255,0.2);
+  background: rgba(0, 0, 0, 0.2);
   padding: 6px 10px;
   border-radius: 10px;
   text-align: center;
@@ -228,10 +227,15 @@ onUnmounted(() => {
   opacity: 0.7;
 }
 
-/* text */
 .deal-name {
   font-weight: bold;
   margin-bottom: 6px;
+}
+
+.deal-pricing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .deal-price {
@@ -242,7 +246,6 @@ onUnmounted(() => {
 .deal-orig {
   text-decoration: line-through;
   opacity: 0.5;
-  margin-left: 6px;
 }
 
 .deal-save {
@@ -253,7 +256,6 @@ onUnmounted(() => {
   font-size: 11px;
 }
 
-/* responsive */
 @media (max-width: 900px) {
   .deals-grid {
     grid-template-columns: 1fr 1fr;

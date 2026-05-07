@@ -50,7 +50,7 @@
 </template>
 
 <script>
-import ProfileForm        from "../../components/Staff/ProfileForm.vue";
+import ProfileForm        from "../../components/Staff/Profileform.vue";
 import SecurityAccess     from "../../components/Staff/Securityaccess.vue";
 import NotificationsCard  from "../../components/Staff/Notificationscard.vue";
 import TwoFactorAuth      from "../../components/Staff/Twofactorauth.vue";

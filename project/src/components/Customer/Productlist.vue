@@ -1,4 +1,6 @@
 <template>
+  <div>
+  <NavigationBar />
   <div class="fresh-vegetables-page">
     <nav class="breadcrumb">
       Home › Groceries › <span class="active">Fresh Vegetables</span>
@@ -7,14 +9,17 @@
     <div class="header">
       <div>
         <h1>Fresh Vegetables</h1>
-        <p class="subtitle">We found <em>{{ filteredProducts.length }}</em> items for you!</p>
+        <p class="subtitle">
+          We found <em>{{ filteredProducts.length }}</em> items for you!
+        </p>
       </div>
 
       <div class="header-controls">
         <div class="view-toggle">
-          <button :class="{ active: view === 'grid' }" @click="view = 'grid'">Grid</button>
-          <button :class="{ active: view === 'list' }" @click="view = 'list'">List</button>
+          <button :class="['view-btn', { active: view === 'grid' }]" @click="view = 'grid'">Grid</button>
+          <button :class="['view-btn', { active: view === 'list' }]" @click="view = 'list'">List</button>
         </div>
+
         <select class="sort-select" v-model="sortBy">
           <option value="featured">Featured</option>
           <option value="price-asc">Price: Low to High</option>
@@ -45,9 +50,11 @@
         </div>
 
         <div class="sidebar-section">
-          <h3>Fill by Price</h3>
+          <h3>Filter by Price</h3>
           <input type="range" min="0" max="150" v-model="maxPrice" class="price-slider" />
-          <div class="price-range">Range: <strong>$0 – ${{ maxPrice }}</strong></div>
+          <div class="price-range">
+            Range: <strong>$0 – ${{ maxPrice }}</strong>
+          </div>
           <button class="filter-btn" @click="applyFilter">Filter</button>
         </div>
 
@@ -69,10 +76,15 @@
 
       <!-- Products -->
       <div class="products-section">
-        <div class="products-grid" :class="{ 'list-view': view === 'list' }">
+        <!-- 🔥 KEY FIX HERE -->
+        <div
+          class="products-grid"
+          :class="{ 'list-view': view === 'list' }"
+          :key="view"
+        >
           <ProductCard
-            v-for="product in paginatedProducts"
-            :key="product.id"
+            v-for="(product, index) in paginatedProducts"
+            :key="product.id + '-' + index"
             :product="product"
             @add-to-cart="addToCart"
           />
@@ -84,29 +96,36 @@
 
         <div class="pagination" v-if="totalPages > 1">
           <button @click="prevPage" :disabled="page === 1">‹</button>
+
           <button
             v-for="n in totalPages"
             :key="n"
-            class="page-btn"
-            :class="{ active: page === n }"
+            :class="['page-btn', { active: page === n }]"
             @click="goToPage(n)"
           >
             {{ n }}
           </button>
+
           <button @click="nextPage" :disabled="page === totalPages">›</button>
         </div>
       </div>
     </div>
   </div>
+  </div>
 </template>
 
-
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useProductStore } from '../../stores/productStore'
+import { ref, computed, watch } from 'vue'
 import ProductCard from './Card.vue'
+import NavigationBar from './NavigationBar.vue'
 
-const productStore = useProductStore()
+const props = defineProps({
+  products: {
+    type: Array,
+    default: () => []
+  }
+})
+
 const view = ref('grid')
 const sortBy = ref('featured')
 const maxPrice = ref(150)
@@ -115,7 +134,6 @@ const activeCategory = ref(null)
 const activeTag = ref(null)
 const page = ref(1)
 const perPage = 6
-const allProducts = ref([])
 
 const categories = [
   { id: 'vegetables', name: 'Vegetables', icon: '🥬', count: 12 },
@@ -123,44 +141,25 @@ const categories = [
 
 const tags = ['Organic', 'Fresh', 'Healthy', 'Snacks', 'Dairy']
 
-onMounted(async () => {
-  try {
-    // Fetch products from API
-    if (!productStore.products || productStore.products.length === 0) {
-      await productStore.fetchAllProducts()
-    }
-    // Transform products for display
-    allProducts.value = productStore.products.map(p => ({
-      id: p.id,
-      name: p.name,
-      category: p.category || 'Vegetables',
-      price: String(p.price),
-      originalPrice: String(parseFloat(p.price) * 1.2),
-      rating: 4.5,
-      image: p.image || 'https://via.placeholder.com/300',
-      stock: p.stock
-    }))
-  } catch (error) {
-    console.error('Error loading products:', error)
-  }
-})
-
 const filteredProducts = computed(() => {
-  let list = allProducts.value.filter(p => parseFloat(p.price) <= appliedMaxPrice.value)
+  let list = props.products.filter(p => p.price <= appliedMaxPrice.value)
 
   if (activeTag.value) {
-    list = list.filter(p => p.name.toLowerCase().includes(activeTag.value.toLowerCase()))
+    list = list.filter(p =>
+      p.name.toLowerCase().includes(activeTag.value.toLowerCase())
+    )
   }
 
-  const sorted = [...list]
-  if (sortBy.value === 'price-asc') sorted.sort((a, b) => parseFloat(a.price) - parseFloat(b.price))
-  if (sortBy.value === 'price-desc') sorted.sort((a, b) => parseFloat(b.price) - parseFloat(a.price))
-  if (sortBy.value === 'rating') sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+  if (sortBy.value === 'price-asc') list.sort((a, b) => a.price - b.price)
+  if (sortBy.value === 'price-desc') list.sort((a, b) => b.price - a.price)
+  if (sortBy.value === 'rating') list.sort((a, b) => b.rating - a.rating)
 
-  return sorted
+  return list
 })
 
-const totalPages = computed(() => Math.ceil(filteredProducts.value.length / perPage))
+const totalPages = computed(() =>
+  Math.ceil(filteredProducts.value.length / perPage)
+)
 
 const paginatedProducts = computed(() => {
   const start = (page.value - 1) * perPage
@@ -171,41 +170,75 @@ watch([sortBy, activeTag, appliedMaxPrice], () => {
   page.value = 1
 })
 
-const toggleCategory = (id) => activeCategory.value = activeCategory.value === id ? null : id
-const toggleTag = (tag) => activeTag.value = activeTag.value === tag ? null : tag
-const applyFilter = () => appliedMaxPrice.value = maxPrice.value
-const addToCart = (product) => console.log('Added to cart:', product.name)
+const toggleCategory = id => {
+  activeCategory.value = activeCategory.value === id ? null : id
+}
 
-const prevPage = () => { if (page.value > 1) page.value-- }
-const nextPage = () => { if (page.value < totalPages.value) page.value++ }
-const goToPage = (n) => { page.value = n }
+const toggleTag = tag => {
+  activeTag.value = activeTag.value === tag ? null : tag
+}
+
+const applyFilter = () => {
+  appliedMaxPrice.value = maxPrice.value
+}
+
+const addToCart = product => {
+  console.log('Added to cart:', product.name)
+}
+
+const prevPage = () => page.value > 1 && page.value--
+const nextPage = () => page.value < totalPages.value && page.value++
+const goToPage = n => (page.value = n)
 </script>
-
 <style scoped>
-/* ==================== FULL STYLES ==================== */
+/* ================= PAGE ================= */
 .fresh-vegetables-page {
   max-width: 1280px;
-  margin: 0 auto;
+  margin: auto;
   padding: 24px;
   font-family: system-ui, -apple-system, sans-serif;
   background: #f8fafc;
 }
 
-.breadcrumb { color: #64748b; margin-bottom: 20px; }
-.breadcrumb .active { color: #0f172a; font-weight: 500; }
+/* ================= BREADCRUMB ================= */
+.breadcrumb {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 20px;
+}
+.breadcrumb .active {
+  color: #0f172a;
+  font-weight: 600;
+}
 
+/* ================= HEADER ================= */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 40px;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
+  margin-bottom: 30px;
 }
-h1 { font-size: 36px; font-weight: 700; margin: 0; color: #0f172a; }
-.subtitle { color: #64748b; margin-top: 6px; }
 
-.header-controls { display: flex; gap: 12px; align-items: center; }
+h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+}
+
+.subtitle {
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* ================= CONTROLS ================= */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
 .view-toggle {
   display: flex;
@@ -213,127 +246,243 @@ h1 { font-size: 36px; font-weight: 700; margin: 0; color: #0f172a; }
   border-radius: 8px;
   overflow: hidden;
 }
+
 .view-btn {
-  padding: 10px 26px;
-  font-size: 14.5px;
+  padding: 8px 18px;
   background: white;
   border: none;
-  color: #64748b;
   cursor: pointer;
+  font-size: 14px;
+  color: #64748b;
 }
-.view-btn:first-child { border-right: 2px solid #e2e8f0; }
-.view-btn.active { background: #0f172a; color: white; }
+
+.view-btn.active {
+  background: #10b981;
+  color: white;
+}
 
 .sort-select {
-  padding: 10px 18px;
-  border: 2px solid #e2e8f0;
+  padding: 8px 14px;
   border-radius: 8px;
+  border: 2px solid #e2e8f0;
   background: white;
 }
 
-.main-content { 
-  display: grid; 
-  grid-template-columns: 280px 1fr; 
-  gap: 32px; 
-}
-
-.sidebar-section {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-}
-
-h3 { margin-bottom: 16px; font-weight: 600; color: #334155; }
-
-.category-list .cat-item {
-  display: flex; 
-  align-items: center; 
-  padding: 10px 12px; 
-  border-radius: 10px; 
-  cursor: pointer;
-}
-.category-list .cat-item:hover, 
-.category-list .cat-item.active { 
-  background: #f0fdf4; 
-}
-
-.cat-icon { margin-right: 12px; font-size: 20px; }
-.cat-name { flex: 1; }
-.cat-count { color: #10b981; font-weight: 600; }
-
-.price-slider { width: 100%; accent-color: #10b981; margin: 12px 0; }
-
-.filter-btn {
-  width: 100%; 
-  padding: 14px; 
-  background: #10b981; 
-  color: white; 
-  border: none;
-  border-radius: 9999px; 
-  font-weight: 600; 
-  margin-top: 12px;
-}
-
-.tags { display: flex; flex-wrap: wrap; gap: 8px; }
-.tag {
-  padding: 6px 14px; 
-  background: #f1f5f9; 
-  border-radius: 9999px; 
-  font-size: 13px; 
-  cursor: pointer;
-}
-.tag.active, .tag:hover { background: #10b981; color: white; }
-
-.products-grid {
+/* ================= LAYOUT ================= */
+.main-content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: 260px 1fr;
   gap: 24px;
 }
 
+/* ================= SIDEBAR ================= */
+.sidebar-section {
+  background: white;
+  padding: 18px;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+}
+
+.sidebar-section h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+/* CATEGORY */
+.cat-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.cat-item:hover,
+.cat-item.active {
+  background: #ecfdf5;
+}
+
+.cat-icon {
+  margin-right: 10px;
+}
+
+.cat-name {
+  flex: 1;
+}
+
+.cat-count {
+  font-weight: 600;
+  color: #10b981;
+}
+
+/* PRICE */
+.price-slider {
+  width: 100%;
+  margin: 10px 0;
+  accent-color: #10b981;
+}
+
+.price-range {
+  font-size: 14px;
+}
+
+.filter-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 999px;
+  background: #10b981;
+  color: white;
+  cursor: pointer;
+}
+
+/* TAGS */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  padding: 5px 12px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tag.active,
+.tag:hover {
+  background: #10b981;
+  color: white;
+}
+
+/* ================= PRODUCTS ================= */
+.products-section {
+  width: 100%;
+}
+
+/* GRID VIEW */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 20px;
+}
+
+/* LIST VIEW */
 .products-grid.list-view {
   grid-template-columns: 1fr;
 }
 
+/* ================= PRODUCT CARD ================= */
+.product-card {
+  background: white;
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  transition: 0.25s;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+}
+
+/* IMAGE */
+.card-image {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* TEXT */
+.product-card h3 {
+  font-size: 15px;
+  margin: 6px 0;
+}
+
+.product-card p {
+  font-weight: 600;
+  color: #10b981;
+}
+
+/* BUTTON */
+.product-card button {
+  margin-top: 8px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  background: #10b981;
+  color: white;
+  cursor: pointer;
+}
+
+/* ================= LIST MODE FIX ================= */
 .products-grid.list-view .product-card {
   display: flex;
-  gap: 24px;
+  gap: 20px;
+  align-items: center;
 }
 
 .products-grid.list-view .card-image {
-  width: 180px;
-  height: 180px;
+  width: 150px;
+  height: 120px;
   flex-shrink: 0;
 }
 
+.products-grid.list-view h3 {
+  font-size: 16px;
+}
+
+/* ================= PAGINATION ================= */
 .pagination {
-  margin-top: 40px;
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
+  margin-top: 30px;
 }
+
 .pagination button {
-  width: 40px; 
-  height: 40px; 
-  border: 1px solid #e2e8f0; 
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
   background: white;
-  border-radius: 8px; 
   cursor: pointer;
 }
-.pagination button.active { 
-  background: #10b981; 
-  color: white; 
+
+.pagination button.active {
+  background: #10b981;
+  color: white;
 }
 
+/* ================= EMPTY ================= */
 .no-results {
   text-align: center;
-  padding: 80px 20px;
+  padding: 60px;
   color: #64748b;
-  font-size: 18px;
 }
 
+/* ================= RESPONSIVE ================= */
 @media (max-width: 992px) {
-  .main-content { grid-template-columns: 1fr; }
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>

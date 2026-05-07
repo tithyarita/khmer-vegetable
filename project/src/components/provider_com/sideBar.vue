@@ -4,7 +4,7 @@
     <div class="sidebar" :class="{ 'sidebar-open': isSidebarOpen, 'sidebar-closed': !isSidebarOpen }">
       <!-- Header -->
       <div class="sidebar-header bg-success text-white p-4">
-        <h5 class="mb-0">Logo</h5>
+        <h5 class="mb-0">Provider Console</h5>
       </div>
 
       <!-- Menu Items -->
@@ -137,16 +137,18 @@ const handleLogout = () => {
 .sidebar-header h5 {
   margin: 0;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 12px;
   color: white;
-  margin-left: 15px;
+  /* margin-left: 15px; */
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 .sidebar-menu {
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .sidebar-footer {
@@ -190,6 +192,7 @@ const handleLogout = () => {
   align-items: center;
   gap: 0.75rem;
   position: relative;
+  font-size: 12.5px;
 }
 
 .menu-item:hover {

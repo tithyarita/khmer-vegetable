@@ -84,9 +84,12 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import NavigationBar from '../components/Customer/NavigationBar.vue'
 import Card from '../components/Customer/Card.vue'
 import Footer from '../components/Customer/Footer.vue'
+
+const router = useRouter()
 
 const couponCode = ref('')
 const shippingCost = ref('2.00')
@@ -155,7 +158,7 @@ const applyCoupon = () => {
 }
 
 const proceedToCheckout = () => {
-  console.log('Proceeding to checkout')
+  router.push('/checkout')
 }
 </script>
 
