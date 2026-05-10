@@ -18,7 +18,7 @@ import { ProductModule } from './product/product.module';
       host: 'localhost',
       port: 3306,
       username: 'root',
-      password: '1qa2ws.M', // your MySQL password
+      password: '123', // your MySQL password
       database: 'khmer_vegetable_market',
       autoLoadEntities: true,
       synchronize: true, // set to false in production
