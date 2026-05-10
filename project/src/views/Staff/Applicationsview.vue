@@ -22,16 +22,21 @@
         @click="activeFilter = 'all'"
       >All Statuses</button>
       <button
-        :class="['filter-chip', activeFilter === 'pending' && 'filter-chip--active']"
-        @click="activeFilter = 'pending'"
+        :class="['filter-chip', activeFilter === 'submitted' && 'filter-chip--active']"
+        @click="activeFilter = 'submitted'"
       >Pending Only</button>
 
-      <span class="filter-count">Displaying 1–{{ filtered.length }} of {{ applications.length }} applications</span>
+      <span class="filter-count">
+        Displaying 1–{{ filtered.length }} of {{ applications.length }} applications
+      </span>
     </div>
 
+    <!-- Loading / error states -->
+    <div v-if="loading" class="state-msg">Loading applications…</div>
+    <div v-else-if="error" class="state-msg state-msg--error">{{ error }}</div>
+
     <!-- Queue card -->
-    <div class="queue-card">
-      <!-- Column headings -->
+    <div v-else class="queue-card">
       <div class="col-headings">
         <span class="qcol qcol-app">Applicant Name</span>
         <span class="qcol qcol-farm">Farm Name</span>
@@ -40,21 +45,34 @@
         <span class="qcol qcol-action"></span>
       </div>
 
-      <!-- Rows -->
+      <!-- Each row maps one ProviderApplication record → ApplicationQueueItem props -->
       <ApplicationQueueItem
         v-for="app in filtered"
         :key="app.id"
         :id="app.id"
-        :applicant="app.applicant"
-        :farm="app.farm"
-        :submittedAt="app.submittedAt"
-        :status="app.status"
-        @view="onView"
+        :applicant="{
+          name:      app.owner_name,
+          email:     app.contact_email,
+          avatarUrl: app.profile_photo_path
+            ? `${API_BASE}/${app.profile_photo_path}`
+            : '',
+        }"
+        :farm="{
+          name:     app.business_name,
+          category: app.farm_category ?? '—',
+        }"
+        :submittedAt="formatDate(app.submitted_at)"
+        :status="normalizeStatus(app.application_status)"
       />
+
+      <!-- Empty state -->
+      <div v-if="filtered.length === 0" class="empty-state">
+        No applications match the current filter.
+      </div>
 
       <!-- Pagination footer -->
       <div class="table-footer">
-        <span class="footer-count">Showing {{ filtered.length }} of 1,284 applications</span>
+        <span class="footer-count">Showing {{ filtered.length }} of {{ applications.length }} applications</span>
         <div class="pagination">
           <button class="page-btn"><i class="bi bi-chevron-left"></i></button>
           <button
@@ -78,195 +96,115 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import ApplicationQueueItem from '../../components/Staff/Applicationqueueitem.vue'
 
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+
+const applications = ref([])   // raw records from GET /api/applications
+const loading      = ref(true)
+const error        = ref(null)
 const currentPage  = ref(1)
 const activeFilter = ref('all')
 
-const applications = [
-  {
-    id: 1,
-    applicant: { name: 'Sarah Greenfield', email: 'sarah@greenfieldfarms.co', avatarUrl: '' },
-    farm:      { name: 'Greenfield Artisanal Orchards', category: 'Heirloom Apples & Pears' },
-    submittedAt: 'Oct 24, 2023 14:22 PM',
-    status: 'pending',
-  },
-  {
-    id: 2,
-    applicant: { name: 'Marcus Thorne', email: 'thorne@urbanveg.io', avatarUrl: '' },
-    farm:      { name: 'Thorne Urban Microgreens', category: 'Hydroponic Herbs' },
-    submittedAt: 'Oct 25, 2023 09:10 AM',
-    status: 'in-review',
-  },
-  {
-    id: 3,
-    applicant: { name: 'Elena Rodriguez', email: 'elena@valleyroot.org', avatarUrl: '' },
-    farm:      { name: 'Valley Root Cooperative', category: 'Root Vegetables & Tubers' },
-    submittedAt: 'Oct 26, 2023 11:45 AM',
-    status: 'pending',
-  },
-  {
-    id: 4,
-    applicant: { name: 'David Chen', email: 'd.chen@morningstar.com', avatarUrl: '' },
-    farm:      { name: 'Morningstar Dairy & Flora', category: 'Goat Cheese & Honey' },
-    submittedAt: 'Oct 27, 2023 16:30 PM',
-    status: 'in-review',
-  },
-]
+// ─── Fetch all applications on mount ────────────────────────────────────────
+onMounted(async () => {
+  try {
+    const res = await fetch(`${API_BASE}/api/applications`)
+    if (!res.ok) throw new Error(`Server error: ${res.status}`)
+    applications.value = await res.json()
+  } catch (err) {
+    error.value = err.message
+  } finally {
+    loading.value = false
+  }
+})
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * DB stores "submitted" | "in_review" | "approved" | "rejected"
+ * The queue item badge expects "pending" | "in-review" | "approved" | "rejected"
+ */
+function normalizeStatus(dbStatus) {
+  const map = {
+    draft:     'pending',
+    submitted: 'pending',
+    in_review: 'in-review',
+    approved:  'approved',
+    rejected:  'rejected',
+  }
+  return map[dbStatus] ?? 'pending'
+}
+
+/**
+ * Format ISO timestamp → "Oct 24, 2023 14:22 PM"
+ */
+function formatDate(iso) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  return `${date} ${time}`
+}
+
+// ─── Filtering ───────────────────────────────────────────────────────────────
 const filtered = computed(() =>
   activeFilter.value === 'all'
-    ? applications
-    : applications.filter(a => a.status === activeFilter.value)
+    ? applications.value
+    : applications.value.filter(a =>
+        normalizeStatus(a.application_status) === activeFilter.value
+      )
 )
 
 const pendingCount = computed(() =>
-  applications.filter(a => a.status === 'pending').length
+  applications.value.filter(a =>
+    ['draft', 'submitted'].includes(a.application_status)
+  ).length
 )
-
-function onView(id) {
-  // Navigation is handled by router-link in the child — this is now a no-op
-  // but you could also do: router.push(`/staff/applications/${id}`)
-}
 </script>
 
 <style scoped>
 .applications { display: flex; flex-direction: column; gap: 20px; }
 
-/* Heading */
-.page-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-.page-title {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--brand-dark);
-  letter-spacing: -.4px;
-}
-.page-sub { font-size: 13px; color: #6b7280; margin-top: 4px; }
+.page-heading { display: flex; align-items: flex-start; justify-content: space-between; }
+.page-title   { font-size: 26px; font-weight: 800; color: var(--brand-dark); letter-spacing: -.4px; }
+.page-sub     { font-size: 13px; color: #6b7280; margin-top: 4px; }
 
-/* Queue health chip */
-.queue-health {
-  text-align: right;
-  background: var(--card-bg);
-  border: 1px solid #eaeaea;
-  border-radius: 10px;
-  padding: 10px 18px;
-  box-shadow: var(--card-shadow);
-}
-.qh-label {
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: .6px;
-  color: #9ca3af;
-  text-transform: uppercase;
-}
-.qh-value {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--brand-dark);
-  margin-top: 2px;
-}
+.queue-health { text-align: right; background: var(--card-bg); border: 1px solid #eaeaea; border-radius: 10px; padding: 10px 18px; box-shadow: var(--card-shadow); }
+.qh-label     { font-size: 9.5px; font-weight: 700; letter-spacing: .6px; color: #9ca3af; text-transform: uppercase; }
+.qh-value     { font-size: 20px; font-weight: 800; color: var(--brand-dark); margin-top: 2px; }
 
-/* Filter bar */
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.filter-chip {
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #374151;
-  cursor: pointer;
-  transition: background .12s, border-color .12s, color .12s;
-}
+.filter-bar   { display: flex; align-items: center; gap: 8px; }
+.filter-chip  { padding: 6px 14px; border-radius: 20px; border: 1px solid #d1d5db; background: #fff; font-size: 12.5px; font-weight: 500; color: #374151; cursor: pointer; transition: background .12s, border-color .12s, color .12s; }
 .filter-chip:hover { border-color: var(--brand-accent); color: var(--brand-green); }
-.filter-chip--active {
-  background: var(--brand-dark);
-  border-color: var(--brand-dark);
-  color: #fff;
-}
+.filter-chip--active { background: var(--brand-dark); border-color: var(--brand-dark); color: #fff; }
 .filter-chip--outline { display: flex; align-items: center; }
-.filter-count {
-  margin-left: auto;
-  font-size: 11.5px;
-  color: #9ca3af;
-}
+.filter-count { margin-left: auto; font-size: 11.5px; color: #9ca3af; }
 
-/* Queue card */
-.queue-card {
-  background: var(--card-bg);
-  border: 1px solid #eaeaea;
-  border-radius: 14px;
-  box-shadow: var(--card-shadow);
-  overflow: hidden;
-}
+.state-msg         { padding: 32px; text-align: center; color: #6b7280; font-size: 13.5px; }
+.state-msg--error  { color: #dc2626; }
 
-/* Column headings */
-.col-headings {
-  display: flex;
-  padding: 10px 24px;
-  background: #f9fafb;
-  border-bottom: 1px solid #f0f0f0;
-}
-.qcol {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: .5px;
-  text-transform: uppercase;
-  color: #9ca3af;
-}
-.qcol-app    { flex: 2.2; }
-.qcol-farm   { flex: 2.0; }
-.qcol-date   { flex: 1.8; }
-.qcol-status { flex: 1.2; }
-.qcol-action { flex: 0 0 120px; }
+.queue-card   { background: var(--card-bg); border: 1px solid #eaeaea; border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
 
-/* Footer */
-.table-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
-  border-top: 1px solid #f3f4f6;
-  background: #fafafa;
-}
-.footer-count { font-size: 11.5px; color: #9ca3af; }
-.pagination { display: flex; gap: 4px; }
-.page-btn {
-  width: 28px; height: 28px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #fff;
-  font-size: 12px; font-weight: 500;
-  color: #374151;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background .12s;
-}
+.col-headings { display: flex; padding: 10px 24px; background: #f9fafb; border-bottom: 1px solid #f0f0f0; }
+.qcol         { font-size: 10.5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #9ca3af; }
+.qcol-app     { flex: 2.2; }
+.qcol-farm    { flex: 2.0; }
+.qcol-date    { flex: 1.8; }
+.qcol-status  { flex: 1.2; }
+.qcol-action  { flex: 0 0 120px; }
+
+.empty-state  { padding: 40px; text-align: center; font-size: 13px; color: #9ca3af; }
+
+.table-footer  { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-top: 1px solid #f3f4f6; background: #fafafa; }
+.footer-count  { font-size: 11.5px; color: #9ca3af; }
+.pagination    { display: flex; gap: 4px; }
+.page-btn      { width: 28px; height: 28px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; font-size: 12px; font-weight: 500; color: #374151; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .12s; }
 .page-btn:hover { background: #f0f7f0; border-color: var(--brand-accent); }
 .page-btn--active { background: var(--brand-dark); color: #fff; border-color: var(--brand-dark); }
 
-/* System footer */
-.system-footer {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10.5px;
-  color: #9ca3af;
-  padding: 4px 0;
-}
-.system-status { display: flex; align-items: center; gap: 6px; }
-.status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #22c55e;
-}
+.system-footer  { display: flex; justify-content: space-between; font-size: 10.5px; color: #9ca3af; padding: 4px 0; }
+.system-status  { display: flex; align-items: center; gap: 6px; }
+.status-dot     { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
 </style>
