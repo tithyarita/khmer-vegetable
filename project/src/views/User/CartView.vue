@@ -85,9 +85,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import NavigationBar from '../components/Customer/NavigationBar.vue'
-import Card from '../components/Customer/Card.vue'
-import Footer from '../components/Customer/Footer.vue'
+import NavigationBar from '../../components/Customer/NavigationBar.vue'
+import Card from '../../components/Customer/Card.vue'
+import Footer from '../../components/Customer/Footer.vue'
 
 const router = useRouter()
 

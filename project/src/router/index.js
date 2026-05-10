@@ -3,20 +3,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 // ==================== Layouts ====================
 import StaffLayout from '../Layout/StaffLayout.vue'
 import AdminLayout from '../Layout/AdminLayout.vue'
-import CustomerLayout from '../Layout/CustomerLayout.vue'
 
 // ==================== Public ====================
-import HomeView from '../views/HomeView.vue'
-import CartView from '../views/CartView.vue'
-import FavoritesView from '../views/FavoritesView.vue'
-import CheckoutView from '../views/CheckoutView.vue'
-import AddressView from '../views/AddressView.vue'
-import ReceiptView from '../views/ReceiptView.vue'
-
-// ==================== Customer ====================
-import OrderTracker from '../views/User/OrderTracker.vue'
-import ProductList from '../components/Customer/Productlist.vue'
-
+import HomeView from '../views/User/HomeView.vue'
+import CartView from '../views/User/CartView.vue'
+import FavoritesView from '../views/User/FavoritesView.vue'
 
 // ==================== Provider ====================
 import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
@@ -24,8 +15,7 @@ import ProviderProduct from '../views/Provider/ProviderProduct.vue'
 import ProductDetail from '../views/Provider/ProductDetail.vue'
 import ProfileSettingProvider from '../views/Provider/ProfileSettingProvider.vue'
 import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
-import ProviderOrders from '@/views/Provider/ProviderOrders.vue'
-import ProviderApplicationForm from '../views/Provider/Providerapplicationform.vue'
+import ProviderOrders from '../views/Provider/ProviderOrders.vue'
 
 // ==================== Staff ====================
 import DashboardView from '../views/Staff/Dashboardview.vue'
@@ -50,38 +40,46 @@ import UserLogin from '../views/User/login.vue'
 // ==================== Routes ====================
 const routes = [
   // -------- Public --------
-  { path: '/', name: 'Home', component: HomeView },
-  { path: '/cart', name: 'Cart', component: CartView },
-  { path: '/favorites', name: 'Favorites', component: FavoritesView },
-  { path: '/about', component: () => import('../views/AboutView.vue') },
-  // -------- Customer --------
   {
-    path: '/customer',
-    component: CustomerLayout,
+    path: '/',
+    component: () => import('../Layout/CustomerLayout.vue'),
     children: [
-      {path: 'order-tracker', component: OrderTracker },
-      {path: 'products-list', component: ProductList },
-    ],
-  },
-  // -------- Provider --------
-  {
-    path: '/provider',
-    // component: { template: '<router-view />' },
-    redirect: '/provider/dashboard',
-    children: [
-      { path: 'dashboard', component: ProviderDashboard },
-      { path: 'orders', component: ProviderOrders },
-      { path: 'products', component: ProviderProduct },
-      { path: 'revenue', component: ProviderRevenue },
-      { path: 'profile', component: ProfileSettingProvider },
-      {
-        path: 'product/:id',
-        component: ProductDetail,
-        props: true,
-      },
+      { path: '', redirect: '/home' },
+      { path: 'home', name: 'Home', component: HomeView },
+      { path: 'cart', name: 'Cart', component: CartView },
+      { path: 'favorites', name: 'Favorites', component: FavoritesView },
+      { path: 'about', name: 'About', component: () => import('../views/User/AboutView.vue') },
     ],
   },
 
+  // -------- Provider --------
+  {
+    path: '/provider',
+    // If you have a ProviderLayout, add: component: ProviderLayout,
+    // component: ProviderLayout,
+    redirect: '/provider/dashboard',
+    children: [
+      { path: 'dashboard', name: 'ProviderDashboard', component: ProviderDashboard },
+      { path: 'orders', name: 'ProviderOrders', component: ProviderOrders },
+      { path: 'products', name: 'ProviderProducts', component: ProviderProduct },
+      { path: 'revenue', name: 'ProviderRevenue', component: ProviderRevenue },
+      { path: 'profile', name: 'ProviderProfile', component: ProfileSettingProvider },
+      { path: 'product/:id', name: 'ProductDetail', component: ProductDetail, props: true },
+    ],
+  },
+
+  // -------- Staff --------
+  {
+    path: '/staff',
+    component: StaffLayout,
+    children: [
+      { path: '', redirect: '/staff/dashboard' },
+      { path: 'dashboard', component: DashboardView },
+      { path: 'applications', component: ApplicationsView },
+      { path: 'details', component: ApplicationDetailsView },
+      { path: 'profile', component: ProfileView },
+    ],
+  },
 
   // -------- Admin --------
   {
@@ -106,300 +104,29 @@ const routes = [
 ]
 
 // ==================== Router ====================
+
 const router = createRouter({
-
-  history: createWebHistory(import.meta.env.BASE_URL),
-
-  routes: [
-
-    // -------- Staff --------
-  {
-    path: '/staff',
-    component: StaffLayout,
-    children: [
-      { path: '', redirect: '/staff/dashboard' },
-      { path: 'dashboard', component: DashboardView },
-      { path: 'applications', component: ApplicationsView },
-      { path: 'applications/:id', name: 'ApplicationDetail', component: ApplicationDetailsView }, 
-      { path: 'profile', component: ProfileView },
-    ],
-  },
-
-    // Public
-
-    {
-      path: '/',
-      name: 'Home',
-      component: HomeView,
-    },
-    {
-      path: '/about',
-      name: 'About',
-      component: () => import('../views/AboutView.vue'),
-    },
-    {
-      path: '/cart',
-      name: 'Cart',
-      component: CartView,
-    },
-    {
-      path: '/favorites',
-      name: 'Favorites',
-      component: FavoritesView,
-    },
-    {
-      path: '/checkout',
-      name: 'Checkout',
-      component: CheckoutView,
-    },
-    {
-      path: '/address',
-      name: 'Address',
-      component: AddressView,
-    },
-    {
-      path: '/receipt',
-      name: 'Receipt',
-      component: ReceiptView,
-    },
-
-
-    // Provider
-
-    {
-
-      path: '/provider-dashboard',
-
-      name: 'ProviderDashboard',
-
-      component: ProviderDashboard,
-
-    },
-
-    {
-
-      path: '/provider-products',
-
-      name: 'ProviderProducts',
-
-      component: ProviderProduct,
-
-    },
-
-    {
-
-      path: '/product-detail/:id',
-
-      name: 'ProductDetail',
-
-      component: ProductDetail,
-
-      props: true,
-
-    },
-
-    {
-
-      path: '/provider-revenue',
-
-      name: 'ProviderRevenue',
-
-      component: ProviderRevenue,
-
-    },
-
-    {
-
-      path: '/provider-profile',
-
-      name: 'ProviderProfile',
-
-      component: ProfileSettingProvider,
-
-    },
-
-    {
-
-      path: '/staff',
-
-      component: StaffLayout,
-
-      children: [
-
-        {
-
-          path: '',
-
-          redirect: '/staff/dashboard',
-
-        },
-
-        {
-
-          path: 'dashboard',
-
-          name: 'StaffDashboard',
-
-          component: DashboardView,
-
-        },
-
-        {
-
-          path: 'applications',
-
-          name: 'Applications',
-
-          component: ApplicationsView,
-
-        },
-
-        {
-
-          path: 'profile',
-
-          name: 'StaffProfile',
-
-          component: ProfileView,
-
-        },
-
-      ],
-
-    },
-
-
-
-    // Admin
-
-    {
-
-      path: '/admin',
-
-      component: AdminLayout,
-
-      children: [
-
-        {
-
-          path: '',
-
-          redirect: '/admin/dashboard',
-
-        },
-
-        {
-
-          path: 'dashboard',
-
-          name: 'AdminDashboard',
-
-          component: AdminDashboard,
-
-        },
-
-        {
-
-          path: 'staff',
-
-          name: 'AdminStaff',
-
-          component: StaffManagement,
-
-        },
-
-        {
-
-          path: 'providers',
-
-          name: 'AdminProviders',
-
-          component: ProviderManagement,
-
-        },
-
-        {
-
-          path: 'users',
-
-          name: 'AdminUsers',
-
-          component: UserManagement,
-
-        },
-
-        {
-
-          path: 'products',
-
-          name: 'AdminProducts',
-
-          component: ProductManagement,
-
-        },
-
-        {
-
-          path: 'orders',
-
-          name: 'AdminOrders',
-
-          component: OrdersManagement,
-
-        },
-
-        {
-
-          path: 'reports',
-
-          name: 'AdminReports',
-
-          component: Reports,
-
-        },
-
-        {
-
-          path: 'settings',
-
-          name: 'AdminSettings',
-
-          component: AdminSetting,
-
-        },
-
-      ],
-
-    },
-
-
-
-    // User (Auth)
-
-    {
-
-      path: '/user/register',
-
-      name: 'UserRegister',
-
-      component: UserRegister,
-
-    },
-
-    {
-
-      path: '/user/login',
-
-      name: 'UserLogin',
-
-      component: UserLogin,
-
-    },
-
-    { path: '/apply', name: 'ProviderApplication', component: ProviderApplicationForm },
-
-  ],
-
+  history: createWebHistory(),
+  routes,
 })
+
+
+// Global navigation guard for role-based dashboard access
+router.beforeEach((to, from, next) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (to.path.startsWith('/admin')) {
+    if (!user || user.role !== 'admin') {
+      // Not admin, redirect to login or home
+      return next('/user/login');
+    }
+  }
+  if (to.path.startsWith('/provider')) {
+    if (!user || user.role !== 'provider') {
+      // Not provider, redirect to login or home
+      return next('/user/login');
+    }
+  }
+  next();
+});
 
 export default router
