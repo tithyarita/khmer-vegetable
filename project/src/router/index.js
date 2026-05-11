@@ -8,6 +8,12 @@ import AdminLayout from '../Layout/AdminLayout.vue'
 import HomeView from '../views/User/HomeView.vue'
 import CartView from '../views/User/CartView.vue'
 import FavoritesView from '../views/User/FavoritesView.vue'
+import fashDeals  from '../views/User/fashDeals.vue'
+import MyOrder  from '../views/User/MyOrder.vue'
+import Receipt from '../views/User/ReceiptView.vue'
+import Address from '../views/User/AddressView.vue'
+import Checkout from '../views/User/CheckoutView.vue'
+
 
 // ==================== Provider ====================
 import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
@@ -49,6 +55,12 @@ const routes = [
       { path: 'cart', name: 'Cart', component: CartView },
       { path: 'favorites', name: 'Favorites', component: FavoritesView },
       { path: 'about', name: 'About', component: () => import('../views/User/AboutView.vue') },
+      { path: 'Address', name: 'Address', component: Address },
+      { path: 'MyOrder', name: 'MyOrder', component: MyOrder },
+      { path: 'Receipt', name: 'Receipt', component: Receipt },
+      { path: 'fashDeals', name: 'FashDeals', component: fashDeals },
+      { path: 'checkout', name: 'Checkout', component: Checkout },
+
     ],
   },
 

@@ -143,6 +143,14 @@ export default {
     },
 
     addToCart(product) {
+      // Check if user is logged in
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user) {
+        if (window.confirm('You need to login or register before adding to cart.\nDo you want to login now?')) {
+          this.$router.push('/user/login');
+        }
+        return;
+      }
       this.cartStore.addToCart(product)
       console.log("Added to cart:", product.name)
     }
