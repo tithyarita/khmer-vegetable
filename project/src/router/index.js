@@ -39,9 +39,9 @@ import OrdersManagement from '../views/Admin/OrdersManagement.vue'
 import Reports from '../views/Admin/Report.vue'
 import AdminSetting from '../views/Admin/AdminSetting.vue'
 
-// ==================== Auth ====================
-import UserRegister from '../views/User/resgister.vue'
-import UserLogin from '../views/User/login.vue'
+// // ==================== Auth ====================
+// import UserRegister from '../views/User/resgister.vue'
+// import UserLogin from '../views/User/login.vue'
 
 // ==================== Routes ====================
 const routes = [
@@ -110,9 +110,9 @@ const routes = [
     ],
   },
 
-  // -------- Auth --------
-  { path: '/user/login', name: 'Login', component: UserLogin },
-  { path: '/user/register', name: 'Register', component: UserRegister },
+  // // -------- Auth --------
+  // { path: '/user/login', name: 'Login', component: UserLogin },
+  // { path: '/user/register', name: 'Register', component: UserRegister },
 ]
 
 // ==================== Router ====================
@@ -123,22 +123,22 @@ const router = createRouter({
 })
 
 
-// Global navigation guard for role-based dashboard access
-router.beforeEach((to, from, next) => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (to.path.startsWith('/admin')) {
-    if (!user || user.role !== 'admin') {
-      // Not admin, redirect to login or home
-      return next('/user/login');
-    }
-  }
-  if (to.path.startsWith('/provider')) {
-    if (!user || user.role !== 'provider') {
-      // Not provider, redirect to login or home
-      return next('/user/login');
-    }
-  }
-  next();
-});
+// // Global navigation guard for role-based dashboard access
+// router.beforeEach((to, from, next) => {
+//   const user = JSON.parse(localStorage.getItem('user'));
+//   if (to.path.startsWith('/admin')) {
+//     if (!user || user.role !== 'admin') {
+//       // Not admin, redirect to login or home
+//       return next('/user/login');
+//     }
+//   }
+//   if (to.path.startsWith('/provider')) {
+//     if (!user || user.role !== 'provider') {
+//       // Not provider, redirect to login or home
+//       return next('/user/login');
+//     }
+//   }
+//   next();
+// });
 
 export default router

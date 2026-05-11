@@ -3,7 +3,10 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Provider } from '../providers/providers.entity';
 
 @Entity('orders')
 export class orders {
@@ -17,6 +20,13 @@ export class orders {
   customer_id!: number;
 
   @Column()
+  provider_id!: number;
+
+  @ManyToOne(() => Provider, { eager: true })
+  @JoinColumn({ name: 'provider_id' })
+  provider!: Provider;
+
+  @Column()
   status!: string;
 
   @Column('decimal')
@@ -27,4 +37,7 @@ export class orders {
 
   @Column({ nullable: true })
   completed_at!: Date;
+
+  @Column({ default: 1 })
+  item!: number;
 }

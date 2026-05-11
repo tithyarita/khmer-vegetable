@@ -4,10 +4,15 @@
     <div v-if="mode === 'card'" class="product-card">
       <div class="product-image">
         <img 
+          v-if="product.image"
           :src="product.image" 
           :alt="product.name"
           @error="handleImageError" 
         />
+        <div v-else class="no-image">
+          <i class="bi bi-image"></i>
+          <p>No Image</p>
+        </div>
       </div>
       <div class="product-info">
         <h6 class="product-name">{{ product.name }}</h6>
@@ -20,7 +25,8 @@
       <td class="id-col">{{ product.id }}</td>
       <td class="name-col">
         <div class="product-row-content">
-          <img :src="product.image" :alt="product.name" @error="handleImageError" class="row-image" />
+          <img v-if="product.image" :src="product.image" :alt="product.name" @error="handleImageError" class="row-image" />
+          <span v-else class="no-image-small">📷</span>
           <span>{{ product.name }}</span>
         </div>
       </td>
@@ -49,8 +55,9 @@ defineProps({
 })
 
 const handleImageError = (e) => {
+  // Simply hide the image if it fails to load
   if (e && e.target) {
-    e.target.src = 'https://via.placeholder.com/300?text=Product'
+    e.target.style.display = 'none'
   }
 }
 </script>
@@ -207,6 +214,38 @@ const handleImageError = (e) => {
     width: 40px;
     height: 40px;
   }
+}
+
+/* No Image Placeholder */
+.no-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f3;
+  color: #999;
+  gap: 8px;
+}
+
+.no-image i {
+  font-size: 32px;
+  color: #bbb;
+}
+
+.no-image p {
+  margin: 0;
+  font-size: 12px;
+  color: #999;
+}
+
+.no-image-small {
+  display: inline-block;
+  font-size: 20px;
+  width: 50px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 </style>

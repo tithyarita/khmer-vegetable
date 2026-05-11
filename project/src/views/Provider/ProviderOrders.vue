@@ -123,7 +123,7 @@
                       </div>
                     </td>
                     <td class="col-items">
-                      <span class="item-count">{{ order.items.length }}</span>
+                      <span class="item-count">{{ order.item }}</span>
                     </td>
                     <td class="col-total">
                       <span class="price">${{ order.total }}</span>
@@ -271,102 +271,59 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
+import axios from 'axios'
 import SideBar from "@/components/provider_com/SideBar.vue"
 import PageHeader from "@/components/provider_com/PageHeader.vue"
 
-// --- Sample Data ---
-const orders = ref([
-  {
-    id: '#O12780',
-    customerId: '#C12780',
-    customerName: 'John Smith',
-    status: 'pending',
-    total: 13,
-    createdAt: new Date('2024-02-03'),
-    completedAt: null,
-    items: [
-      { productId: '#P12780', image: '🥦', quantity: '2 kg', price: 2 },
-      { productId: '#P12767', image: '🌽', quantity: '2 kg', price: 6 },
-      { productId: '#P12721', image: '🥩', quantity: '2 kg', price: 5 },
-    ]
-  },
-  {
-    id: '#O12781',
-    customerId: '#C12781',
-    customerName: 'Sarah Johnson',
-    status: 'delivering',
-    total: 13,
-    createdAt: new Date('2024-02-03'),
-    completedAt: null,
-    items: [
-      { productId: '#P12780', image: '🥦', quantity: '2 kg', price: 2 },
-      { productId: '#P12767', image: '🌽', quantity: '2 kg', price: 6 },
-      { productId: '#P12721', image: '🥩', quantity: '2 kg', price: 5 },
-    ]
-  },
-  {
-    id: '#O12782',
-    customerId: '#C12782',
-    customerName: 'Michael Chen',
-    status: 'pending',
-    total: 13,
-    createdAt: new Date('2024-02-03'),
-    completedAt: null,
-    items: [
-      { productId: '#P12780', image: '🥦', quantity: '2 kg', price: 2 },
-      { productId: '#P12767', image: '🌽', quantity: '2 kg', price: 6 },
-      { productId: '#P12721', image: '🥩', quantity: '2 kg', price: 5 },
-    ]
-  },
-  {
-    id: '#O12783',
-    customerId: '#C12783',
-    customerName: 'Emma Wilson',
-    status: 'completed',
-    total: 20,
-    createdAt: new Date('2024-02-05'),
-    completedAt: new Date('2024-02-06'),
-    items: [
-      { productId: '#P12780', image: '🍎', quantity: '3 kg', price: 10 },
-      { productId: '#P12767', image: '🥕', quantity: '2 kg', price: 10 },
-    ]
-  },
-  {
-    id: '#O12784',
-    customerId: '#C12784',
-    customerName: 'Robert Brown',
-    status: 'completed',
-    total: 30,
-    createdAt: new Date('2024-02-06'),
-    completedAt: new Date('2024-02-07'),
-    items: [
-      { productId: '#P12790', image: '🍊', quantity: '5 kg', price: 15 },
-      { productId: '#P12791', image: '🍇', quantity: '2 kg', price: 15 },
-    ]
-  },
-  {
-    id: '#O12785',
-    customerId: '#C12785',
-    customerName: 'Lisa Anderson',
-    status: 'delivering',
-    total: 25,
-    createdAt: new Date('2024-02-07'),
-    completedAt: null,
-    items: [
-      { productId: '#P12795', image: '🍓', quantity: '1 kg', price: 12 },
-      { productId: '#P12796', image: '🥒', quantity: '2 kg', price: 8 },
-      { productId: '#P12797', image: '🧄', quantity: '0.5 kg', price: 5 },
-    ]
-  },
-])
+const API_BASE_URL = 'http://localhost:3000'
+const providerId = 1 // HARDCODED - Replace with auth.user.id when authentication is ready
 
-// --- Filter & Search State ---
+// --- State ---
+const orders = ref([])
+const loading = ref(false)
+const error = ref(null)
 const activeFilter = ref('all')
 const searchQuery = ref('')
 const showDetailModal = ref(false)
 const selectedOrder = ref(null)
-const sortOrder = ref('desc') // 'desc' = newest first, 'asc' = oldest first
+const sortOrder = ref('desc')
+
+// --- Fetch Orders from API ---
+const fetchOrders = async () => {
+  loading.value = true
+  error.value = null
+  try {
+    const response = await axios.get(`${API_BASE_URL}/orders/provider/${providerId}`)
+    
+    // Transform API response to match component structure
+    orders.value = response.data.map(order => ({
+      id: order.order_code || `#O${order.id}`,
+      customerId: `#C${order.customer_id}`,
+      customerName: `Customer ${order.customer_id}`, // Will be updated when users API is connected
+      status: order.status,
+      total: parseFloat(order.total),
+      createdAt: new Date(order.created_at),
+      completedAt: order.completed_at ? new Date(order.completed_at) : null,
+      items: [], // Will be populated when order_items API is connected
+      item: order.item ?? 1, // Use nullish coalescing to preserve 0 values
+      orderId: order.id // Keep original ID for updates
+    }))
+    
+    console.log('Orders loaded:', orders.value)
+  } catch (err) {
+    error.value = err.message || 'Failed to load orders'
+    console.error('Error fetching orders:', err)
+    showToast('Failed to load orders', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+// --- Load orders on mount ---
+onMounted(() => {
+  fetchOrders()
+})
 
 const toggleSort = () => {
   sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'

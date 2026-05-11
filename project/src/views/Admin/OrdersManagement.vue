@@ -54,7 +54,16 @@
       <button class="clear-filter-btn">Clear Filters</button>
     </div>
     <div class="main-content">
-      <div class="table-section">
+      <div v-if="loading" class="loading-state">
+        <p>Loading orders...</p>
+      </div>
+      <div v-else-if="error" class="error-state">
+        <p>Error: {{ error }}</p>
+      </div>
+      <div v-else-if="orders.length === 0" class="empty-state">
+        <p>No orders found</p>
+      </div>
+      <div v-else class="table-section">
         <table class="orders-table">
           <thead>
             <tr>
@@ -66,7 +75,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="order in paginatedOrders" :key="order.id" :class="{selected: order.id === selectedOrder.id}" @click="selectOrder(order)">
+            <tr v-for="order in paginatedOrders" :key="order.id" :class="{selected: order.id === selectedOrder?.id}" @click="selectOrder(order)">
               <td><span class="order-id">#ORD-{{ order.id }}</span></td>
               <td>
                 <div class="customer-cell">
@@ -81,7 +90,7 @@
           </tbody>
         </table>
         <div class="pagination-row">
-          <span>SHOWING 1-10 OF 2,482</span>
+          <span>SHOWING {{ (page - 1) * pageSize + 1 }}-{{ Math.min(page * pageSize, filteredOrders.length) }} OF {{ filteredOrders.length }}</span>
           <div class="pagination">
             <button :disabled="page === 1" @click="page--">&lt;</button>
             <button v-for="p in totalPages" :key="p" :class="{active: p === page}" @click="page = p">{{ p }}</button>
@@ -93,7 +102,7 @@
         <div class="details-card">
           <div class="details-header">
             <span class="details-order-id">#ORD-{{ selectedOrder.id }}</span>
-            <span class="details-date">Oct 24, 2023 at 2:45 PM</span>
+            <span class="details-date">{{ formatDate(selectedOrder.createdAt) }}</span>
             <span class="details-status delivered">DELIVERED</span>
           </div>
           <div class="details-customer">
@@ -138,83 +147,54 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 
+const API_BASE_URL = 'http://localhost:3000'
 const status = ref('All Statuses')
 const page = ref(1)
 const pageSize = 10
+const orders = ref([])
+const loading = ref(false)
+const error = ref(null)
 
-const orders = ref([
-  {
-    id: '5521',
-    customer: 'Jane Doe',
-    customerInitials: 'JD',
-    customerColor: '#e0e7ff',
-    provider: 'Green Valley Organics',
-    price: '$25.00',
-    status: 'Delivered',
-    statusClass: 'delivered',
-    items: [
-      { name: 'Kale', qty: 2, price: '$5.00' },
-      { name: 'Carrots', qty: 5, price: '$3.00' }
-    ]
-  },
-  {
-    id: '5522',
-    customer: 'Mark Smith',
-    customerInitials: 'MS',
-    customerColor: '#fef9c3',
-    provider: 'Sun-Kissed Farms',
-    price: '$42.50',
-    status: 'Pending',
-    statusClass: 'pending',
-    items: [
-      { name: 'Tomatoes', qty: 10, price: '$2.50' },
-      { name: 'Lettuce', qty: 3, price: '$4.00' }
-    ]
-  },
-  {
-    id: '5523',
-    customer: 'Rose Lee',
-    customerInitials: 'RL',
-    customerColor: '#bbf7d0',
-    provider: 'Orchard Lane',
-    price: '$118.00',
-    status: 'Confirmed',
-    statusClass: 'confirmed',
-    items: [
-      { name: 'Apples', qty: 20, price: '$3.00' },
-      { name: 'Pears', qty: 10, price: '$4.80' }
-    ]
-  },
-  {
-    id: '5524',
-    customer: 'Bill Brown',
-    customerInitials: 'BB',
-    customerColor: '#fca5a5',
-    provider: 'Root & Stem',
-    price: '$12.20',
-    status: 'Shipped',
-    statusClass: 'shipped',
-    items: [
-      { name: 'Spinach', qty: 4, price: '$2.50' }
-    ]
-  },
-  {
-    id: '5525',
-    customer: 'Tom Cook',
-    customerInitials: 'TC',
-    customerColor: '#fbcfe8',
-    provider: 'Green Valley Organics',
-    price: '$65.40',
-    status: 'Cancelled',
-    statusClass: 'cancelled',
-    items: [
-      { name: 'Cabbage', qty: 8, price: '$4.00' },
-      { name: 'Carrots', qty: 10, price: '$2.50' }
-    ]
+// --- Fetch All Orders from API ---
+const fetchOrders = async () => {
+  loading.value = true
+  error.value = null
+  try {
+    const response = await axios.get(`${API_BASE_URL}/orders`)
+    
+    // Transform API response to match component structure
+    orders.value = response.data.map(order => ({
+      id: order.id,
+      customer: `Customer ${order.customer_id}`, // Will be updated when users API is connected
+      customerInitials: `C${order.customer_id}`,
+      customerColor: '#e0e7ff',
+      provider: `Provider ${order.provider_id}`, // Will be updated when providers API is connected
+      price: `$${parseFloat(order.total).toFixed(2)}`,
+      status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
+      statusClass: order.status.toLowerCase(),
+      items: [], // Will be populated when order_items API is connected
+      item: order.item || 1,
+      orderCode: order.order_code,
+      createdAt: new Date(order.created_at),
+      completedAt: order.completed_at ? new Date(order.completed_at) : null
+    }))
+    
+    console.log('Orders loaded:', orders.value)
+  } catch (err) {
+    error.value = err.message || 'Failed to load orders'
+    console.error('Error fetching orders:', err)
+  } finally {
+    loading.value = false
   }
-])
+}
+
+// --- Load orders on mount ---
+onMounted(() => {
+  fetchOrders()
+})
 
 const filteredOrders = computed(() => {
   let result = orders.value
@@ -230,9 +210,20 @@ const paginatedOrders = computed(() => {
   return filteredOrders.value.slice(start, start + pageSize)
 })
 
-const selectedOrder = ref(orders.value[0])
+const selectedOrder = ref(null)
 function selectOrder(order) {
   selectedOrder.value = order
+}
+
+const formatDate = (date) => {
+  if (!date) return 'N/A'
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 </script>
 
@@ -436,15 +427,19 @@ function selectOrder(order) {
   font-size: 0.95rem;
   font-weight: 600;
   color: #fff;
+  background: #64748b;
 }
 .status-badge.delivered {
   background: #22c55e;
+  color: #fff;
 }
 .status-badge.pending {
   background: #f59e42;
+  color: #fff;
 }
 .status-badge.confirmed {
   background: #2563eb;
+  color: #fff;
 }
 .status-badge.shipped {
   background: #fbbf24;
@@ -452,6 +447,15 @@ function selectOrder(order) {
 }
 .status-badge.cancelled {
   background: #dc2626;
+  color: #fff;
+}
+.status-badge.completed {
+  background: #10b981;
+  color: #fff;
+}
+.status-badge.delivering {
+  background: #3b82f6;
+  color: #fff;
 }
 .pagination-row {
   display: flex;
@@ -602,6 +606,20 @@ function selectOrder(order) {
 }
 .cancel-btn {
   background: #fff1f2;
+  color: #dc2626;
+}
+.loading-state,
+.error-state,
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  background: #fff;
+  border-radius: 12px;
+  color: #64748b;
+  font-size: 1.1rem;
+}
+.error-state {
+  background: #fee2e2;
   color: #dc2626;
 }
 </style>
