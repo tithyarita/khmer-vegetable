@@ -20,12 +20,16 @@ export const useProductStore = defineStore('product', () => {
   const formatImage = (product) => {
     if (!product) return product
 
-    if (product.imageUrl && !product.imageUrl.startsWith('http')) {
-      product.image = API_BASE_URL + product.imageUrl
-    } else if (product.imageUrl) {
-      product.image = product.imageUrl
+    // Only use imageUrl if it exists and is not empty
+    if (product.imageUrl && product.imageUrl.trim() !== '') {
+      if (product.imageUrl.startsWith('http')) {
+        product.image = product.imageUrl
+      } else {
+        product.image = API_BASE_URL + product.imageUrl
+      }
     } else {
-      product.image = 'https://via.placeholder.com/200'
+      // If no image, set to null (don't use placeholder)
+      product.image = null
     }
 
     return product

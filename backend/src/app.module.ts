@@ -19,11 +19,7 @@ import { ProviderApplicationsModule } from './provider-application/provider-appl
       host: 'localhost',
       port: 3306,
       username: 'root',
-<<<<<<< HEAD
       password: 'root', // your MySQL password
-=======
-      password: '123', // your MySQL password
->>>>>>> 6f971ac1ca09d9773a2267113649f79a51e56ff7
       database: 'khmer_vegetable_market',
       autoLoadEntities: true,
       synchronize: true, // set to false in production

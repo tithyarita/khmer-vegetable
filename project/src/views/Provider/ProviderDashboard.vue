@@ -112,9 +112,11 @@
 
 <script setup>
 
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted, provide } from 'vue'
 
 import { useRouter } from 'vue-router'
+
+import { useProductStore } from '@/stores/productStore'
 
 import SideBar from '@/components/provider_com/sideBar.vue'
 
@@ -141,6 +143,17 @@ import onionImg from '@/assets/img-provider/onion.jpg'
 const router = useRouter()
 const productStore = useProductStore()
 const products = ref([])
+
+// Sidebar state
+const isSidebarOpen = ref(false)
+
+const closeSidebar = () => {
+  isSidebarOpen.value = false
+}
+
+// Provide sidebar state to child components
+provide('isSidebarOpen', isSidebarOpen)
+provide('closeSidebar', closeSidebar)
 
 onMounted(async () => {
   try {

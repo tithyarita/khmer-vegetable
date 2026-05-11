@@ -8,6 +8,8 @@ import { orders } from './orders.entity';
 import { products } from './products.entity';
 import { orderItems } from './order-items.entity';
 import { orderHistory } from './order-histories.entity';
+import { OrdersController } from './orders.controller';
+import { OrdersService } from './orders.service';
 
 @Module({
   imports: [
@@ -19,8 +21,8 @@ import { orderHistory } from './order-histories.entity';
       orderHistory,
     ]),
   ],
-  controllers: [UsersController],
-  providers: [UsersService],
-  exports: [UsersService],
+  controllers: [UsersController, OrdersController],
+  providers: [UsersService, OrdersService],
+  exports: [UsersService, OrdersService],
 })
 export class UsersModule {}
