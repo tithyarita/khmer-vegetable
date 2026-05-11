@@ -37,4 +37,7 @@ export class orders {
 
   @Column({ nullable: true })
   completed_at!: Date;
+
+  @Column({ default: 1 })
+  item!: number;
 }

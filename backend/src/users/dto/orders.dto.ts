@@ -20,6 +20,10 @@ export class CreateOrderDto {
   @IsNumber()
   @IsNotEmpty()
   total: number;
+
+  @IsNumber()
+  @IsOptional()
+  item?: number;
 }
 
 export class UpdateOrderDto {
@@ -42,6 +46,10 @@ export class UpdateOrderDto {
   @IsNumber()
   @IsOptional()
   total?: number;
+
+  @IsNumber()
+  @IsOptional()
+  item?: number;
 
   @IsDate()
   @IsOptional()
