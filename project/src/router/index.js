@@ -13,6 +13,7 @@ import MyOrder  from '../views/User/MyOrder.vue'
 import Receipt from '../views/User/ReceiptView.vue'
 import Address from '../views/User/AddressView.vue'
 import Checkout from '../views/User/CheckoutView.vue'
+import Profile from '../views/User/UserDashboard.vue'
 
 
 // ==================== Provider ====================
@@ -60,6 +61,7 @@ const routes = [
       { path: 'Receipt', name: 'Receipt', component: Receipt },
       { path: 'fashDeals', name: 'FashDeals', component: fashDeals },
       { path: 'checkout', name: 'Checkout', component: Checkout },
+      { path: 'profile', name: 'Profile', component: Profile },
 
     ],
   },
@@ -110,9 +112,9 @@ const routes = [
     ],
   },
 
-  // // -------- Auth --------
-  // { path: '/user/login', name: 'Login', component: UserLogin },
-  // { path: '/user/register', name: 'Register', component: UserRegister },
+  // -------- Auth --------
+  { path: '/user/login', name: 'Login', component: () => import('../views/User/login.vue') },
+  // { path: '/user/register', name: 'Register', component: () => import('../views/User/resgister.vue') },
 ]
 
 // ==================== Router ====================
@@ -123,22 +125,26 @@ const router = createRouter({
 })
 
 
-// // Global navigation guard for role-based dashboard access
-// router.beforeEach((to, from, next) => {
-//   const user = JSON.parse(localStorage.getItem('user'));
-//   if (to.path.startsWith('/admin')) {
-//     if (!user || user.role !== 'admin') {
-//       // Not admin, redirect to login or home
-//       return next('/user/login');
-//     }
-//   }
-//   if (to.path.startsWith('/provider')) {
-//     if (!user || user.role !== 'provider') {
-//       // Not provider, redirect to login or home
-//       return next('/user/login');
-//     }
-//   }
-//   next();
-// });
+
+// Global navigation guard for role-based dashboard access
+router.beforeEach((to, from) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const token = localStorage.getItem('token');
+
+  // Protect admin routes
+  if (to.path.startsWith('/admin')) {
+    if (!user || !token || user.role !== 'admin') {
+      return { path: '/user/login', query: { redirect: to.fullPath } }
+    }
+  }
+  // Protect provider routes
+  if (to.path.startsWith('/provider')) {
+    if (!user || !token || user.role !== 'provider') {
+      return { path: '/user/login', query: { redirect: to.fullPath } }
+    }
+  }
+  // Allow navigation
+  return true
+});
 
 export default router

@@ -1,3 +1,4 @@
+
 import {
   Controller,
   Post,
@@ -6,10 +7,12 @@ import {
   Delete,
   Param,
   Query,
+  Put,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { users } from './users.entity';
+import { orders } from './orders.entity';
 import * as bcrypt from 'bcryptjs';
 
 @Controller('users')
@@ -17,7 +20,25 @@ export class UsersController {
   constructor(
     @InjectRepository(users)
     private readonly usersRepository: Repository<users>,
+    @InjectRepository(orders)
+    private readonly ordersRepository: Repository<orders>,
   ) {}
+  // =========================
+  // UPDATE USER PROFILE
+  // =========================
+  @Put(':id')
+  async updateUser(@Param('id') id: string, @Body() body: Partial<users>) {
+    await this.usersRepository.update(id, body);
+    return await this.usersRepository.findOne({ where: { id: Number(id) } });
+  }
+
+  // =========================
+  // GET USER ORDERS
+  // =========================
+  @Get(':id/orders')
+  async getUserOrders(@Param('id') id: string) {
+    return this.ordersRepository.find({ where: { customer_id: Number(id) } });
+  }
 
   // =========================
   // GET USERS (ALL OR FILTER BY ROLE)
