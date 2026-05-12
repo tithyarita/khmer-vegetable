@@ -1,14 +1,12 @@
 <template>
 <NavigationBar />
   <div class="app">
-    <!-- Topbar -->
-    <nav class="topbar">
-      <span class="topbar__crumb">Orders</span>
-      <span class="topbar__sep">›</span>
-      <span class="topbar__id">#{{ orderTrackerStore.currentOrder?.id }}</span>
-    </nav>
-
     <main class="page">
+      <nav class="breadcrumb">
+        <a href="/">Home</a><span class="sep">›</span>
+        <a href="/customer/my-orders">My Orders</a><span class="sep">›</span>
+        <span class="cur">#{{ orderTrackerStore.currentOrder?.id }}</span>
+      </nav>
       <header class="page-header" v-if="orderTrackerStore.currentOrder">
         <div>
           <h1 class="page-title">Track Your Freshness</h1>
@@ -123,9 +121,21 @@
               </div>
             </div>
 
-            <button class="download-btn">
-              <IconDownload />
-              Download Receipt
+          </div>
+
+          <!-- Actions -->
+          <div class="card actions-card">
+            <button class="action-btn action-btn--primary" @click="$router.push('/customer/my-orders')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              Back to My Orders
+            </button>
+            <button class="action-btn action-btn--secondary" @click="contactSupport">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.362 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.338 1.85.574 2.81.7A2 2 0 0122 16.92z"/>
+              </svg>
+              Contact Support
             </button>
           </div>
 
@@ -183,14 +193,6 @@ const IconBox = defineComponent({
     h('line', { x1: '10', y1: '12', x2: '14', y2: '12' }),
   ])
 })
-const IconDownload = defineComponent({
-  render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
-    h('path', { d: 'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4' }),
-    h('polyline', { points: '7 10 12 15 17 10' }),
-    h('line', { x1: '12', y1: '15', x2: '12', y2: '3' }),
-  ])
-})
-
 // ── Fixed Phnom Penh coordinates ──────────────────────────────────────────────
 // Default coordinates (will be overridden by store data)
 let FARM_COORDS = [11.4700, 104.8800]
@@ -198,7 +200,7 @@ let DEST_COORDS = [11.5564, 104.9282]
 
 // ── Map refs & state ──────────────────────────────────────────────────────────
 const mapEl       = ref(null)
-const mapStatus   = ref('locating') // 'locating' | 'live' | 'denied'
+const mapStatus   = ref('locating') 
 let leafletMap    = null
 let riderMarker   = null
 let riderTimer    = null
@@ -353,6 +355,10 @@ onUnmounted(() => {
   if (leafletMap) leafletMap.remove()
 })
 
+function contactSupport() {
+  alert('Contacting support for order #' + orderTrackerStore.currentOrder?.id)
+}
+
 // ── Store and state setup ────────────────────────────────────────────────────
 const route = useRoute()
 const orderTrackerStore = useOrderTrackerStore()
@@ -403,19 +409,11 @@ const connectorState = (i) => {
   min-height: 100vh;
 }
 
-/* ── Topbar ──────────────────────────────────────────────────────────────────*/
-.topbar {
-  background: var(--white);
-  border-bottom: 1px solid var(--sand);
-  padding: 12px 28px;
-  font-size: 13px;
-  color: var(--text-soft);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.topbar__sep { margin: 0 2px; }
-.topbar__id  { color: var(--green-mid); font-weight: 600; }
+/* ── Breadcrumb ──────────────────────────────────────────────────────────────*/
+.breadcrumb { display: flex; gap: 6px; font-size: 13px; color: var(--text-soft); margin-bottom: 20px; }
+.breadcrumb a { color: var(--text-mid); text-decoration: none; }
+.breadcrumb .cur { color: var(--text-soft); }
+.sep { color: #c8d5cc; }
 
 /* ── Page ────────────────────────────────────────────────────────────────────*/
 .page {
@@ -691,31 +689,54 @@ const connectorState = (i) => {
 }
 .totals__grand-price { color: var(--green-bright); }
 
-/* ── Download ────────────────────────────────────────────────────────────────*/
-.download-btn {
-  width: 100%; margin-top: 14px;
-  background: var(--sand);
-  border: 1.5px solid #d0c8bc;
-  border-radius: 12px; padding: 12px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px; font-weight: 600;
-  color: var(--text-mid);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: background .2s, border-color .2s, color .2s;
+/* ── Actions ─────────────────────────────────────────────────────────────────*/
+.actions-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-.download-btn:hover {
+.action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+.action-btn--primary {
+  background: var(--green-deep);
+  color: #fff;
+}
+.action-btn--primary:hover {
+  background: var(--green-mid);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(26,61,43,0.3);
+}
+.action-btn--secondary {
+  background: transparent;
+  color: var(--text-mid);
+  border: 1.5px solid var(--sand);
+}
+.action-btn--secondary:hover {
   background: var(--green-pale);
   border-color: var(--green-light);
   color: var(--green-deep);
 }
-.download-btn :deep(svg) { width: 16px; height: 16px; stroke: currentColor; }
+.action-btn svg { flex-shrink: 0; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────────*/
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
   .page { padding: 24px 20px 40px; }
-  .topbar { padding: 12px 20px; }
+  .breadcrumb { font-size: 11px; margin-bottom: 16px; }
   .page-title { font-size: 32px; }
   .page-header { flex-direction: column; gap: 16px; }
   .map-card { height: 300px; }
