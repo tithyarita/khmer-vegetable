@@ -3,7 +3,7 @@
     <div class="navbar-top">
       <div class="container">
         <div class="logo">
-          <span class="logo-text"><img src="../../assets/images/Logo.png" alt="Logo" /></span>
+          <span class="logo-text"><img src="@/assets/images/Logo.png" alt="Logo" /></span>
         </div>
 
         <div class="search" @click="toSearch">
