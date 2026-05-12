@@ -14,7 +14,10 @@ import Receipt from '../views/User/ReceiptView.vue'
 import Address from '../views/User/AddressView.vue'
 import Checkout from '../views/User/CheckoutView.vue'
 import Profile from '../views/User/UserDashboard.vue'
-
+import OrderTracker from '../views/User/OrderTracker.vue'
+import ProductDetailUser from '../views/User/ProductDetail.vue'
+import Search from '../components/Customer/Search.vue'
+import ProductList from '../components/Customer/Productlist.vue'
 
 // ==================== Provider ====================
 import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
@@ -62,6 +65,10 @@ const routes = [
       { path: 'fashDeals', name: 'FashDeals', component: fashDeals },
       { path: 'checkout', name: 'Checkout', component: Checkout },
       { path: 'profile', name: 'Profile', component: Profile },
+      { path: 'search', name: 'Search', component: Search },
+      { path: 'order-tracker', name: 'OrderTracker', component: OrderTracker },
+      { path: 'product/:id', name: 'ProductDetailUser', component: ProductDetailUser, props: true },
+      { path: 'products', name: 'ProductList', component: ProductList },
 
     ],
   },
