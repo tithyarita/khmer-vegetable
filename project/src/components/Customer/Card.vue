@@ -4,6 +4,8 @@
       v-for="product in products"
       :key="product.id"
       class="product-card"
+      @click="goToProductDetail(product.id)"
+      style="cursor: pointer;"
     >
       <div class="card-image">
         <img :src="product.image" :alt="product.name" />
@@ -46,7 +48,7 @@
             <span class="original-price">${{ product.originalPrice }}</span>
           </div>
 
-          <button class="btn-add" @click="addToCart(product)">
+          <button class="btn-add" @click.stop="addToCart(product)">
             <span class="plus">+</span> Add
           </button>
         </div>
@@ -143,16 +145,12 @@ export default {
     },
 
     addToCart(product) {
-      // Check if user is logged in
-      const user = JSON.parse(localStorage.getItem('user'));
-      if (!user) {
-        if (window.confirm('You need to login or register before adding to cart.\nDo you want to login now?')) {
-          this.$router.push('/user/login');
-        }
-        return;
-      }
       this.cartStore.addToCart(product)
       console.log("Added to cart:", product.name)
+    },
+
+    goToProductDetail(productId) {
+      this.$router.push(`/product/${productId}`)
     }
   }
 };
