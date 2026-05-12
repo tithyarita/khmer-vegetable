@@ -3,7 +3,7 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <img src="../logo.png" alt="Khmer Veg" class="logo" />
+        <!-- <img src="../logo.png" alt="Khmer Veg" class="logo" /> -->
         <h3>Khmer Veg<br /><span class="subtitle">HARVEST LEDGER</span></h3>
       </div>
       <nav class="sidebar-nav">
