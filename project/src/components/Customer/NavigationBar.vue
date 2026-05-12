@@ -188,6 +188,7 @@ export default {
     },
     toSearch() {
       this.searchStore.open(this.query)
+      this.$router.push('/search')
     },
     goToCart() {
       this.$router.push('/cart')

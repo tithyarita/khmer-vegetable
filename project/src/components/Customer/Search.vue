@@ -1,156 +1,154 @@
 <template>
-  <transition name="fade">
-    <div v-if="searchStore.isOpen" class="search-overlay" @click.self="closeSearch">
-      <div class="search-modal">
+  <div class="search-page">
+    <div class="search-page-inner">
 
-        <div class="modal-topbar">
-          <div class="modal-logo">
-            <div class="logo-icon small">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#fff" stroke-width="1.8"/>
-                <line x1="3" y1="6" x2="21" y2="6" stroke="#fff" stroke-width="1.8"/>
-                <path d="M16 10a4 4 0 01-8 0" stroke="#fff" stroke-width="1.8"/>
-              </svg>
-            </div>
-            <span class="logo-text" style="font-size:17px">Nest<span class="logo-accent">Mart</span></span>
-          </div>
-          <button class="close-btn" @click="closeSearch">✕</button>
-        </div>
-
-        <!-- Big Search Input -->
-        <div class="big-search-wrap">
-          <div class="big-search" :class="{ focused: searchFocused }">
-            <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
-              <circle cx="9" cy="9" r="6" stroke="#2D7A3A" stroke-width="1.8"/>
-              <path d="M13.5 13.5L17 17" stroke="#2D7A3A" stroke-width="1.8" stroke-linecap="round"/>
+      <div class="modal-topbar">
+        <div class="modal-logo">
+          <div class="logo-icon small">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#fff" stroke-width="1.8"/>
+              <line x1="3" y1="6" x2="21" y2="6" stroke="#fff" stroke-width="1.8"/>
+              <path d="M16 10a4 4 0 01-8 0" stroke="#fff" stroke-width="1.8"/>
             </svg>
-            <input
-              ref="mainSearch"
-              v-model="query"
-              type="text"
-              placeholder="What are you looking for today?"
-              @focus="searchFocused = true"
-              @blur="searchFocused = false"
-            />
-            <button v-if="query" class="clear-x" @click="query = ''">✕</button>
           </div>
+          <span class="logo-text" style="font-size:17px">Nest<span class="logo-accent">Mart</span></span>
         </div>
+        <button class="close-btn" @click="closeSearch">✕</button>
+      </div>
 
-        <!-- BODY -->
-        <div class="modal-body">
-
-          <!-- LEFT -->
-          <div class="left-col">
-
-            <!-- DEFAULT STATE -->
-            <template v-if="!query">
-              <section class="section">
-                <p class="sec-label">POPULAR SEARCHES</p>
-                <div class="chips-row">
-                  <button v-for="tag in popularSearches" :key="tag" class="pop-chip" @click="query = tag">{{ tag }}</button>
-                </div>
-              </section>
-
-              <section class="section">
-                <p class="sec-label">TRENDING NOW</p>
-                <div class="trending-grid">
-                  <div v-for="item in trendingItems" :key="item.id" class="trending-card" @click="goToProduct(item)">
-                    <div class="trending-img-box">
-                      <img :src="item.img" :alt="item.name" />
-                    </div>
-                    <p class="t-name">{{ item.name }}</p>
-                    <p class="t-price">{{ item.price }}</p>
-                  </div>
-                </div>
-              </section>
-
-              <section class="section">
-                <p class="sec-label">EXPLORE CATEGORIES</p>
-                <div class="cat-grid">
-                  <div v-for="cat in exploreCategories" :key="cat.name" class="cat-card" @click="query = cat.name">
-                    <div class="cat-icon-box">{{ cat.icon }}</div>
-                    <p class="c-name">{{ cat.name }}</p>
-                    <p class="c-count">{{ cat.count }} items</p>
-                  </div>
-                </div>
-              </section>
-            </template>
-
-            <!-- SEARCH RESULTS STATE -->
-            <template v-else>
-              <div class="result-tabs">
-                <button class="rtab" :class="{ active: resultTab === 'products' }" @click="resultTab = 'products'">
-                  Products <span class="rtab-ct">{{ filteredItems.length }}</span>
-                </button>
-                <button class="rtab" :class="{ active: resultTab === 'farmers' }" @click="resultTab = 'farmers'">
-                  Farmers <span class="rtab-ct">{{ filteredFarmers.length }}</span>
-                </button>
-              </div>
-
-              <div v-if="resultTab === 'products'">
-                <div v-if="!filteredItems.length" class="empty">
-                  <p>No products for "<strong>{{ query }}</strong>"</p>
-                  <button class="clear-q" @click="query=''">Clear search</button>
-                </div>
-                <div class="r-list">
-                  <div v-for="item in filteredItems" :key="item.id" class="r-row" @click="goToProduct(item)">
-                    <div class="r-emoji">{{ item.emoji }}</div>
-                    <div class="r-info">
-                      <p class="r-name">{{ item.name }}</p>
-                      <p class="r-sub">{{ item.farmer }} · {{ item.category }}</p>
-                    </div>
-                    <span class="r-price">{{ item.priceLabel }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="resultTab === 'farmers'">
-                <div v-if="!filteredFarmers.length" class="empty">
-                  <p>No farmers for "<strong>{{ query }}</strong>"</p>
-                  <button class="clear-q" @click="query=''">Clear search</button>
-                </div>
-                <div class="r-list">
-                  <div v-for="f in filteredFarmers" :key="f.id" class="r-row" @click="goToFarmer(f)">
-                    <div class="r-avatar" :style="{ background: f.bg }">{{ f.initials }}</div>
-                    <div class="r-info">
-                      <p class="r-name">
-                        {{ f.name }}
-                        <svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:middle;margin-left:3px"><circle cx="12" cy="12" r="10" fill="#2D7A3A"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                      </p>
-                      <p class="r-sub">{{ f.location }} · {{ f.specialties.join(', ') }}</p>
-                    </div>
-                    <button class="follow-sm" @click.stop="f.following = !f.following">
-                      {{ f.following ? 'Following' : 'Follow' }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </template>
-
-          </div>
-
-          <!-- RIGHT -->
-          <div class="right-col">
-            <p class="sec-label">FEATURED LOCAL FARMS</p>
-            <div class="farms-list">
-              <div v-for="farm in featuredFarms" :key="farm.id" class="farm-row" @click="goToFarmer(farm)">
-                <div class="farm-ava" :style="{ background: farm.bg }">{{ farm.initials }}</div>
-                <div class="farm-info">
-                  <p class="farm-name">
-                    {{ farm.name }}
-                    <svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:middle;margin-left:3px"><circle cx="12" cy="12" r="10" fill="#2D7A3A"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </p>
-                  <p class="farm-sub">{{ farm.distance }} · {{ farm.tag }}</p>
-                </div>
-              </div>
-            </div>
-            <button class="view-all" @click="$router.push('/farmers')">View all local partners →</button>
-          </div>
-
+      <!-- Big Search Input -->
+      <div class="big-search-wrap">
+        <div class="big-search" :class="{ focused: searchFocused }">
+          <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+            <circle cx="9" cy="9" r="6" stroke="#2D7A3A" stroke-width="1.8"/>
+            <path d="M13.5 13.5L17 17" stroke="#2D7A3A" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <input
+            ref="mainSearch"
+            v-model="query"
+            type="text"
+            placeholder="What are you looking for today?"
+            @focus="searchFocused = true"
+            @blur="searchFocused = false"
+          />
+          <button v-if="query" class="clear-x" @click="query = ''">✕</button>
         </div>
       </div>
+
+      <!-- BODY -->
+      <div class="modal-body">
+
+        <!-- LEFT -->
+        <div class="left-col">
+
+          <!-- DEFAULT STATE -->
+          <template v-if="!query">
+            <section class="section">
+              <p class="sec-label">POPULAR SEARCHES</p>
+              <div class="chips-row">
+                <button v-for="tag in popularSearches" :key="tag" class="pop-chip" @click="query = tag">{{ tag }}</button>
+              </div>
+            </section>
+
+            <section class="section">
+              <p class="sec-label">TRENDING NOW</p>
+              <div class="trending-grid">
+                <div v-for="item in trendingItems" :key="item.id" class="trending-card" @click="goToProduct(item)">
+                  <div class="trending-img-box">
+                    <img :src="item.img" :alt="item.name" />
+                  </div>
+                  <p class="t-name">{{ item.name }}</p>
+                  <p class="t-price">{{ item.price }}</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="section">
+              <p class="sec-label">EXPLORE CATEGORIES</p>
+              <div class="cat-grid">
+                <div v-for="cat in exploreCategories" :key="cat.name" class="cat-card" @click="query = cat.name">
+                  <div class="cat-icon-box">{{ cat.icon }}</div>
+                  <p class="c-name">{{ cat.name }}</p>
+                  <p class="c-count">{{ cat.count }} items</p>
+                </div>
+              </div>
+            </section>
+          </template>
+
+          <!-- SEARCH RESULTS STATE -->
+          <template v-else>
+            <div class="result-tabs">
+              <button class="rtab" :class="{ active: resultTab === 'products' }" @click="resultTab = 'products'">
+                Products <span class="rtab-ct">{{ filteredItems.length }}</span>
+              </button>
+              <button class="rtab" :class="{ active: resultTab === 'farmers' }" @click="resultTab = 'farmers'">
+                Farmers <span class="rtab-ct">{{ filteredFarmers.length }}</span>
+              </button>
+            </div>
+
+            <div v-if="resultTab === 'products'">
+              <div v-if="!filteredItems.length" class="empty">
+                <p>No products for "<strong>{{ query }}</strong>"</p>
+                <button class="clear-q" @click="query=''">Clear search</button>
+              </div>
+              <div class="r-list">
+                <div v-for="item in filteredItems" :key="item.id" class="r-row" @click="goToProduct(item)">
+                  <div class="r-emoji">{{ item.emoji }}</div>
+                  <div class="r-info">
+                    <p class="r-name">{{ item.name }}</p>
+                    <p class="r-sub">{{ item.farmer }} · {{ item.category }}</p>
+                  </div>
+                  <span class="r-price">{{ item.priceLabel }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="resultTab === 'farmers'">
+              <div v-if="!filteredFarmers.length" class="empty">
+                <p>No farmers for "<strong>{{ query }}</strong>"</p>
+                <button class="clear-q" @click="query=''">Clear search</button>
+              </div>
+              <div class="r-list">
+                <div v-for="f in filteredFarmers" :key="f.id" class="r-row" @click="goToFarmer(f)">
+                  <div class="r-avatar" :style="{ background: f.bg }">{{ f.initials }}</div>
+                  <div class="r-info">
+                    <p class="r-name">
+                      {{ f.name }}
+                      <svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:middle;margin-left:3px"><circle cx="12" cy="12" r="10" fill="#2D7A3A"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </p>
+                    <p class="r-sub">{{ f.location }} · {{ f.specialties.join(', ') }}</p>
+                  </div>
+                  <button class="follow-sm" @click.stop="f.following = !f.following">
+                    {{ f.following ? 'Following' : 'Follow' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+
+        </div>
+
+        <!-- RIGHT -->
+        <div class="right-col">
+          <p class="sec-label">FEATURED LOCAL FARMS</p>
+          <div class="farms-list">
+            <div v-for="farm in featuredFarms" :key="farm.id" class="farm-row" @click="goToFarmer(farm)">
+              <div class="farm-ava" :style="{ background: farm.bg }">{{ farm.initials }}</div>
+              <div class="farm-info">
+                <p class="farm-name">
+                  {{ farm.name }}
+                  <svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:middle;margin-left:3px"><circle cx="12" cy="12" r="10" fill="#2D7A3A"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </p>
+                <p class="farm-sub">{{ farm.distance }} · {{ farm.tag }}</p>
+              </div>
+            </div>
+          </div>
+          <button class="view-all" @click="$router.push('/farmers')">View all local partners →</button>
+        </div>
+
+      </div>
     </div>
-  </transition>
+  </div>
 </template>
 
 <script>
@@ -236,17 +234,11 @@ export default {
   },
   watch: {
     query(v) { if (v) this.resultTab = 'products' },
-    'searchStore.isOpen'(open) {
-      if (open) {
-        this.query = this.searchStore.query
-        this.$nextTick(() => this.$refs.mainSearch?.focus())
-      }
-    },
   },
   methods: {
-    closeSearch() { this.searchStore.close() },
-    goToProduct(item) { this.closeSearch(); this.$router.push(`/product/${item.id}`) },
-    goToFarmer(f) { this.closeSearch(); this.$router.push(`/farmers/${f.id}`) },
+    closeSearch() { this.$router.push('/home') },
+    goToProduct(item) { this.$router.push(`/product/${item.id}`) },
+    goToFarmer(f) { this.$router.push(`/farmers/${f.id}`) },
   },
   mounted() {
     if (this.searchStore.query) {
@@ -261,21 +253,15 @@ export default {
 * { box-sizing: border-box; }
 :global(body) { margin: 0; overflow-x: hidden; }
 
-/* ===== OVERLAY ===== */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-
-.search-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.25);
-  z-index: 300; display: flex; justify-content: center;
-  align-items: flex-start; overflow-y: auto; padding-top: 40px;
+/* ===== PAGE ===== */
+.search-page {
+  background: #fff; min-height: 100vh;
+  display: flex; justify-content: center;
+  padding: 40px 20px;
 }
 
-.search-modal {
-  background: #fff; width: 100%; max-width: 1100px;
-  min-height: 60vh; max-height: 90vh; overflow-y: auto;
-  padding: 28px 44px 56px; border-radius: 20px; margin-bottom: 40px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+.search-page-inner {
+  width: 100%; max-width: 1100px;
 }
 
 .modal-topbar {
@@ -400,8 +386,7 @@ export default {
 .view-all:hover { text-decoration: underline; }
 
 @media (max-width: 768px) {
-  .search-overlay { padding-top: 0; }
-  .search-modal { padding: 20px 18px 40px; min-height: 100vh; max-height: none; border-radius: 0; margin-bottom: 0; }
+  .search-page { padding: 20px 16px; }
   .modal-body { grid-template-columns: 1fr; gap: 32px; }
   .trending-grid { grid-template-columns: repeat(2, 1fr); }
   .cat-grid { grid-template-columns: repeat(2, 1fr); }
