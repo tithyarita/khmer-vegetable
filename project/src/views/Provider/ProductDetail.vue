@@ -126,7 +126,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useProductStore } from '../../stores/productStore'
 import SideBar from '../../components/provider_com/sideBar.vue'
 import PageHeader from '../../components/provider_com/pageHeader.vue'
-import PopupCard from '../../components/provider_com/PopupCard.vue'
+import PopupCard from '../../components/provider_com/popupCard.vue'
 
 const router = useRouter()
 const route = useRoute()
