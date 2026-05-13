@@ -1,4 +1,4 @@
-<!-- <template>
+<template>
   <div class="revenue-stats">
     <div class="row g-3">
       <div v-for="stat in stats" :key="stat.id" class="col-12 col-sm-6 col-lg-3">
@@ -176,4 +176,4 @@ const stats = ref([
     gap: 0.75rem !important;
   }
 }
-</style> -->
+</style>
