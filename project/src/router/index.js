@@ -121,6 +121,7 @@ const routes = [
 
   // -------- Auth --------
   { path: '/user/login', name: 'Login', component: () => import('../views/User/login.vue') },
+  { path: '/provider/login', name: 'ProviderLogin', component: () => import('../views/Provider/login.vue') },
   // { path: '/user/register', name: 'Register', component: () => import('../views/User/resgister.vue') },
 ]
 
