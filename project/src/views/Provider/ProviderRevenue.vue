@@ -42,7 +42,7 @@
 
 <script setup>
 import SideBar from '../../components/provider_com/sideBar.vue'
-import PageHeader from '../../components/provider_com/PageHeader.vue'
+import PageHeader from '../../components/provider_com/pageHeader.vue'
 import RevenueStats from '../../components/provider_com/RevenueStats.vue'
 import ProductsSellAnalysis from '../../components/provider_com/ProductsSellAnalysis.vue'
 import RecentOrder from '../../components/provider_com/RecentOrder.vue'
