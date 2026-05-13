@@ -57,8 +57,9 @@ export class UsersController {
         'users.name',
         'users.email',
         'users.phone',
-        role: (role as UserRole) || UserRole.CUSTOMER,
         'users.createat',
+        'users.role',
+        'users.created_at',
       ])
       .getMany();
   }
@@ -116,7 +117,7 @@ export class UsersController {
       name: name,
       email: email,
       phone: phone,
-      role: role || 'customer',
+      role: (role && Object.values(UserRole).includes(role as UserRole) ? (role as UserRole) : UserRole.CUSTOMER),
       password: hashedPassword,
     });
 

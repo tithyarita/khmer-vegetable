@@ -11,6 +11,7 @@ import { ProvidersModule } from './providers/providers.module';
 import { ApplicationsModule } from './providers/applications.module';
 import { ProductModule } from './product/product.module';
 import { ProviderApplicationsModule } from './provider-application/provider-application.module';
+import { Customer } from './customer/customer.entity';
 
 @Module({
   imports: [
