@@ -1,9 +1,19 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  Column,
+  OneToOne,
+  JoinColumn,
+  OneToMany,
+  PrimaryColumn,
+} from 'typeorm';
+import { users } from '../users/users.entity';
+import { ProviderApplication } from '../provider-application/provider-application.entity';
+import { Provider } from '../providers/providers.entity';
 
 @Entity('admins')
 export class Admin {
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @PrimaryColumn({ name: 'user_id' })
+  user_id!: number;
 
   @Column()
   name!: string;
@@ -16,4 +26,14 @@ export class Admin {
 
   @Column()
   status!: string;
+
+  @OneToOne(() => users, (user) => user.admin)
+  @JoinColumn({ name: 'user_id' })
+  user!: users;
+
+  @OneToMany(() => ProviderApplication, (app) => app.admin_reviewed_by)
+  reviewed_applications!: ProviderApplication[];
+
+  @OneToMany(() => Provider, (provider) => provider.createdByAdmin)
+  created_providers!: Provider[];
 }
