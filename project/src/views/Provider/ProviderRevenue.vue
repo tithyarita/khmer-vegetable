@@ -41,7 +41,7 @@
 </template>
 
 <script setup>
-import SideBar from '../../components/provider_com/SideBar.vue'
+import SideBar from '../../components/provider_com/sideBar.vue'
 import PageHeader from '../../components/provider_com/PageHeader.vue'
 import RevenueStats from '../../components/provider_com/RevenueStats.vue'
 import ProductsSellAnalysis from '../../components/provider_com/ProductsSellAnalysis.vue'
