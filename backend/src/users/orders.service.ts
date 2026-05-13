@@ -14,7 +14,10 @@ export class OrdersService {
   // Create a new order
   async create(createOrderDto: CreateOrderDto) {
     try {
-      const order = this.ordersRepository.create(createOrderDto);
+      const order = this.ordersRepository.create({
+        ...createOrderDto,
+        status: createOrderDto.status as OrderStatus,
+      });
       await this.ordersRepository.save(order);
       return {
         message: 'Order created successfully!',

@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { users } from './users.entity';
+import { users, UserRole } from './users.entity';
 import { orders } from './orders.entity';
 import * as bcrypt from 'bcryptjs';
 
@@ -57,7 +57,7 @@ export class UsersController {
         'users.name',
         'users.email',
         'users.phone',
-        'users.role',
+        role: (role as UserRole) || UserRole.CUSTOMER,
         'users.createat',
       ])
       .getMany();
@@ -69,7 +69,7 @@ export class UsersController {
   @Get('providers')
   async getProviders() {
     return this.usersRepository.find({
-      where: { role: 'provider' },
+      where: { role: UserRole.PROVIDER },
     });
   }
 
