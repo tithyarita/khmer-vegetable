@@ -42,6 +42,7 @@ import ProductManagement from '../views/Admin/ProductManagement.vue'
 import OrdersManagement from '../views/Admin/OrdersManagement.vue'
 import Reports from '../views/Admin/Report.vue'
 import AdminSetting from '../views/Admin/AdminSetting.vue'
+import AdminProfile from '../views/Admin/AdminProfile.vue'
 
 // // ==================== Auth ====================
 // import UserRegister from '../views/User/resgister.vue'
@@ -116,6 +117,7 @@ const routes = [
       { path: 'orders', component: OrdersManagement },
       { path: 'reports', component: Reports },
       { path: 'settings', component: AdminSetting },
+      { path: 'profile', component: AdminProfile },
     ],
   },
 

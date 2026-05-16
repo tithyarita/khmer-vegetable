@@ -45,23 +45,22 @@ export class UsersController {
   // =========================
   @Get()
   async findAll(@Query('role') role?: string) {
-    const query = this.usersRepository.createQueryBuilder('users');
-
-    if (role) {
-      query.where('users.role = :role', { role });
+    try {
+      if (role && Object.values(UserRole).includes(role as UserRole)) {
+        return await this.usersRepository.find({
+          select: ['id', 'name', 'email', 'phone', 'role', 'created_at'],
+          where: { role: role as UserRole },
+          order: { id: 'ASC' },
+        });
+      }
+      return await this.usersRepository.find({
+        select: ['id', 'name', 'email', 'phone', 'role', 'created_at'],
+        order: { id: 'ASC' },
+      });
+    } catch (error) {
+      console.error('Error in /users:', error);
+      throw error;
     }
-
-    return query
-      .select([
-        'users.id',
-        'users.name',
-        'users.email',
-        'users.phone',
-        'users.createat',
-        'users.role',
-        'users.created_at',
-      ])
-      .getMany();
   }
 
   // =========================
