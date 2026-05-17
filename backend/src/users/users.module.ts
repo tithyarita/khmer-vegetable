@@ -3,6 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { users } from './users.entity';
 import { Customer } from '../customer/customer.entity';
+import { Admin } from '../admin/admin.entity';
+import { Staff } from '../staff/staff.entity';
+import { Provider } from '../providers/providers.entity';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { orders } from './orders.entity';
@@ -21,6 +24,9 @@ import { OrdersService } from './orders.service';
       products,
       orderHistory,
       Customer,
+      Admin,
+      Staff,
+      Provider,
     ]),
   ],
   controllers: [UsersController, OrdersController],

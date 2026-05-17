@@ -9,6 +9,9 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  Req,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -17,6 +20,7 @@ import { extname } from 'path';
 
 import { ProductService } from './product.service';
 import { ProductDto } from './dto/product.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('products')
 export class ProductController {
@@ -24,8 +28,11 @@ export class ProductController {
 
   // 📦 GET ALL
   @Get()
-  findAll() {
-    return this.productService.findAll();
+  @UseGuards(JwtAuthGuard) // Populate req.user for the dashboard
+  findAll(@Query('provider_id') providerId?: string, @Req() req?: any) {
+    // If provider_id is passed in query, use it. Otherwise, check if user is logged in.
+    const id = providerId ? Number(providerId) : req.user?.id;
+    return this.productService.findAll(id);
   }
 
   // 🔍 GET ONE
@@ -35,6 +42,7 @@ export class ProductController {
   }
 
   // ➕ CREATE
+  @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(
     FileInterceptor('image', {
@@ -47,12 +55,17 @@ export class ProductController {
       }),
     }),
   )
-  create(@UploadedFile() file: Express.Multer.File, @Body() body: ProductDto) {
+  create(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: ProductDto & { provider_id?: number },
+    @Req() req: any,
+  ) {
     if (!file) {
       throw new BadRequestException('Image is required');
     }
 
-    return this.productService.create({
+    return this.productService.create(
+      {
       name: body.name,
       price: Number(body.price),
       stock: Number(body.stock),
@@ -60,10 +73,13 @@ export class ProductController {
       description: body.description,
       discount: body.discount ?? 0,
       imageUrl: `/images/${file.filename}`,
-    });
+      },
+      req.user.id, // Strictly use the logged-in user's ID
+    );
   }
 
   // ✏️ UPDATE (THIS FIXES YOUR 404 ISSUE)
+  @UseGuards(JwtAuthGuard)
   @Put(':id')
   @UseInterceptors(
     FileInterceptor('image', {
@@ -80,21 +96,27 @@ export class ProductController {
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
     @Body() body: ProductDto,
+    @Req() req: any,
   ) {
-    return this.productService.update(Number(id), {
-      name: body.name,
-      price: Number(body.price),
-      stock: Number(body.stock),
-      category: body.category,
-      description: body.description,
-      discount: body.discount ?? 0,
-      imageUrl: file ? `/images/${file.filename}` : undefined,
-    });
+    return this.productService.update(
+      Number(id),
+      {
+        name: body.name,
+        price: Number(body.price),
+        stock: Number(body.stock),
+        category: body.category,
+        description: body.description,
+        discount: body.discount ?? 0,
+        imageUrl: file ? `/images/${file.filename}` : undefined,
+      },
+      req.user.id, // Pass provider ID to verify ownership
+    );
   }
 
   // ❌ DELETE
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productService.remove(Number(id));
+  remove(@Param('id') id: string, @Req() req: any) {
+    return this.productService.remove(Number(id), req.user.id);
   }
 }

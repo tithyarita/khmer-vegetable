@@ -13,6 +13,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { users, UserRole } from './users.entity';
 import { orders } from './orders.entity';
+import { UsersService } from './users.service';
 import * as bcrypt from 'bcryptjs';
 
 @Controller('users')
@@ -22,6 +23,7 @@ export class UsersController {
     private readonly usersRepository: Repository<users>,
     @InjectRepository(orders)
     private readonly ordersRepository: Repository<orders>,
+    private readonly usersService: UsersService,
   ) {}
   // =========================
   // UPDATE USER PROFILE
@@ -96,35 +98,6 @@ export class UsersController {
       role?: string;
     },
   ) {
-    const { name, email, phone, password, role } = body;
-
-    if (!name || !email || !phone || !password) {
-      return { message: 'All fields are required.' };
-    }
-
-    const existingUser = await this.usersRepository.findOne({
-      where: { email: email },
-    });
-
-    if (existingUser) {
-      return { message: 'Email already registered.' };
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = this.usersRepository.create({
-      name: name,
-      email: email,
-      phone: phone,
-      role: (role && Object.values(UserRole).includes(role as UserRole) ? (role as UserRole) : UserRole.CUSTOMER),
-      password: hashedPassword,
-    });
-
-    await this.usersRepository.save(newUser);
-
-    return {
-      message: 'Registration successful!',
-      user: newUser,
-    };
+    return this.usersService.register(body);
   }
 }

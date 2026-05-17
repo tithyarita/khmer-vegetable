@@ -32,11 +32,11 @@ export class Provider {
   @JoinColumn({ name: 'user_id' })
   user!: users;
 
-  @OneToOne(() => ProviderApplication, (app) => app.provider)
+  @OneToOne(() => ProviderApplication, (app) => app.provider, { nullable: true })
   @JoinColumn({ name: 'application_id' })
   application!: ProviderApplication;
 
-  @ManyToOne(() => Admin, (admin) => admin.created_providers)
+  @ManyToOne(() => Admin, (admin) => admin.created_providers, { nullable: true })
   @JoinColumn({ name: 'created_by_admin' })
   createdByAdmin!: Admin;
 

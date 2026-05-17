@@ -1,13 +1,18 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Product } from './product.entity';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  ForbiddenException,
+} from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { Product } from './product.entity'
+import { HttpService } from '@nestjs/axios'
+import { firstValueFrom } from 'rxjs'
 
 @Injectable()
 export class ProductService {
-  private readonly logger = new Logger(ProductService.name);
+  private readonly logger = new Logger(ProductService.name)
 
   constructor(
     @InjectRepository(Product)
@@ -15,81 +20,98 @@ export class ProductService {
     private readonly httpService: HttpService,
   ) {}
 
-  // 🌐 Random image fallback
+  // 🌐 fallback image
   async getRandomImage(): Promise<string> {
     const res = await firstValueFrom(
       this.httpService.get<{ message: string }>(
         'https://dog.ceo/api/breeds/image/random',
       ),
-    );
-
-    return res.data.message;
+    )
+    return res.data.message
   }
 
-  // ➕ CREATE
-  async create(data: Partial<Product>) {
+  // ➕ CREATE PRODUCT
+  async create(data: Partial<Product>, providerId?: number) {
     if (!data.imageUrl) {
-      data.imageUrl = await this.getRandomImage();
+      data.imageUrl = await this.getRandomImage()
     }
 
-    const product = this.productRepository.create(data);
-    const saved = await this.productRepository.save(product);
+    const product = this.productRepository.create({
+      ...data,
+      provider: providerId ? { id: providerId } : undefined,
+    })
 
-    this.logger.log(`Created product ID: ${saved.id}`);
-    return saved;
+    const saved = await this.productRepository.save(product)
+
+    this.logger.log(`Created product ID: ${saved.id}`)
+    return saved
   }
 
-  // 📦 FIND ALL
-  async findAll() {
-    const products = await this.productRepository.find();
-    this.logger.log(`Loaded ${products.length} products`);
-    return products;
+  // 📦 GET ALL PRODUCTS
+  async findAll(providerId?: number) {
+    const products = await this.productRepository.find({
+      where: providerId ? { provider: { id: providerId } } : {},
+      relations: ['provider'],
+    })
+
+    this.logger.log(
+      `Loaded ${products.length} products (${
+        providerId ? 'provider ' + providerId : 'ALL'
+      })`,
+    )
+
+    return products
   }
 
-  // 🔍 FIND ONE
-  async findOne(id: number) {
+  // 🔍 GET ONE PRODUCT
+  async findOne(id: number, providerId?: number) {
     const product = await this.productRepository.findOne({
       where: { id },
-    });
+      relations: ['provider'],
+    })
 
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('Product not found')
     }
 
-    return product;
-  }
-
-  // ✏️ UPDATE (FIXED)
-  async update(id: number, data: Partial<Product>) {
-    const product = await this.findOne(id);
-
-    product.name = data.name ?? product.name;
-    product.price = data.price ?? product.price;
-    product.stock = data.stock ?? product.stock;
-    product.category = data.category ?? product.category;
-    product.description = data.description ?? product.description;
-    product.discount = data.discount ?? product.discount;
-
-    if (data.imageUrl) {
-      product.imageUrl = data.imageUrl;
+    if (providerId && product.provider?.id !== providerId) {
+      throw new ForbiddenException('You do not own this product')
     }
 
-    const updated = await this.productRepository.save(product);
-
-    this.logger.log(`Updated product ID: ${id}`);
-    return updated;
+    return product
   }
 
-  // ❌ DELETE
-  async remove(id: number) {
-    const product = await this.findOne(id);
-    await this.productRepository.remove(product);
+  // ✏️ UPDATE PRODUCT
+  async update(id: number, data: Partial<Product>, providerId: number) {
+    const product = await this.findOne(id, providerId)
 
-    this.logger.log(`Deleted product ID: ${id}`);
+    Object.assign(product, {
+      name: data.name ?? product.name,
+      price: data.price ?? product.price,
+      stock: data.stock ?? product.stock,
+      category: data.category ?? product.category,
+      description: data.description ?? product.description,
+      discount: data.discount ?? product.discount,
+      imageUrl: data.imageUrl ?? product.imageUrl,
+    })
+
+    const updated = await this.productRepository.save(product)
+
+    this.logger.log(`Updated product ID: ${id}`)
+    return updated
+  }
+
+  // ❌ DELETE PRODUCT
+  async remove(id: number, providerId: number) {
+    const product = await this.findOne(id, providerId)
+
+    await this.productRepository.remove(product)
+
+    this.logger.log(`Deleted product ID: ${id}`)
 
     return {
       message: 'Product deleted',
       id,
-    };
+    }
   }
 }
