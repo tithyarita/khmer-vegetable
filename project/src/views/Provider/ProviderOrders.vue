@@ -273,8 +273,8 @@
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
 import axios from 'axios'
-import SideBar from "@/components/provider_com/SideBar.vue"
-import PageHeader from "@/components/provider_com/PageHeader.vue"
+import SideBar from "@/components/provider_com/sideBar.vue"
+import PageHeader from "@/components/provider_com/pageHeader.vue"
 
 const API_BASE_URL = 'http://localhost:3000'
 const providerId = 1 // HARDCODED - Replace with auth.user.id when authentication is ready

@@ -62,6 +62,44 @@ onUnmounted(() => clearInterval(interval))
 function addToCart(product) {
   alert(`Added "${product.name}" to cart!`)
 }
+
+// Sample products array
+defineExpose(); // for <script setup> context
+const products = ref([
+  {
+    id: 1,
+    name: 'Organic Tomato',
+    image: 'https://via.placeholder.com/120x120?text=Tomato',
+    category: 'Vegetable',
+    rating: 4.7,
+    price: 2.5,
+    discount: 10,
+    badge: 'Hot',
+    label: 'Best Seller',
+  },
+  {
+    id: 2,
+    name: 'Fresh Cucumber',
+    image: 'https://via.placeholder.com/120x120?text=Cucumber',
+    category: 'Vegetable',
+    rating: 4.5,
+    price: 1.8,
+    discount: 5,
+    badge: 'Deal',
+    label: '',
+  },
+  {
+    id: 3,
+    name: 'Sweet Carrot',
+    image: 'https://via.placeholder.com/120x120?text=Carrot',
+    category: 'Vegetable',
+    rating: 4.9,
+    price: 2.0,
+    discount: 15,
+    badge: '',
+    label: '',
+  },
+])
 </script>
 
 <style scoped>

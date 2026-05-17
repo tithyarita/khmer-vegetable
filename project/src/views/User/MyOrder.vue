@@ -1,228 +1,227 @@
 <template>
-<div>
-<NavigationBar />
-  <div class="my-orders">
-    
-    <div class="page-header">
-      <h1>My Orders</h1>
-      <p>Track and manage your boutique market deliveries</p>
-    </div>
-    <div class="orders-grid">
-      <div
-        v-for="(order, i) in orders"
-        :key="order.id"
-        class="order-card"
-      >
+  <div class="home">
+    <NavigationBar />
+    <div class="my-orders-page">
+      <nav class="breadcrumb">
+        <a href="/">Home</a><span class="sep">›</span>
+        <span class="cur">My Orders</span>
+      </nav>
+      <div class="page-header">
+        <h1>My Orders</h1>
+        <p>Track and manage your deliveries</p>
+      </div>
+
+      <div v-for="order in orders" :key="order.id" class="order-card">
         <div class="card-top">
           <div>
             <div class="card-top-left">
               <span class="order-number">Order #{{ order.id }}</span>
-
-              <span
-                :class="[
-                  'badge',
-                  order.status === 'IN PROGRESS'
-                    ? 'badge-progress'
-                    : 'badge-delivered'
-                ]"
-              >
-                <span
-                  v-if="order.status === 'IN PROGRESS'"
-                  class="pulse-dot"
-                ></span>
+              <span :class="['badge', order.status === 'IN PROGRESS' ? 'badge-progress' : 'badge-delivered']">
+                <span v-if="order.status === 'IN PROGRESS'" class="pulse-dot"></span>
                 {{ order.status }}
               </span>
             </div>
-
             <div class="order-meta">{{ order.meta }}</div>
           </div>
-
           <div class="order-price">${{ order.price }}</div>
         </div>
+
         <div class="items-preview">
           <div class="item-images">
-            <div
-              class="item-img"
-              v-for="(image, idx) in order.images"
-              :key="idx"
-            >
-              <img :src="image" :alt="order.itemsLabel" />
-            </div>
-
-            <div class="item-count-bubble">
-              +{{ order.extraCount }}
-            </div>
+            <div class="item-img" v-for="(emoji, idx) in order.emojis" :key="idx">{{ emoji }}</div>
+            <div class="item-count-bubble">+{{ order.extraCount }}</div>
           </div>
-
           <div class="items-text">
-            <div class="items-name">
-              {{ order.itemsLabel }}
-            </div>
+            <div class="items-name">{{ order.itemsLabel }}</div>
             <div class="items-farm">{{ order.farm }}</div>
           </div>
         </div>
 
-        <!-- Actions -->
         <div class="card-actions">
-          <button
-            class="btn btn-primary"
-            @click="handlePrimary(order)"
-          >
-            {{ order.status === 'IN PROGRESS'
-              ? 'Track Delivery'
-              : 'Reorder' }}
+          <button class="btn btn-primary" @click="handlePrimary(order)">
+            <svg v-if="order.status === 'IN PROGRESS'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <svg v-else width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+            </svg>
+            {{ order.status === 'IN PROGRESS' ? 'Track Delivery' : 'Reorder' }}
           </button>
-
-          <button
-            class="btn btn-secondary"
-            @click="viewDetails(order)"
-          >
+          <button class="btn btn-secondary" @click="viewDetails(order)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+            </svg>
             View Details
           </button>
         </div>
       </div>
     </div>
   </div>
-</div>
 </template>
 
 <script>
-import NavigationBar from '@/components/Customer/NavigationBar.vue';
-import Tomato from '../../assets/images/Tomato3.png'
-import Broccoli from '../../assets/images/broccoli.png'
-import Corn from '../../assets/images/corn.png'
+import NavigationBar from '../../components/Customer/NavigationBar.vue'
+
 export default {
-  name: "MyOrders",
+  name: 'MyOrder',
+  components: { NavigationBar },
   data() {
     return {
       orders: [
         {
-          id: "EG-92841",
-          status: "IN PROGRESS",
-          meta:
-            "Placed on Oct 24, 2024 • Expected Arrival: Today, 5:00 PM",
-          price: "42.80",
-          images: [
-            Broccoli,
-            Tomato,
-          ],
+          id: 'EG-92841',
+          status: 'IN PROGRESS',
+          meta: 'Placed on Oct 24, 2024 • Expected Arrival: Today, 5:00 PM',
+          price: '42.80',
+          emojis: ['🥬', '🥕'],
           extraCount: 4,
-          itemsLabel:
-            "Organic Kale, Heirloom Carrots + 4 more items",
-          farm: "From Willow Creek Family Farm",
+          itemsLabel: 'Organic Kale, Heirloom Carrots + 4 more items',
+          farm: 'From Willow Creek Family Farm',
         },
         {
-          id: "EG-81722",
-          status: "DELIVERED",
-          meta:
-            "Placed on Oct 18, 2024 • Delivered on Oct 19, 2024",
-          price: "89.15",
-          images: [
-            Tomato,
-            Corn,
-          ],
+          id: 'EG-81722',
+          status: 'DELIVERED',
+          meta: 'Placed on Oct 18, 2024 • Delivered on Oct 19, 2024',
+          price: '89.15',
+          emojis: ['🫐', '🍅'],
           extraCount: 8,
-          itemsLabel:
-            "Weekly Harvest Box, Artisan Sourdough + 8 items",
-          farm: "Multiple Partner Farms",
+          itemsLabel: 'Weekly Harvest Box, Artisan Sourdough + 8 items',
+          farm: 'Multiple Partner Farms',
         },
         {
-          id: "EG-71604",
-          status: "DELIVERED",
-          meta:
-            "Placed on Oct 04, 2024 • Delivered on Oct 05, 2024",
-          price: "35.40",
-          images: [
-            Tomato,
-            Broccoli,
-          ],
+          id: 'EG-71604',
+          status: 'DELIVERED',
+          meta: 'Placed on Oct 04, 2024 • Delivered on Oct 05, 2024',
+          price: '35.40',
+          emojis: ['🍅', '🌿'],
           extraCount: 2,
-          itemsLabel:
-            "Vine-Ripened Tomatoes, Fresh Basil + 2 items",
-          farm: "Emerald Grove Greenhouses",
+          itemsLabel: 'Vine-Ripened Tomatoes, Fresh Basil + 2 items',
+          farm: 'Emerald Grove Greenhouses',
         },
-      ],
-    };
+      ]
+    }
   },
   methods: {
     handlePrimary(order) {
-      alert(
-        order.status === "IN PROGRESS"
-          ? `Tracking order #${order.id}`
-          : `Reordering #${order.id}`
-      );
+      if (order.status === 'IN PROGRESS') {
+        this.$router.push('/customer/order-tracker')
+      } else {
+        alert(`Reordering #${order.id}…`)
+      }
     },
     viewDetails(order) {
-      alert(`Viewing order #${order.id}`);
-    },
-  },
-};
+      alert(`Viewing details for order #${order.id}`)
+    }
+  }
+}
 </script>
 
 <style scoped>
-/* Layout */
-.my-orders {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 40px 20px 80px;
-  font-family: "DM Sans", sans-serif;
+.breadcrumb { display: flex; gap: 6px; font-size: 13px; color: #8fa896; margin-bottom: 20px; }
+.breadcrumb a { color: #5a7060; text-decoration: none; }
+.breadcrumb .cur { color: #8fa896; }
+.sep { color: #c8d5cc; }
+
+.home {
+  background: #edf4ef;
+  min-height: 100vh;
 }
 
-/* Header */
+.my-orders-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
 .page-header {
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .page-header h1 {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-size: 2.4rem;
   font-weight: 700;
   color: #1a4a2e;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0;
 }
 
 .page-header p {
   color: #5a7060;
+  margin-top: 6px;
   font-size: 1rem;
 }
 
-/* GRID (2 columns) */
-.orders-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
-}
-
-/* Card */
 .order-card {
   background: #fff;
-  border-radius: 18px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 12px rgba(30, 80, 45, 0.07);
   border: 1px solid #e8ede9;
-  box-shadow: 0 4px 18px rgba(30, 80, 45, 0.08);
-  transition: 0.25s ease;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
 .order-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(30, 80, 45, 0.15);
+  box-shadow: 0 4px 24px rgba(30, 80, 45, 0.12);
+  transform: translateY(-2px);
 }
 
-/* Top */
 .card-top {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 14px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 .card-top-left {
   display: flex;
-  gap: 10px;
   align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .order-number {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #1a2e1f;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badge-progress {
+  background: #fffbeb;
+  color: #f59e0b;
+  border: 1px solid #fde68a;
+}
+
+.badge-delivered {
+  background: #e8f5ee;
+  color: #2d7a4f;
+  border: 1px solid #bbf0d0;
+}
+
+.order-price {
+  font-family: 'Fraunces', serif;
   font-weight: 700;
+  font-size: 1.4rem;
+  color: #2d7a4f;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .order-meta {
@@ -231,101 +230,93 @@ export default {
   margin-top: 4px;
 }
 
-.order-price {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #2d7a4f;
-}
-
-/* Badge */
-.badge {
-  padding: 4px 10px;
-  border-radius: 99px;
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-.badge-progress {
-  background: #fffbeb;
-  color: #f59e0b;
-}
-
-.badge-delivered {
-  background: #e8f5ee;
-  color: #2d7a4f;
-}
-
-/* Items */
 .items-preview {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 14px;
   background: #f7faf8;
-  padding: 12px;
   border-radius: 12px;
-  margin-bottom: 14px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border: 1px solid #e8ede9;
 }
 
 .item-images {
   display: flex;
+  align-items: center;
 }
 
 .item-img {
   width: 40px;
   height: 40px;
   border-radius: 10px;
+  background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
+  border: 2px solid white;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
-}
-
-.item-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  font-size: 1.2rem;
+  flex-shrink: 0;
 }
 
 .item-img + .item-img {
-  margin-left: -8px;
+  margin-left: -10px;
 }
 
 .item-count-bubble {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   background: #1a4a2e;
   color: white;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: -8px;
+  margin-left: -10px;
+  border: 2px solid white;
+  flex-shrink: 0;
 }
 
-/* Text */
+.items-text {
+  flex: 1;
+  min-width: 0;
+}
+
 .items-name {
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1a2e1f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .items-farm {
   font-size: 0.85rem;
   color: #8fa896;
-  margin-top: 3px;
+  margin-top: 2px;
+  font-style: italic;
 }
 
-/* Buttons */
 .card-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .btn {
-  padding: 10px 16px;
-  border-radius: 999px;
-  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 99px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
 }
 
 .btn-primary {
@@ -335,38 +326,35 @@ export default {
 
 .btn-primary:hover {
   background: #2d7a4f;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(30, 80, 45, 0.25);
 }
 
 .btn-secondary {
-  border: 1px solid #e8ede9;
   background: transparent;
   color: #5a7060;
+  border: 1.5px solid #e8ede9;
 }
 
 .btn-secondary:hover {
   background: #e8f5ee;
+  border-color: #3db870;
+  color: #1a4a2e;
 }
 
-/* Pulse */
 .pulse-dot {
-  width: 7px;
-  height: 7px;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #f59e0b;
-  display: inline-block;
-  margin-right: 4px;
-  animation: pulse 1.5s infinite;
+  margin-right: 5px;
+  animation: pulse 1.6s ease infinite;
+  vertical-align: middle;
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(0.7); opacity: 0.5; }
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .orders-grid {
-    grid-template-columns: 1fr;
-  }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.75); }
 }
 </style>

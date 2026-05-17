@@ -4,6 +4,8 @@
       v-for="product in products"
       :key="product.id"
       class="product-card"
+      @click="goToProductDetail(product.id)"
+      style="cursor: pointer;"
     >
       <div class="card-image">
         <img :src="product.image" :alt="product.name" />
@@ -46,7 +48,7 @@
             <span class="original-price">${{ product.originalPrice }}</span>
           </div>
 
-          <button class="btn-add" @click="addToCart(product)">
+          <button class="btn-add" @click.stop="addToCart(product)">
             <span class="plus">+</span> Add
           </button>
         </div>
@@ -145,6 +147,10 @@ export default {
     addToCart(product) {
       this.cartStore.addToCart(product)
       console.log("Added to cart:", product.name)
+    },
+
+    goToProductDetail(productId) {
+      this.$router.push(`/product/${productId}`)
     }
   }
 };

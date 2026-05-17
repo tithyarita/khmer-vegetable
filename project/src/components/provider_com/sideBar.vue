@@ -70,14 +70,16 @@ const isActive = (itemRoute) => {
   return route.path === itemRoute
 }
 
+import { useUserStore } from '@/stores/userStore'
+const userStore = useUserStore()
+
 const handleLogout = () => {
-  // Clear any stored authentication data
-  localStorage.removeItem('authToken')
-  localStorage.removeItem('userRole')
-  sessionStorage.clear()
-  
-  // Navigate to login page
+  userStore.logout()
   router.push('/')
+  // Scroll to top after navigation
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, 100)
 }
 </script>
 

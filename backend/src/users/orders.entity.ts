@@ -4,10 +4,18 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { Provider } from '../providers/providers.entity';
+import { Customer } from '../customer/customer.entity';
+import { orderItems } from './order-items.entity';
 
+export enum OrderStatus {
+  PENDING = 'pending',
+  SHIPPED = 'shipped',
+  DELIVERING = 'delivering',
+}
 @Entity('orders')
 export class orders {
   @PrimaryGeneratedColumn()
@@ -26,8 +34,8 @@ export class orders {
   @JoinColumn({ name: 'provider_id' })
   provider!: Provider;
 
-  @Column()
-  status!: string;
+  @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
+  status!: OrderStatus;
 
   @Column('decimal')
   total!: number;
@@ -40,4 +48,11 @@ export class orders {
 
   @Column({ default: 1 })
   item!: number;
+
+  @ManyToOne(() => Customer, (customer) => customer.orders)
+  @JoinColumn({ name: 'customer_id' })
+  customer!: Customer;
+
+  @OneToMany(() => orderItems, (item) => item.order, { cascade: true })
+  order_items!: orderItems[];
 }

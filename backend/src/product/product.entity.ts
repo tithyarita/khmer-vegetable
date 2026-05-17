@@ -3,8 +3,13 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
 } from 'typeorm';
 
+import { Provider } from '../providers/providers.entity';
+import { orderItems } from '../users/order-items.entity';
 @Entity()
 export class Product {
   @PrimaryGeneratedColumn()
@@ -33,4 +38,11 @@ export class Product {
 
   @CreateDateColumn({ type: 'timestamp', name: 'added_date' })
   addedDate!: Date;
+
+  @ManyToOne(() => Provider, (provider) => provider.products)
+  @JoinColumn({ name: 'provider_id' })
+  provider!: Provider;
+
+  @OneToMany(() => orderItems, (item) => item.product)
+  order_items!: orderItems[];
 }

@@ -8,6 +8,16 @@ import AdminLayout from '../Layout/AdminLayout.vue'
 import HomeView from '../views/User/HomeView.vue'
 import CartView from '../views/User/CartView.vue'
 import FavoritesView from '../views/User/FavoritesView.vue'
+import fashDeals  from '../views/User/fashDeals.vue'
+import MyOrder  from '../views/User/MyOrder.vue'
+import Receipt from '../views/User/ReceiptView.vue'
+import Address from '../views/User/AddressView.vue'
+import Checkout from '../views/User/CheckoutView.vue'
+import Profile from '../views/User/UserDashboard.vue'
+import OrderTracker from '../views/User/OrderTracker.vue'
+import ProductDetailUser from '../views/User/ProductDetail.vue'
+import Search from '../components/Customer/Search.vue'
+import ProductList from '../components/Customer/Productlist.vue'
 
 // ==================== Provider ====================
 import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
@@ -32,6 +42,7 @@ import ProductManagement from '../views/Admin/ProductManagement.vue'
 import OrdersManagement from '../views/Admin/OrdersManagement.vue'
 import Reports from '../views/Admin/Report.vue'
 import AdminSetting from '../views/Admin/AdminSetting.vue'
+import AdminProfile from '../views/Admin/AdminProfile.vue'
 
 // // ==================== Auth ====================
 // import UserRegister from '../views/User/resgister.vue'
@@ -49,6 +60,17 @@ const routes = [
       { path: 'cart', name: 'Cart', component: CartView },
       { path: 'favorites', name: 'Favorites', component: FavoritesView },
       { path: 'about', name: 'About', component: () => import('../views/User/AboutView.vue') },
+      { path: 'Address', name: 'Address', component: Address },
+      { path: 'MyOrder', name: 'MyOrder', component: MyOrder },
+      { path: 'Receipt', name: 'Receipt', component: Receipt },
+      { path: 'fashDeals', name: 'FashDeals', component: fashDeals },
+      { path: 'checkout', name: 'Checkout', component: Checkout },
+      { path: 'profile', name: 'Profile', component: Profile },
+      { path: 'search', name: 'Search', component: Search },
+      { path: 'order-tracker', name: 'OrderTracker', component: OrderTracker },
+      { path: 'product/:id', name: 'ProductDetailUser', component: ProductDetailUser, props: true },
+      { path: 'products', name: 'ProductList', component: ProductList },
+
     ],
   },
 
@@ -95,12 +117,14 @@ const routes = [
       { path: 'orders', component: OrdersManagement },
       { path: 'reports', component: Reports },
       { path: 'settings', component: AdminSetting },
+      { path: 'profile', component: AdminProfile },
     ],
   },
 
-  // // -------- Auth --------
-  // { path: '/user/login', name: 'Login', component: UserLogin },
-  // { path: '/user/register', name: 'Register', component: UserRegister },
+  // -------- Auth --------
+  { path: '/user/login', name: 'Login', component: () => import('../views/User/login.vue') },
+  { path: '/provider/login', name: 'ProviderLogin', component: () => import('../views/Provider/login.vue') },
+  // { path: '/user/register', name: 'Register', component: () => import('../views/User/resgister.vue') },
 ]
 
 // ==================== Router ====================
@@ -111,22 +135,26 @@ const router = createRouter({
 })
 
 
-// // Global navigation guard for role-based dashboard access
-// router.beforeEach((to, from, next) => {
-//   const user = JSON.parse(localStorage.getItem('user'));
-//   if (to.path.startsWith('/admin')) {
-//     if (!user || user.role !== 'admin') {
-//       // Not admin, redirect to login or home
-//       return next('/user/login');
-//     }
-//   }
-//   if (to.path.startsWith('/provider')) {
-//     if (!user || user.role !== 'provider') {
-//       // Not provider, redirect to login or home
-//       return next('/user/login');
-//     }
-//   }
-//   next();
-// });
+
+// Global navigation guard for role-based dashboard access
+router.beforeEach((to, from) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const token = localStorage.getItem('token');
+
+  // Protect admin routes
+  if (to.path.startsWith('/admin')) {
+    if (!user || !token || user.role !== 'admin') {
+      return { path: '/user/login', query: { redirect: to.fullPath } }
+    }
+  }
+  // Protect provider routes
+  if (to.path.startsWith('/provider')) {
+    if (!user || !token || user.role !== 'provider') {
+      return { path: '/user/login', query: { redirect: to.fullPath } }
+    }
+  }
+  // Allow navigation
+  return true
+});
 
 export default router

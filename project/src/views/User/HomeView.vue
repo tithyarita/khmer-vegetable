@@ -9,7 +9,7 @@
       <div class="section-inner">
         <div class="section-header">
           <h2 class="section-title">Popular Vegetables</h2>
-          <a href="#" class="see-all">All Vegetables →</a>
+          <router-link to="/products" class="see-all">All Vegetables →</router-link>
         </div>
         <Card />
         <br>
@@ -21,7 +21,7 @@
         </div>
   
         <Farm />
-          <div class="section-header">
+        <div class="section-header">
           <h2 class="section-title">Special Deals</h2>
           <a href="#" class="see-all">All Deals →</a>
         </div>
@@ -48,7 +48,6 @@ import FashDeal from './fashDeals.vue'
   color: rgb(101, 142, 101);
   text-decoration: none;
   font-size: 1.2rem;
-  
 }
 .home {
   width: 100%;

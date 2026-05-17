@@ -1,4 +1,6 @@
-import { IsString, IsNumber, IsNotEmpty, IsOptional, IsDate } from 'class-validator';
+
+import { IsString, IsNumber, IsNotEmpty, IsOptional, IsDate, IsEnum } from 'class-validator';
+import { OrderStatus } from '../orders.entity';
 
 export class CreateOrderDto {
   @IsString()
@@ -13,9 +15,9 @@ export class CreateOrderDto {
   @IsNotEmpty()
   provider_id: number;
 
-  @IsString()
+  @IsEnum(OrderStatus)
   @IsNotEmpty()
-  status: string;
+  status: OrderStatus;
 
   @IsNumber()
   @IsNotEmpty()
@@ -39,9 +41,9 @@ export class UpdateOrderDto {
   @IsOptional()
   provider_id?: number;
 
-  @IsString()
+  @IsEnum(OrderStatus)
   @IsOptional()
-  status?: string;
+  status?: OrderStatus;
 
   @IsNumber()
   @IsOptional()

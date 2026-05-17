@@ -4,10 +4,12 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
+  OneToOne,
   JoinColumn,
 } from 'typeorm';
 import { Staff } from '../staff/staff.entity';
 import { Admin } from '../admin/admin.entity';
+import { Provider } from '../providers/providers.entity';
 
 export enum ApplicationStatus {
   DRAFT = 'draft',
@@ -67,6 +69,9 @@ export class ProviderApplication {
   @Column({ name: 'farm_angle3_path', nullable: true })
   farm_angle3_path!: string;
 
+  @CreateDateColumn({ name: 'created_at' })
+  created_at!: Date;
+
   @Column({
     name: 'application_status',
     type: 'enum',
@@ -78,14 +83,20 @@ export class ProviderApplication {
   @Column({ name: 'submitted_at', type: 'timestamp', nullable: true })
   submitted_at!: Date | null;
 
-  @ManyToOne(() => Staff, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Staff, (staff) => staff.reviewed_applications, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'staff_reviewed_by' })
   staff_reviewed_by!: Staff | null;
 
-  @ManyToOne(() => Admin, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Admin, (admin) => admin.reviewed_applications, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'admin_reviewed_by' })
   admin_reviewed_by!: Admin | null;
 
-  @CreateDateColumn({ name: 'created_at' })
-  created_at!: Date;
+  @OneToOne(() => Provider, (provider) => provider.application)
+  provider!: Provider;
 }
