@@ -51,7 +51,7 @@
             {{ loading ? "Logging in..." : "Login" }}
           </button>
 
-          <button class="register-btn" type="button">
+          <button class="register-btn" type="button" @click="router.push('/register')">
             Register Account
           </button>
 
@@ -98,7 +98,7 @@ async function handleLogin(e) {
 
   try {
     const res = await axios.post(
-      "http://localhost:3000/auth/login",
+      "http://localhost:3001/auth/login",
       {
         email: email.value,
         password: password.value

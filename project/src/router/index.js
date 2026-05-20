@@ -116,7 +116,12 @@ const routes = [
 
   // AUTH
   { path: '/user/login', component: () => import('../views/User/login.vue') },
+  { path: '/user/register', component: () => import('../views/User/resgister.vue') },
   { path: '/provider/login', component: () => import('../views/Provider/login.vue') },
+  
+  // AUTH ALIASES
+  { path: '/login', redirect: '/user/login' },
+  { path: '/register', redirect: '/user/register' },
 ]
 
 // ==================== ROUTER ====================

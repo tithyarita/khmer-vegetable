@@ -10,6 +10,7 @@ import {
 
 import { Provider } from '../providers/providers.entity';
 import { orderItems } from '../users/order-items.entity';
+import { Cart } from '../cart/cart.entity';
 @Entity('product')
 export class Product {
   @PrimaryGeneratedColumn()
@@ -49,4 +50,7 @@ export class Product {
 
   @OneToMany(() => orderItems, (item) => item.product)
   order_items!: orderItems[];
+
+  @OneToMany(() => Cart, (cart) => cart.product)
+  carts!: Cart[];
 }
