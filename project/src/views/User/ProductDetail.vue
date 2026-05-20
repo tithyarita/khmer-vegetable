@@ -57,6 +57,14 @@
               <strong>{{ product.weight }}</strong>
             </div>
 
+            <div class="pd-provider">
+              <span>Provider Owner:</span>
+              <strong>
+                {{ product.providerName }}
+                <span v-if="product.providerId">(#{{ product.providerId }})</span>
+              </strong>
+            </div>
+
             <p class="pd-desc">{{ product.description }}</p>
 
             <div class="pd-actions">
@@ -220,6 +228,9 @@ const product = reactive({
   name: 'Loading product...',
   price: 0,
   originalPrice: 0,
+  discount: 0,
+  providerId: null,
+  providerName: 'Unknown',
   weight: 'N/A',
   description: '',
   culinaryBody: '',
@@ -243,6 +254,7 @@ const applyProduct = (data) => {
     discount,
     originalPrice,
     providerId: data.provider?.user_id || data.provider_id || data.providerId || null,
+    providerName: data.provider?.provider_name || data.providerName || data.provider?.name || 'Unknown',
     weight: data.weight || `${Number(data.stock || 0)} in stock`,
     description: data.description || '',
     culinaryBody:
@@ -301,6 +313,7 @@ const addToCart = () => {
     quantity: qty.value,
     unit: product.unit || 'item',
     provider_id: product.providerId,
+    providerName: product.providerName || 'Unknown',
   });
 
   cartCount.value += qty.value;
@@ -509,6 +522,7 @@ watch(
   .pd-orig { font-size: 13px; }
   .pd-off { font-size: 10px; padding: 3px 8px; }
   .pd-weight { font-size: 12px; }
+  .pd-provider { font-size: 12px; margin-top: 8px; color: var(--t2); }
   .pd-desc { font-size: 12px; line-height: 1.5; }
   
   .qty { border-radius: 8px; }

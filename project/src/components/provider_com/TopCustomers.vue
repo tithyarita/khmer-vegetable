@@ -207,6 +207,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/userStore'
+import { useProviderOrderStore } from '@/stores/providerOrderStore'
 
 const props = defineProps({
   customers: {
@@ -410,15 +412,67 @@ onMounted(() => {
 const fetchTopCustomers = async () => {
   isLoading.value = true
   try {
-    // Replace with your actual API endpoint
-    const response = await fetch('/api/provider/customers/top')
-    if (!response.ok) throw new Error('Failed to fetch customers')
-    const data = await response.json()
-    topCustomers.value = data
+    const userStore = useUserStore()
+    const providerOrderStore = useProviderOrderStore()
+    
+    // Get provider/user ID
+    const user = userStore.user || JSON.parse(localStorage.getItem('user') || 'null')
+    if (!user?.id) throw new Error('No user found')
+
+    // Fetch all orders for this provider
+    const orders = await providerOrderStore.fetchProviderOrders(user.id)
+    
+    // Group orders by customer
+    const customersMap = {}
+    
+    orders.forEach(order => {
+      const customerId = order.customerIdRaw || Math.random() // Fallback if no ID
+      if (!customersMap[customerId]) {
+        customersMap[customerId] = {
+          id: customerId,
+          name: order.customerName || 'Unknown Customer',
+          email: order.raw?.customer?.user?.email || order.raw?.customer?.email || 'No email provided',
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(order.customerName || 'U')}&background=random`,
+          totalOrders: 0,
+          totalItems: 0,
+          totalAmount: 0,
+          joinedDate: order.raw?.customer?.created_at || new Date().toISOString(),
+          orders: []
+        }
+      }
+      
+      const c = customersMap[customerId]
+      c.totalOrders += 1
+      c.totalAmount += order.total
+      c.totalItems += Number(order.item || 1)
+      
+      // Map products for the order modal
+      const orderProducts = (order.raw?.order_items || []).map(oi => ({
+        id: oi.product_id,
+        name: oi.product?.name || 'Unknown Product',
+        quantity: Number(oi.quantity),
+        price: Number(oi.price)
+      }))
+
+      // Capitalize status
+      const capitalizedStatus = order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Pending'
+
+      c.orders.push({
+        id: order.id,
+        date: order.createdAt,
+        status: capitalizedStatus,
+        products: orderProducts,
+        total: order.total
+      })
+    })
+
+    // Convert map to array and sort by total Amount (descending)
+    let customersList = Object.values(customersMap)
+    customersList.sort((a, b) => b.totalAmount - a.totalAmount)
+
+    topCustomers.value = customersList
   } catch (err) {
-    console.warn('API not available, loading mock data:', err.message)
-    // Use mock data as fallback (no error shown to user)
-    topCustomers.value = mockCustomersData
+    console.error('Error fetching top customers:', err)
   } finally {
     isLoading.value = false
   }

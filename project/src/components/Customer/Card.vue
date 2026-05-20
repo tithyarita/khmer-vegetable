@@ -33,6 +33,10 @@
       <div class="card-body">
         <p class="category">{{ product.category || 'Product' }}</p>
         <h3 class="product-name">{{ product.name }}</h3>
+        <p class="provider-owner">
+          Provider: {{ product.providerName }}
+          <span v-if="product.providerId">(#{{ product.providerId }})</span>
+        </p>
 
         <div class="rating">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="#8B6914">
@@ -82,6 +86,8 @@ const normalizeProduct = product => ({
   price: Number(product?.price ?? 0),
   discount: Number(product?.discount ?? 0),
   rating: Number(product?.rating ?? 0),
+  providerId: Number(product?.providerId ?? product?.provider_id ?? product?.provider?.user_id ?? 0) || null,
+  providerName: product?.providerName || product?.provider?.provider_name || product?.provider?.name || 'Unknown',
   image: product?.image || product?.imageUrl || '',
 })
 
@@ -120,6 +126,7 @@ const addToCart = product => {
     unitPrice: Number(product.price ?? 0),
     unit: product.unit || 'item',
     provider_id: product.provider_id ?? product.provider?.user_id ?? product.providerId ?? null,
+    providerName: product.providerName || product.provider?.provider_name || 'Unknown',
   })
 }
 
@@ -217,6 +224,12 @@ onMounted(async () => {
   font-weight: 700;
   margin: 4px 0 6px;
   line-height: 1.3;
+}
+
+.provider-owner {
+  font-size: 11px;
+  color: #4b5563;
+  margin-bottom: 8px;
 }
 
 .rating {

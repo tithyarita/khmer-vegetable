@@ -66,86 +66,32 @@
 </template>
 
 <script>
-import axios from 'axios'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
-import { useUserStore } from '@/stores/userStore'
-
-const API_BASE_URL = 'http://localhost:3000'
+import { useCustomerOrderStore } from '@/stores/customerOrderStore'
 
 export default {
   name: 'MyOrder',
   components: { NavigationBar },
   data() {
     return {
-      orders: [],
-      loading: false,
-      error: ''
+      customerOrderStore: useCustomerOrderStore(),
     }
   },
+  computed: {
+    orders() {
+      return this.customerOrderStore.orders
+    },
+    loading() {
+      return this.customerOrderStore.loading
+    },
+    error() {
+      return this.customerOrderStore.error
+    },
+  },
   async mounted() {
-    await this.fetchOrders()
+    await this.customerOrderStore.fetchCustomerOrders()
   },
   methods: {
-    async fetchOrders() {
-      this.loading = true
-      this.error = ''
-
-      try {
-        const userStore = useUserStore()
-        const user = userStore.user || JSON.parse(localStorage.getItem('user') || 'null')
-
-        if (!user?.id) {
-          this.error = 'Please log in to view your orders.'
-          return
-        }
-
-        const response = await axios.get(`${API_BASE_URL}/orders/customer/${user.id}`)
-        this.orders = response.data.map((order) => this.mapOrder(order))
-      } catch (err) {
-        this.error = err.response?.data?.message || err.message || 'Failed to load orders.'
-      } finally {
-        this.loading = false
-      }
-    },
-    mapOrder(order) {
-      const items = Array.isArray(order.order_items) ? order.order_items : []
-      const previewItems = items
-        .slice(0, 2)
-        .map((item) => this.getInitial(item.product?.name || 'Item'))
-
-      return {
-        id: order.id,
-        orderCode: order.order_code || `ORD-${order.id}`,
-        status: order.status || 'pending',
-        statusLabel: this.formatStatus(order.status),
-        statusClass: order.status === 'completed' ? 'badge-delivered' : 'badge-progress',
-        meta: `Placed on ${this.formatDate(order.created_at)}`,
-        price: Number(order.total || 0).toFixed(2),
-        previewItems: previewItems.length ? previewItems : ['O', 'R'],
-        extraCount: Math.max(items.length - previewItems.length, 0),
-        itemsLabel: items.length
-          ? items.map((item) => item.product?.name || 'Product').join(', ')
-          : 'No items available',
-        providerName: order.provider?.provider_name || `Provider ${order.provider_id}`,
-        raw: order,
-      }
-    },
-    getInitial(name) {
-      return (name || '?').trim().charAt(0).toUpperCase()
-    },
-    formatStatus(status) {
-      if (status === 'completed') return 'DELIVERED'
-      if (status === 'delivering') return 'IN PROGRESS'
-      return 'PENDING'
-    },
-    formatDate(value) {
-      if (!value) return 'Unknown date'
-      return new Date(value).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    },
     handlePrimary(order) {
       if (order.status === 'pending') {
         this.$router.push('/order-tracker')

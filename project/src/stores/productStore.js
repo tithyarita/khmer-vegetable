@@ -38,6 +38,14 @@ export const useProductStore = defineStore('product', () => {
     product.discount = discount
     product.originalPrice = Number(product.originalPrice ?? price)
     product.discountPercentage = discount
+    product.providerId = Number(
+      product.providerId ?? product.provider_id ?? product.provider?.user_id ?? 0,
+    ) || null
+    product.providerName =
+      product.providerName ||
+      product.provider?.provider_name ||
+      product.provider?.name ||
+      'Unknown'
 
     if (product.imageUrl && product.imageUrl.trim() !== '') {
       product.image = product.imageUrl.startsWith('http')

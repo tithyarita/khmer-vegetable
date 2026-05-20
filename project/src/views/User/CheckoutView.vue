@@ -72,6 +72,10 @@
                     <div class="item-info">
                       <h4>{{ item.name }}</h4>
                       <p>{{ item.quantity }} × ${{ item.price }}</p>
+                      <p class="provider-meta">
+                        Provider: {{ item.providerName || 'Unknown' }}
+                        <span v-if="item.providerId">(#{{ item.providerId }})</span>
+                      </p>
                     </div>
 
                     <div class="item-price">
@@ -88,25 +92,48 @@
                   <button @click="goToAddress" class="edit-btn">EDIT</button>
                 </div>
 
-                <div class="address-display">
-                  <p>
-                    <strong>
-                      {{ shipping.firstName }}
-                      {{ shipping.lastName }}
-                    </strong>
+                <div class="address-display editable-address">
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>First Name</label>
+                      <input v-model.trim="shipping.firstName" type="text" placeholder="Enter first name" />
+                    </div>
+                    <div class="form-group">
+                      <label>Last Name</label>
+                      <input v-model.trim="shipping.lastName" type="text" placeholder="Enter last name" />
+                    </div>
+                    <div class="form-group full-width">
+                      <label>Address</label>
+                      <input v-model.trim="shipping.address" type="text" placeholder="Street address" />
+                    </div>
+                    <div class="form-group">
+                      <label>City</label>
+                      <input v-model.trim="shipping.city" type="text" placeholder="City" />
+                    </div>
+                    <div class="form-group">
+                      <label>State / Province</label>
+                      <input v-model.trim="shipping.state" type="text" placeholder="State" />
+                    </div>
+                    <div class="form-group">
+                      <label>ZIP Code</label>
+                      <input v-model.trim="shipping.zip" type="text" placeholder="ZIP" />
+                    </div>
+                    <div class="form-group">
+                      <label>Country</label>
+                      <input v-model.trim="shipping.country" type="text" placeholder="Country" />
+                    </div>
+                    <div class="form-group">
+                      <label>Phone</label>
+                      <input v-model.trim="shipping.phone" type="text" placeholder="Phone number" />
+                    </div>
+                    <div class="form-group">
+                      <label>Email</label>
+                      <input v-model.trim="shipping.email" type="email" placeholder="Email" />
+                    </div>
+                  </div>
+                  <p v-if="!isShippingProfileComplete" class="profile-warning">
+                    Please complete your profile fields. "Unknown" values are not allowed for checkout.
                   </p>
-
-                  <p>{{ shipping.address }}</p>
-
-                  <p>
-                    {{ shipping.city }},
-                    {{ shipping.state }}
-                    {{ shipping.zip }}
-                  </p>
-
-                  <p>{{ shipping.country }}</p>
-                  <p>{{ shipping.phone }}</p>
-                  <p>{{ shipping.email }}</p>
                 </div>
               </div>
 
@@ -278,6 +305,7 @@
 
                 <button
                   class="confirm-order-btn"
+                  :disabled="!isShippingProfileComplete || loading"
                   @click="confirmOrder"
                 >
                   Confirm Order
@@ -330,7 +358,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useCartStore } from '../../stores/cartStore'
@@ -344,16 +372,66 @@ const cartStore = useCartStore()
 const userStore = useUserStore()
 const API_BASE_URL = 'http://localhost:3000'
 
-const shipping = ref({
-  firstName: 'John',
-  lastName: 'Doe',
-  address: '123 Main Street',
-  city: 'Phnom Penh',
-  state: 'Phnom Penh',
-  zip: '12000',
-  country: 'Cambodia',
-  phone: '+855 12 345 678',
-  email: 'john.doe@example.com'
+const UNKNOWN = 'Unknown'
+
+const normalizeField = value => {
+  const normalized = String(value ?? '').trim()
+  return normalized || UNKNOWN
+}
+
+const splitName = (value) => {
+  const name = String(value ?? '').trim()
+  if (!name) {
+    return { firstName: UNKNOWN, lastName: UNKNOWN }
+  }
+
+  const [firstName, ...rest] = name.split(/\s+/)
+  return {
+    firstName: normalizeField(firstName),
+    lastName: normalizeField(rest.join(' ')),
+  }
+}
+
+const getLoggedInUser = () => {
+  return userStore.user || JSON.parse(localStorage.getItem('user') || 'null') || {}
+}
+
+const buildShippingFromAccount = () => {
+  const account = getLoggedInUser()
+  const fullName = splitName(account.name || account.fullName)
+
+  return {
+    firstName: normalizeField(account.firstName || fullName.firstName),
+    lastName: normalizeField(account.lastName || fullName.lastName),
+    address: normalizeField(account.address || account.street || account.location),
+    city: normalizeField(account.city),
+    state: normalizeField(account.state || account.province),
+    zip: normalizeField(account.zip || account.postalCode),
+    country: normalizeField(account.country),
+    phone: normalizeField(account.phone || account.phoneNumber),
+    email: normalizeField(account.email),
+  }
+}
+
+const shipping = ref(buildShippingFromAccount())
+
+const requiredShippingFields = [
+  'firstName',
+  'lastName',
+  'address',
+  'city',
+  'state',
+  'zip',
+  'country',
+  'phone',
+  'email',
+]
+
+const isShippingProfileComplete = computed(() => {
+  return requiredShippingFields.every((field) => {
+    const value = String(shipping.value[field] ?? '').trim()
+    return Boolean(value) && value.toLowerCase() !== UNKNOWN.toLowerCase()
+  })
 })
 
 const paymentMethod = ref('bank')
@@ -369,6 +447,10 @@ const loading = ref(false)
 const orderResult = ref('')
 const orderMessage = ref('')
 const orderItems = computed(() => cartStore.cartItems)
+
+onMounted(() => {
+  shipping.value = buildShippingFromAccount()
+})
 
 const calculateSubtotal = () => {
   return orderItems.value
@@ -394,6 +476,12 @@ const confirmOrder = async () => {
   if (!orderItems.value.length) {
     orderResult.value = 'error'
     orderMessage.value = 'Your cart is empty. Add products before placing an order.'
+    return
+  }
+
+  if (!isShippingProfileComplete.value) {
+    orderResult.value = 'error'
+    orderMessage.value = 'Please complete all shipping/account fields before confirming your order.'
     return
   }
 
@@ -660,6 +748,12 @@ const goToAddress = () => {
   margin: 0 0 24px;
 }
 
+.provider-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #475569;
+}
+
 .confirm-order-btn {
   width: 100%;
   padding: 16px;
@@ -671,6 +765,50 @@ const goToAddress = () => {
   font-weight: 600;
   cursor: pointer;
   margin-top: 24px;
+}
+
+.confirm-order-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.editable-address .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.editable-address .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editable-address .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.editable-address label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.editable-address input {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.profile-warning {
+  margin-top: 12px;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
 }
 
 .confirm-order-btn:hover {

@@ -26,6 +26,11 @@ export const useCartStore = defineStore('cart', () => {
     const providerId = Number(
       product.provider_id ?? product.providerId ?? product.provider?.user_id ?? 0
     ) || null
+    const providerName =
+      product.providerName ||
+      product.provider?.provider_name ||
+      product.provider?.name ||
+      'Unknown'
     const quantityToAdd = Number(product.quantity ?? 1) || 1
 
     if (existingItem) {
@@ -41,6 +46,7 @@ export const useCartStore = defineStore('cart', () => {
         category: product.category,
         unit: product.unit || 'item',
         providerId,
+        providerName,
         quantity: quantityToAdd
       })
     }

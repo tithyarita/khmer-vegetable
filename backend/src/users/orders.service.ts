@@ -15,6 +15,8 @@ import {
 } from './dto/orders.dto';
 import { orderItems } from './order-items.entity';
 import { Product } from '../product/product.entity';
+import { Customer, CustomerStatus } from '../customer/customer.entity';
+import { users } from './users.entity';
 
 @Injectable()
 export class OrdersService {
@@ -25,10 +27,39 @@ export class OrdersService {
     private readonly orderItemsRepository: Repository<orderItems>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(Customer)
+    private readonly customerRepository: Repository<Customer>,
+    @InjectRepository(users)
+    private readonly usersRepository: Repository<users>,
   ) {}
 
   private generateOrderCode() {
     return `ORD-${Date.now().toString(36).toUpperCase()}`;
+  }
+
+  private async ensureCustomerProfile(customerId: number) {
+    const existingCustomer = await this.customerRepository.findOne({
+      where: { user_id: customerId },
+    });
+
+    if (existingCustomer) {
+      return existingCustomer.user_id;
+    }
+
+    const user = await this.usersRepository.findOne({ where: { id: customerId } });
+    if (!user) {
+      throw new BadRequestException('Invalid customer id. Please log in again.');
+    }
+
+    const createdCustomer = this.customerRepository.create({
+      user_id: user.id,
+      name: user.name || 'Unknown',
+      phone: user.phone || 'Unknown',
+      status: CustomerStatus.ACTIVE,
+    });
+
+    await this.customerRepository.save(createdCustomer);
+    return createdCustomer.user_id;
   }
 
   private async saveOrderForProvider(
@@ -38,6 +69,8 @@ export class OrdersService {
     orderCode?: string,
     status: OrderStatus = OrderStatus.PENDING,
   ) {
+    const resolvedCustomerId = await this.ensureCustomerProfile(customerId);
+
     const productIds = items.map((item) => item.product_id);
     const products = await this.productRepository.find({
       where: { id: In(productIds) },
@@ -75,7 +108,7 @@ export class OrdersService {
 
     const order = this.ordersRepository.create({
       order_code: orderCode || this.generateOrderCode(),
-      customer_id: customerId,
+      customer_id: resolvedCustomerId,
       provider_id: resolvedProviderId,
       status,
       total,
@@ -122,8 +155,13 @@ export class OrdersService {
         };
       }
 
+      const resolvedCustomerId = await this.ensureCustomerProfile(
+        createOrderDto.customer_id,
+      );
+
       const order = this.ordersRepository.create({
         ...createOrderDto,
+        customer_id: resolvedCustomerId,
         status: createOrderDto.status as OrderStatus,
       });
       const savedOrder = await this.ordersRepository.save(order);
