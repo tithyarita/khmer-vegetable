@@ -17,15 +17,28 @@ export const useProductStore = defineStore('product', () => {
   })
 
   // ================= AUTH INTERCEPTOR (FIX 401) =================
+
   api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token')
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-
     return config
   })
+
+  // Global 401 handler
+  api.interceptors.response.use(
+    response => response,
+    error => {
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        alert('Session expired or unauthorized. Please log in again.')
+        window.location.href = '/login' // Change this to your login route if different
+      }
+      return Promise.reject(error)
+    }
+  )
 
   // ================= HELPERS =================
   const formatImage = (product) => {

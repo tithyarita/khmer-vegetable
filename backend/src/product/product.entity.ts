@@ -10,7 +10,7 @@ import {
 
 import { Provider } from '../providers/providers.entity';
 import { orderItems } from '../users/order-items.entity';
-@Entity()
+@Entity('product')
 export class Product {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -18,8 +18,12 @@ export class Product {
   @Column()
   name!: string;
 
+
   @Column()
   stock!: number;
+
+  @Column({ default: 'In Stock' })
+  status!: string;
 
   @Column()
   category!: string;

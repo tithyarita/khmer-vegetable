@@ -126,32 +126,32 @@ const router = createRouter({
 })
 
 // ==================== GLOBAL GUARD (FIXED) ====================
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const user = JSON.parse(localStorage.getItem('user'))
   const token = localStorage.getItem('token')
-
   const role = user?.role?.trim()?.toLowerCase()
 
   // NOT LOGGED IN
   if ((to.path.startsWith('/admin') || to.path.startsWith('/provider')) && !token) {
-    return next(`/user/login?redirect=${to.fullPath}`)
+    return `/user/login?redirect=${to.fullPath}`
   }
 
   // ADMIN PROTECTION
   if (to.path.startsWith('/admin')) {
     if (!user || role !== 'admin') {
-      return next(`/user/login?redirect=${to.fullPath}`)
+      return `/user/login?redirect=${to.fullPath}`
     }
   }
 
   // PROVIDER PROTECTION
   if (to.path.startsWith('/provider')) {
     if (!user || role !== 'provider') {
-      return next(`/user/login?redirect=${to.fullPath}`)
+      return `/user/login?redirect=${to.fullPath}`
     }
   }
 
-  next()
+  // Allow navigation
+  return true
 })
 
 export default router

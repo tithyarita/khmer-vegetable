@@ -108,7 +108,8 @@ export class ProductController {
         discount: body.discount ?? 0,
         imageUrl: file ? `/images/${file.filename}` : undefined,
       },
-      req.user.id, // Pass provider ID to verify ownership
+      req.user.id,
+      req.user.role,
     );
   }
 
@@ -116,6 +117,6 @@ export class ProductController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: any) {
-    return this.productService.remove(Number(id), req.user.id);
+    return this.productService.remove(Number(id), req.user.id, req.user.role);
   }
 }
