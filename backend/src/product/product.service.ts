@@ -36,9 +36,17 @@ export class ProductService {
       data.imageUrl = await this.getRandomImage()
     }
 
+    // Set status based on stock
+    let status = 'In Stock';
+    if (typeof data.stock === 'number') {
+      if (data.stock === 0) status = 'Out of Stock';
+      else if (data.stock < 10) status = 'Low Stock';
+    }
+
     const product = this.productRepository.create({
       ...data,
-      provider: providerId ? { id: providerId } : undefined,
+      status,
+      provider: providerId ? { user_id: providerId } : undefined,
     })
 
     const saved = await this.productRepository.save(product)
@@ -50,7 +58,7 @@ export class ProductService {
   // 📦 GET ALL PRODUCTS
   async findAll(providerId?: number) {
     const products = await this.productRepository.find({
-      where: providerId ? { provider: { id: providerId } } : {},
+      where: providerId ? { provider: { user_id: providerId } } : {},
       relations: ['provider'],
     })
 
@@ -64,7 +72,7 @@ export class ProductService {
   }
 
   // 🔍 GET ONE PRODUCT
-  async findOne(id: number, providerId?: number) {
+  async findOne(id: number, providerId?: number, userRole?: string) {
     const product = await this.productRepository.findOne({
       where: { id },
       relations: ['provider'],
@@ -74,7 +82,8 @@ export class ProductService {
       throw new NotFoundException('Product not found')
     }
 
-    if (providerId && product.provider?.id !== providerId) {
+    // Allow admin to access any product
+    if (providerId && product.provider?.user_id !== providerId && userRole !== 'admin') {
       throw new ForbiddenException('You do not own this product')
     }
 
@@ -82,8 +91,8 @@ export class ProductService {
   }
 
   // ✏️ UPDATE PRODUCT
-  async update(id: number, data: Partial<Product>, providerId: number) {
-    const product = await this.findOne(id, providerId)
+  async update(id: number, data: Partial<Product>, providerId: number, userRole?: string) {
+    const product = await this.findOne(id, providerId, userRole)
 
     Object.assign(product, {
       name: data.name ?? product.name,
@@ -95,6 +104,13 @@ export class ProductService {
       imageUrl: data.imageUrl ?? product.imageUrl,
     })
 
+    // Update status based on new stock value
+    if (typeof product.stock === 'number') {
+      if (product.stock === 0) product.status = 'Out of Stock';
+      else if (product.stock < 10) product.status = 'Low Stock';
+      else product.status = 'In Stock';
+    }
+
     const updated = await this.productRepository.save(product)
 
     this.logger.log(`Updated product ID: ${id}`)
@@ -102,8 +118,8 @@ export class ProductService {
   }
 
   // ❌ DELETE PRODUCT
-  async remove(id: number, providerId: number) {
-    const product = await this.findOne(id, providerId)
+  async remove(id: number, providerId: number, userRole?: string) {
+    const product = await this.findOne(id, providerId, userRole)
 
     await this.productRepository.remove(product)
 
