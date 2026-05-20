@@ -17,19 +17,48 @@ export const useProductStore = defineStore('product', () => {
   })
 
   // ================= AUTH INTERCEPTOR (FIX 401) =================
+
   api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token')
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-
     return config
   })
+
+  // Global 401 handler
+  api.interceptors.response.use(
+    response => response,
+    error => {
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        alert('Session expired or unauthorized. Please log in again.')
+        window.location.href = '/login' // Change this to your login route if different
+      }
+      return Promise.reject(error)
+    }
+  )
 
   // ================= HELPERS =================
   const formatImage = (product) => {
     if (!product) return product
+
+    const price = Number(product.price ?? 0)
+    const discount = Number(product.discount ?? 0)
+
+    product.price = price
+    product.discount = discount
+    product.originalPrice = Number(product.originalPrice ?? price)
+    product.discountPercentage = discount
+    product.providerId = Number(
+      product.providerId ?? product.provider_id ?? product.provider?.user_id ?? 0,
+    ) || null
+    product.providerName =
+      product.providerName ||
+      product.provider?.provider_name ||
+      product.provider?.name ||
+      'Unknown'
 
     if (product.imageUrl && product.imageUrl.trim() !== '') {
       product.image = product.imageUrl.startsWith('http')

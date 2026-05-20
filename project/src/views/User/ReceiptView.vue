@@ -63,9 +63,13 @@
                   <div class="item-details">
                     <h4>{{ item.name }}</h4>
                     <p>Quantity: {{ item.quantity }}</p>
+                    <p class="provider-line">
+                      Provider: {{ item.providerName || 'Unknown' }}
+                      <span v-if="item.providerId">(#{{ item.providerId }})</span>
+                    </p>
                   </div>
                   <div class="item-price">
-                    ${{ (item.price * item.quantity).toFixed(2) }}
+                    ${{ ((Number(item.unitPrice ?? item.price ?? 0)) * Number(item.quantity ?? 0)).toFixed(2) }}
                   </div>
                 </div>
               </div>
@@ -152,6 +156,29 @@ const orderItems = ref([])
 const estimatedDelivery = ref('')
 const trackingNumber = ref('')
 
+const UNKNOWN = 'Unknown'
+
+const normalizeField = (value) => {
+  const normalized = String(value ?? '').trim()
+  return normalized || UNKNOWN
+}
+
+const splitName = (value) => {
+  const name = String(value ?? '').trim()
+  if (!name) {
+    return { firstName: UNKNOWN, lastName: UNKNOWN }
+  }
+  const [firstName, ...rest] = name.split(/\s+/)
+  return {
+    firstName: normalizeField(firstName),
+    lastName: normalizeField(rest.join(' ')),
+  }
+}
+
+const getLoggedInUser = () => {
+  return JSON.parse(localStorage.getItem('user') || 'null') || {}
+}
+
 // Generate order details on component mount
 onMounted(() => {
   // Get order data from localStorage (in real app, this would come from API)
@@ -187,16 +214,33 @@ const generateTrackingNumber = () => {
 
 const getCustomerData = () => {
   const savedAddress = localStorage.getItem('shippingAddress')
-  return savedAddress ? JSON.parse(savedAddress) : {
-    firstName: 'John',
-    lastName: 'Doe',
-    address: '123 Main Street',
-    city: 'Phnom Penh',
-    state: 'Phnom Penh',
-    zip: '12000',
-    country: 'Cambodia',
-    phone: '+855 12 345 678',
-    email: 'john.doe@example.com'
+  if (savedAddress) {
+    const address = JSON.parse(savedAddress)
+    return {
+      firstName: normalizeField(address.firstName),
+      lastName: normalizeField(address.lastName),
+      address: normalizeField(address.address),
+      city: normalizeField(address.city),
+      state: normalizeField(address.state),
+      zip: normalizeField(address.zip),
+      country: normalizeField(address.country),
+      phone: normalizeField(address.phone),
+      email: normalizeField(address.email),
+    }
+  }
+
+  const account = getLoggedInUser()
+  const fullName = splitName(account.name || account.fullName)
+  return {
+    firstName: normalizeField(account.firstName || fullName.firstName),
+    lastName: normalizeField(account.lastName || fullName.lastName),
+    address: normalizeField(account.address || account.street || account.location),
+    city: normalizeField(account.city),
+    state: normalizeField(account.state || account.province),
+    zip: normalizeField(account.zip || account.postalCode),
+    country: normalizeField(account.country),
+    phone: normalizeField(account.phone || account.phoneNumber),
+    email: normalizeField(account.email),
   }
 }
 
@@ -234,7 +278,7 @@ const calculateEstimatedDelivery = () => {
 
 const calculateSubtotal = () => {
   return orderItems.value.reduce((total, item) => {
-    return total + (item.price * item.quantity)
+    return total + (Number(item.unitPrice ?? item.price ?? 0) * Number(item.quantity ?? 0))
   }, 0).toFixed(2)
 }
 
@@ -631,5 +675,10 @@ const goHome = () => {
     width: 100%;
     justify-content: center;
   }
+}
+.provider-line {
+  font-size: 12px;
+  color: #475569;
+  margin-top: 4px;
 }
 </style>

@@ -117,7 +117,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useProductStore } from '../../stores/productStore'
 import ProductCard from './Card.vue'
 import NavigationBar from './NavigationBar.vue'
 
@@ -127,6 +128,8 @@ const props = defineProps({
     default: () => []
   }
 })
+
+const productStore = useProductStore()
 
 const view = ref('grid')
 const sortBy = ref('featured')
@@ -143,8 +146,14 @@ const categories = [
 
 const tags = ['Organic', 'Fresh', 'Healthy', 'Snacks', 'Dairy']
 
+const sourceProducts = computed(() => {
+  return Array.isArray(props.products) && props.products.length > 0
+    ? props.products
+    : productStore.products
+})
+
 const filteredProducts = computed(() => {
-  let list = props.products.filter(p => p.price <= appliedMaxPrice.value)
+  let list = sourceProducts.value.filter(p => p.price <= appliedMaxPrice.value)
 
   if (activeTag.value) {
     list = list.filter(p =>
@@ -191,6 +200,12 @@ const addToCart = product => {
 const prevPage = () => page.value > 1 && page.value--
 const nextPage = () => page.value < totalPages.value && page.value++
 const goToPage = n => (page.value = n)
+
+onMounted(async () => {
+  if (!Array.isArray(props.products) || props.products.length === 0) {
+    await productStore.fetchAllProducts()
+  }
+})
 </script>
 <style scoped>
 .shop-wrapper {
