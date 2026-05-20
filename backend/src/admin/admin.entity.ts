@@ -22,6 +22,9 @@ export class Admin {
   email!: string;
 
   @Column()
+  role!: string;
+
+  @Column()
   password!: string;
 
   @Column()
@@ -31,9 +34,9 @@ export class Admin {
   @JoinColumn({ name: 'user_id' })
   user!: users;
 
-  @OneToMany(() => ProviderApplication, (app) => app.admin_reviewed_by)
+  @OneToMany(() => ProviderApplication, (app) => app.admin_reviewed_by, { nullable: true })
   reviewed_applications!: ProviderApplication[];
 
-  @OneToMany(() => Provider, (provider) => provider.createdByAdmin)
+  @OneToMany(() => Provider, (provider) => provider.createdByAdmin, { nullable: true })
   created_providers!: Provider[];
 }

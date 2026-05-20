@@ -11,24 +11,31 @@ export const useProductStore = defineStore('product', () => {
   const loading = ref(false)
   const error = ref(null)
 
-  // ================= API =================
+  // ================= API INSTANCE =================
   const api = axios.create({
     baseURL: API_BASE_URL,
+  })
+
+  // ================= AUTH INTERCEPTOR (FIX 401) =================
+  api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token')
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+
+    return config
   })
 
   // ================= HELPERS =================
   const formatImage = (product) => {
     if (!product) return product
 
-    // Only use imageUrl if it exists and is not empty
     if (product.imageUrl && product.imageUrl.trim() !== '') {
-      if (product.imageUrl.startsWith('http')) {
-        product.image = product.imageUrl
-      } else {
-        product.image = API_BASE_URL + product.imageUrl
-      }
+      product.image = product.imageUrl.startsWith('http')
+        ? product.imageUrl
+        : API_BASE_URL + product.imageUrl
     } else {
-      // If no image, set to null (don't use placeholder)
       product.image = null
     }
 
@@ -37,7 +44,7 @@ export const useProductStore = defineStore('product', () => {
 
   // ================= ACTIONS =================
 
-  // GET ALL
+  // GET ALL PRODUCTS
   const fetchAllProducts = async () => {
     loading.value = true
     error.value = null
@@ -47,15 +54,15 @@ export const useProductStore = defineStore('product', () => {
       products.value = res.data.map(formatImage)
       return products.value
     } catch (err) {
-      error.value = err.message
-      console.error(err)
+      error.value = err.response?.data?.message || err.message
+      console.error('Fetch products error:', err)
       return []
     } finally {
       loading.value = false
     }
   }
 
-  // GET ONE
+  // GET ONE PRODUCT
   const fetchProductById = async (id) => {
     loading.value = true
     error.value = null
@@ -65,7 +72,7 @@ export const useProductStore = defineStore('product', () => {
       selectedProduct.value = formatImage(res.data)
       return selectedProduct.value
     } catch (err) {
-      error.value = err.message
+      error.value = err.response?.data?.message || err.message
       console.error(err)
       return null
     } finally {
@@ -73,7 +80,7 @@ export const useProductStore = defineStore('product', () => {
     }
   }
 
-  // CREATE
+  // CREATE PRODUCT
   const createProduct = async (data) => {
     loading.value = true
     error.value = null
@@ -92,26 +99,30 @@ export const useProductStore = defineStore('product', () => {
         formData.append('image', data.imageFile)
       }
 
+      // FIXED: correct user structure
+      const user = JSON.parse(localStorage.getItem('user') || 'null')
+      if (user?.id) {
+        formData.append('provider_id', user.id)
+      }
+
       const res = await api.post('/products', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
 
       const newProduct = formatImage(res.data)
-
-      // update UI
       products.value.push(newProduct)
 
       return newProduct
     } catch (err) {
       error.value = err.response?.data?.message || err.message
-      console.error(err)
+      console.error('Create product error:', err)
       throw err
     } finally {
       loading.value = false
     }
   }
 
-  // UPDATE
+  // UPDATE PRODUCT
   const updateProduct = async (id, data) => {
     loading.value = true
     error.value = null
@@ -126,22 +137,18 @@ export const useProductStore = defineStore('product', () => {
       formData.append('description', data.description || '')
       formData.append('discount', data.discount ?? 0)
 
-      // only send image if changed
       if (data.imageFile instanceof File) {
         formData.append('image', data.imageFile)
       }
 
-      //SEND TO BACKEND
       const res = await api.put(`/products/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
 
       const updated = formatImage(res.data)
 
-      // SYNC UI WITH BACKEND
       await fetchAllProducts()
 
-      // update selected product
       if (selectedProduct.value?.id === id) {
         selectedProduct.value = updated
       }
@@ -149,14 +156,14 @@ export const useProductStore = defineStore('product', () => {
       return updated
     } catch (err) {
       error.value = err.response?.data?.message || err.message
-      console.error('Update failed:', err)
+      console.error('Update product error:', err)
       throw err
     } finally {
       loading.value = false
     }
   }
 
-  // DELETE
+  // DELETE PRODUCT
   const deleteProduct = async (id) => {
     loading.value = true
     error.value = null
@@ -164,12 +171,11 @@ export const useProductStore = defineStore('product', () => {
     try {
       await api.delete(`/products/${id}`)
 
-      // update UI
       products.value = products.value.filter(p => p.id !== id)
 
       return true
     } catch (err) {
-      error.value = err.message
+      error.value = err.response?.data?.message || err.message
       console.error(err)
       throw err
     } finally {
@@ -190,6 +196,7 @@ export const useProductStore = defineStore('product', () => {
 
   const searchProducts = computed(() => (q) => {
     if (!q) return products.value
+
     const query = q.toLowerCase()
 
     return products.value.filter(p =>
@@ -199,23 +206,22 @@ export const useProductStore = defineStore('product', () => {
     )
   })
 
+  // ================= EXPORT =================
   return {
-    // state
     products,
     selectedProduct,
     loading,
     error,
 
-    // actions
     fetchAllProducts,
     fetchProductById,
     createProduct,
     updateProduct,
     deleteProduct,
+
     clearError,
     clearSelectedProduct,
 
-    // computed
     productCount,
     getProductById,
     searchProducts,

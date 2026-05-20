@@ -4,35 +4,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import StaffLayout from '../Layout/StaffLayout.vue'
 import AdminLayout from '../Layout/AdminLayout.vue'
 
-// ==================== Public ====================
-import HomeView from '../views/User/HomeView.vue'
-import CartView from '../views/User/CartView.vue'
-import FavoritesView from '../views/User/FavoritesView.vue'
-import fashDeals  from '../views/User/fashDeals.vue'
-import MyOrder  from '../views/User/MyOrder.vue'
-import Receipt from '../views/User/ReceiptView.vue'
-import Address from '../views/User/AddressView.vue'
-import Checkout from '../views/User/CheckoutView.vue'
-import Profile from '../views/User/UserDashboard.vue'
-import OrderTracker from '../views/User/OrderTracker.vue'
-import ProductDetailUser from '../views/User/ProductDetail.vue'
-import Search from '../components/Customer/Search.vue'
-import ProductList from '../components/Customer/Productlist.vue'
-
-// ==================== Provider ====================
-import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
-import ProviderProduct from '../views/Provider/ProviderProduct.vue'
-import ProductDetail from '../views/Provider/ProductDetail.vue'
-import ProfileSettingProvider from '../views/Provider/ProfileSettingProvider.vue'
-import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
-import ProviderOrders from '../views/Provider/ProviderOrders.vue'
-
-// ==================== Staff ====================
-import DashboardView from '../views/Staff/Dashboardview.vue'
-import ApplicationsView from '../views/Staff/Applicationsview.vue'
-import ProfileView from '../views/Staff/Profile.vue'
-import ApplicationDetailsView from '../views/Staff/ProviderReviewDetail.vue'
-
 // ==================== Admin ====================
 import AdminDashboard from '../views/Admin/admindashboard.vue'
 import StaffManagement from '../views/Admin/StaffManagement.vue'
@@ -44,53 +15,75 @@ import Reports from '../views/Admin/Report.vue'
 import AdminSetting from '../views/Admin/AdminSetting.vue'
 import AdminProfile from '../views/Admin/AdminProfile.vue'
 
-// // ==================== Auth ====================
-// import UserRegister from '../views/User/resgister.vue'
-// import UserLogin from '../views/User/login.vue'
+// ==================== Provider ====================
+import ProviderDashboard from '../views/Provider/ProviderDashboard.vue'
+import ProviderProduct from '../views/Provider/ProviderProduct.vue'
+import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
+import ProviderOrders from '../views/Provider/ProviderOrders.vue'
+import ProfileSettingProvider from '../views/Provider/ProfileSettingProvider.vue'
+import ProductDetail from '../views/Provider/ProductDetail.vue'
+
+// ==================== Staff ====================
+import DashboardView from '../views/Staff/Dashboardview.vue'
+import ApplicationsView from '../views/Staff/Applicationsview.vue'
+import ProfileView from '../views/Staff/Profile.vue'
+import ApplicationDetailsView from '../views/Staff/ProviderReviewDetail.vue'
+
+// ==================== Public ====================
+import HomeView from '../views/User/HomeView.vue'
+import CartView from '../views/User/CartView.vue'
+import FavoritesView from '../views/User/FavoritesView.vue'
+import MyOrder from '../views/User/MyOrder.vue'
+import Receipt from '../views/User/ReceiptView.vue'
+import Address from '../views/User/AddressView.vue'
+import Checkout from '../views/User/CheckoutView.vue'
+import Profile from '../views/User/UserDashboard.vue'
+import OrderTracker from '../views/User/OrderTracker.vue'
+import ProductDetailUser from '../views/User/ProductDetail.vue'
+import Search from '../components/Customer/Search.vue'
+import ProductList from '../components/Customer/Productlist.vue'
+import fashDeals from '../views/User/fashDeals.vue'
 
 // ==================== Routes ====================
 const routes = [
-  // -------- Public --------
+  // PUBLIC
   {
     path: '/',
     component: () => import('../Layout/CustomerLayout.vue'),
     children: [
       { path: '', redirect: '/home' },
-      { path: 'home', name: 'Home', component: HomeView },
-      { path: 'cart', name: 'Cart', component: CartView },
-      { path: 'favorites', name: 'Favorites', component: FavoritesView },
-      { path: 'about', name: 'About', component: () => import('../views/User/AboutView.vue') },
-      { path: 'Address', name: 'Address', component: Address },
-      { path: 'MyOrder', name: 'MyOrder', component: MyOrder },
-      { path: 'Receipt', name: 'Receipt', component: Receipt },
-      { path: 'fashDeals', name: 'FashDeals', component: fashDeals },
-      { path: 'checkout', name: 'Checkout', component: Checkout },
-      { path: 'profile', name: 'Profile', component: Profile },
-      { path: 'search', name: 'Search', component: Search },
-      { path: 'order-tracker', name: 'OrderTracker', component: OrderTracker },
-      { path: 'product/:id', name: 'ProductDetailUser', component: ProductDetailUser, props: true },
-      { path: 'products', name: 'ProductList', component: ProductList },
-
+      { path: 'home', component: HomeView },
+      { path: 'cart', component: CartView },
+      { path: 'favorites', component: FavoritesView },
+      { path: 'about', component: () => import('../views/User/AboutView.vue') },
+      { path: 'address', component: Address },
+      { path: 'myorder', component: MyOrder },
+      { path: 'receipt', component: Receipt },
+      { path: 'fashDeals', component: fashDeals },
+      { path: 'checkout', component: Checkout },
+      { path: 'profile', component: Profile },
+      { path: 'search', component: Search },
+      { path: 'order-tracker', component: OrderTracker },
+      { path: 'product/:id', component: ProductDetailUser, props: true },
+      { path: 'products', component: ProductList },
     ],
   },
 
-  // -------- Provider --------
+  // PROVIDER
   {
     path: '/provider',
-    // If you have a ProviderLayout, add: component: ProviderLayout,
-    // component: ProviderLayout,
     redirect: '/provider/dashboard',
     children: [
-      { path: 'dashboard', name: 'ProviderDashboard', component: ProviderDashboard },
-      { path: 'orders', name: 'ProviderOrders', component: ProviderOrders },
-      { path: 'products', name: 'ProviderProducts', component: ProviderProduct },
-      { path: 'revenue', name: 'ProviderRevenue', component: ProviderRevenue },
-      { path: 'profile', name: 'ProviderProfile', component: ProfileSettingProvider },
-      { path: 'product/:id', name: 'ProductDetail', component: ProductDetail, props: true },
+      { path: 'dashboard', component: ProviderDashboard },
+      { path: 'orders', component: ProviderOrders },
+      { path: 'products', component: ProviderProduct },
+      { path: 'revenue', component: ProviderRevenue },
+      { path: 'profile', component: ProfileSettingProvider },
+      { path: 'product/:id', component: ProductDetail, props: true },
     ],
   },
 
-  // -------- Staff --------
+  // STAFF
   {
     path: '/staff',
     component: StaffLayout,
@@ -103,7 +96,7 @@ const routes = [
     ],
   },
 
-  // -------- Admin --------
+  // ADMIN
   {
     path: '/admin',
     component: AdminLayout,
@@ -121,40 +114,44 @@ const routes = [
     ],
   },
 
-  // -------- Auth --------
-  { path: '/user/login', name: 'Login', component: () => import('../views/User/login.vue') },
-  { path: '/provider/login', name: 'ProviderLogin', component: () => import('../views/Provider/login.vue') },
-  // { path: '/user/register', name: 'Register', component: () => import('../views/User/resgister.vue') },
+  // AUTH
+  { path: '/user/login', component: () => import('../views/User/login.vue') },
+  { path: '/provider/login', component: () => import('../views/Provider/login.vue') },
 ]
 
-// ==================== Router ====================
-
+// ==================== ROUTER ====================
 const router = createRouter({
   history: createWebHistory(),
   routes,
 })
 
+// ==================== GLOBAL GUARD (FIXED) ====================
+router.beforeEach((to, from, next) => {
+  const user = JSON.parse(localStorage.getItem('user'))
+  const token = localStorage.getItem('token')
 
+  const role = user?.role?.trim()?.toLowerCase()
 
-// Global navigation guard for role-based dashboard access
-router.beforeEach((to, from) => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  const token = localStorage.getItem('token');
+  // NOT LOGGED IN
+  if ((to.path.startsWith('/admin') || to.path.startsWith('/provider')) && !token) {
+    return next(`/user/login?redirect=${to.fullPath}`)
+  }
 
-  // Protect admin routes
+  // ADMIN PROTECTION
   if (to.path.startsWith('/admin')) {
-    if (!user || !token || user.role !== 'admin') {
-      return { path: '/user/login', query: { redirect: to.fullPath } }
+    if (!user || role !== 'admin') {
+      return next(`/user/login?redirect=${to.fullPath}`)
     }
   }
-  // Protect provider routes
+
+  // PROVIDER PROTECTION
   if (to.path.startsWith('/provider')) {
-    if (!user || !token || user.role !== 'provider') {
-      return { path: '/user/login', query: { redirect: to.fullPath } }
+    if (!user || role !== 'provider') {
+      return next(`/user/login?redirect=${to.fullPath}`)
     }
   }
-  // Allow navigation
-  return true
-});
+
+  next()
+})
 
 export default router
