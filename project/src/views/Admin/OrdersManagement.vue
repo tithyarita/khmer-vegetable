@@ -80,7 +80,10 @@
               <td>
                 <div class="customer-cell">
                   <span class="customer-avatar" :style="{background: order.customerColor}">{{ order.customerInitials }}</span>
-                  <span>{{ order.customer }}</span>
+                  <div>
+                    <span>{{ order.customer }}</span>
+                    <span v-if="order.customerRawId === 9" class="customer-id">#C{{ order.customerRawId }}</span>
+                  </div>
                 </div>
               </td>
               <td>{{ order.provider }}</td>
@@ -109,6 +112,7 @@
             <span class="customer-avatar" :style="{background: selectedOrder.customerColor}">{{ selectedOrder.customerInitials }}</span>
             <div>
               <div class="customer-name">{{ selectedOrder.customer }}</div>
+              <div v-if="selectedOrder.customerRawId === 9" class="customer-id">#C{{ selectedOrder.customerRawId }}</div>
               <div class="customer-phone">+1 555-0123</div>
               <div class="customer-address">123 Maple St, Harvest Village</div>
             </div>
@@ -166,21 +170,33 @@ const fetchOrders = async () => {
     const response = await axios.get(`${API_BASE_URL}/orders`)
     
     // Transform API response to match component structure
-    orders.value = response.data.map(order => ({
-      id: order.id,
-      customer: `Customer ${order.customer_id}`, // Will be updated when users API is connected
-      customerInitials: `C${order.customer_id}`,
-      customerColor: '#e0e7ff',
-      provider: `Provider ${order.provider_id}`, // Will be updated when providers API is connected
-      price: `$${parseFloat(order.total).toFixed(2)}`,
-      status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
-      statusClass: order.status.toLowerCase(),
-      items: [], // Will be populated when order_items API is connected
-      item: order.item || 1,
-      orderCode: order.order_code,
-      createdAt: new Date(order.created_at),
-      completedAt: order.completed_at ? new Date(order.completed_at) : null
-    }))
+    orders.value = response.data.map(order => {
+      const customerRawId = order.customer?.id ?? order.customer_id
+      const customerName = order.customer?.name || `Customer ${order.customer_id}`
+      const initials = (customerName || '')
+        .split(' ')
+        .map(part => part.charAt(0))
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || `C${customerRawId}`
+
+      return {
+        id: order.id,
+        customerRawId,
+        customer: customerName,
+        customerInitials: initials,
+        customerColor: '#e0e7ff',
+        provider: order.provider?.provider_name || `Provider ${order.provider_id}`,
+        price: `$${parseFloat(order.total).toFixed(2)}`,
+        status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
+        statusClass: order.status.toLowerCase(),
+        items: [], // Will be populated when order_items API is connected
+        item: order.item || 1,
+        orderCode: order.order_code,
+        createdAt: new Date(order.created_at),
+        completedAt: order.completed_at ? new Date(order.completed_at) : null
+      }
+    })
     
     console.log('Orders loaded:', orders.value)
   } catch (err) {

@@ -1,44 +1,160 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, In, Repository } from 'typeorm';
 import { orders, OrderStatus } from './orders.entity';
-import { CreateOrderDto, UpdateOrderDto } from './dto/orders.dto';
+import {
+  CreateOrderDto,
+  CreateOrderItemDto,
+  UpdateOrderDto,
+} from './dto/orders.dto';
+import { orderItems } from './order-items.entity';
+import { Product } from '../product/product.entity';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectRepository(orders)
     private readonly ordersRepository: Repository<orders>,
+    @InjectRepository(orderItems)
+    private readonly orderItemsRepository: Repository<orderItems>,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
   ) {}
+
+  private generateOrderCode() {
+    return `ORD-${Date.now().toString(36).toUpperCase()}`;
+  }
+
+  private async saveOrderForProvider(
+    customerId: number,
+    providerId: number,
+    items: CreateOrderItemDto[],
+    orderCode?: string,
+    status: OrderStatus = OrderStatus.PENDING,
+  ) {
+    const productIds = items.map((item) => item.product_id);
+    const products = await this.productRepository.find({
+      where: { id: In(productIds) },
+      relations: ['provider'],
+    });
+
+    if (products.length !== productIds.length) {
+      throw new NotFoundException('One or more products were not found');
+    }
+
+    const productsById = new Map(products.map((product) => [product.id, product]));
+
+    const resolvedProviderId = products[0].provider?.user_id;
+    if (!resolvedProviderId) {
+      throw new BadRequestException('Product provider is missing');
+    }
+
+    for (const product of products) {
+      if (product.provider?.user_id !== resolvedProviderId) {
+        throw new BadRequestException(
+          'Checkout can only contain products from one provider at a time',
+        );
+      }
+    }
+
+    if (providerId && providerId !== resolvedProviderId) {
+      throw new BadRequestException('Provider does not match the selected products');
+    }
+
+    const total = items.reduce((sum, item) => {
+      const product = productsById.get(item.product_id);
+      if (!product) return sum;
+      return sum + Number(product.price) * Number(item.quantity);
+    }, 0);
+
+    const order = this.ordersRepository.create({
+      order_code: orderCode || this.generateOrderCode(),
+      customer_id: customerId,
+      provider_id: resolvedProviderId,
+      status,
+      total,
+      item: items.reduce((sum, item) => sum + Number(item.quantity), 0),
+      completed_at:
+        status === OrderStatus.DELIVERING ? new Date() : undefined,
+    } as DeepPartial<orders>);
+
+    const savedOrder = await this.ordersRepository.save(order);
+
+    const orderItemEntities = items.map((item) => {
+      const product = productsById.get(item.product_id);
+      return this.orderItemsRepository.create({
+        order_id: savedOrder.id,
+        product_id: item.product_id,
+        quantity: String(item.quantity),
+        price: Number(product?.price ?? 0),
+      });
+    });
+
+    await this.orderItemsRepository.save(orderItemEntities);
+
+    return this.ordersRepository.findOne({
+      where: { id: savedOrder.id },
+      relations: ['provider', 'customer', 'order_items', 'order_items.product'],
+    });
+  }
 
   // Create a new order
   async create(createOrderDto: CreateOrderDto) {
     try {
+      if (createOrderDto.items?.length) {
+        const createdOrder = await this.saveOrderForProvider(
+          createOrderDto.customer_id,
+          createOrderDto.provider_id ?? 0,
+          createOrderDto.items,
+          createOrderDto.order_code,
+          createOrderDto.status ?? OrderStatus.PENDING,
+        );
+
+        return {
+          message: 'Order created successfully!',
+          data: createdOrder,
+        };
+      }
+
       const order = this.ordersRepository.create({
         ...createOrderDto,
         status: createOrderDto.status as OrderStatus,
       });
-      await this.ordersRepository.save(order);
+      const savedOrder = await this.ordersRepository.save(order);
       return {
         message: 'Order created successfully!',
-        data: order,
+        data: savedOrder,
       };
     } catch (error) {
-      return {
-        message: 'Error creating order',
-        error: error.message,
-      };
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'Error creating order',
+      );
     }
   }
 
   // Get all orders
   async findAll() {
-    return this.ordersRepository.find();
+    return this.ordersRepository.find({
+      relations: ['provider', 'customer', 'order_items', 'order_items.product'],
+    });
   }
 
   // Get order by ID
   async findOne(id: number) {
-    const order = await this.ordersRepository.findOne({ where: { id } });
+    const order = await this.ordersRepository.findOne({
+      where: { id },
+      relations: ['provider', 'customer', 'order_items', 'order_items.product'],
+    });
     if (!order) {
       return { message: 'Order not found.' };
     }
@@ -47,12 +163,18 @@ export class OrdersService {
 
   // Get orders by provider ID
   async findByProvider(providerId: number) {
-    return this.ordersRepository.find({ where: { provider_id: providerId } });
+    return this.ordersRepository.find({
+      where: { provider_id: providerId },
+      relations: ['provider', 'customer', 'order_items', 'order_items.product'],
+    });
   }
 
   // Get orders by customer ID
   async findByCustomer(customerId: number) {
-    return this.ordersRepository.find({ where: { customer_id: customerId } });
+    return this.ordersRepository.find({
+      where: { customer_id: customerId },
+      relations: ['provider', 'customer', 'order_items', 'order_items.product'],
+    });
   }
 
   // Update order
@@ -63,6 +185,9 @@ export class OrdersService {
     }
 
     Object.assign(order, updateOrderDto);
+    if (updateOrderDto.status === OrderStatus.DELIVERING && !order.completed_at) {
+      order.completed_at = new Date();
+    }
     await this.ordersRepository.save(order);
 
     return {

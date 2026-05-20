@@ -330,13 +330,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { useCartStore } from '../../stores/cartStore'
+import { useUserStore } from '@/stores/userStore'
 
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Footer from '../../components/Customer/Footer.vue'
 
 const router = useRouter()
+const cartStore = useCartStore()
+const userStore = useUserStore()
+const API_BASE_URL = 'http://localhost:3000'
 
 const shipping = ref({
   firstName: 'John',
@@ -362,38 +368,12 @@ const card = ref({
 const loading = ref(false)
 const orderResult = ref('')
 const orderMessage = ref('')
-
-const orderItems = ref([
-  {
-    id: 1,
-    name: 'Organic Curly Kale Bunch',
-    price: 2.50,
-    quantity: 2,
-    image:
-      'https://images.unsplash.com/photo-1524179091875-bf99a9a6af57?w=400&q=80'
-  },
-  {
-    id: 2,
-    name: 'Fresh Garden Radish (Bunch)',
-    price: 1.99,
-    quantity: 3,
-    image:
-      'https://images.unsplash.com/photo-1585278407894-e2a1386378d9?w=400&q=80'
-  },
-  {
-    id: 3,
-    name: 'Sweet Red Bell Peppers (3 Pack)',
-    price: 3.45,
-    quantity: 1,
-    image:
-      'https://images.unsplash.com/photo-1563565375-fc4c4e308637?w=400&q=80'
-  }
-])
+const orderItems = computed(() => cartStore.cartItems)
 
 const calculateSubtotal = () => {
   return orderItems.value
     .reduce((total, item) => {
-      return total + item.price * item.quantity
+      return total + Number(item.unitPrice ?? item.price ?? 0) * item.quantity
     }, 0)
     .toFixed(2)
 }
@@ -411,6 +391,19 @@ const calculateTotal = () => {
 }
 
 const confirmOrder = async () => {
+  if (!orderItems.value.length) {
+    orderResult.value = 'error'
+    orderMessage.value = 'Your cart is empty. Add products before placing an order.'
+    return
+  }
+
+  const customerId = Number(userStore.user?.id ?? JSON.parse(localStorage.getItem('user') || 'null')?.id)
+  if (!customerId) {
+    orderResult.value = 'error'
+    orderMessage.value = 'Please log in before placing an order.'
+    return
+  }
+
   if (paymentMethod.value === 'card') {
     const { number, expiry, cvv, name } = card.value
 
@@ -428,42 +421,76 @@ const confirmOrder = async () => {
   orderMessage.value = ''
 
   try {
-    // Process payment based on selected method
-    const paymentResult = await processPayment()
+    const groupedOrders = groupCartItemsByProvider(orderItems.value)
 
-    if (paymentResult.success) {
-      // Save order data for receipt
-      const orderData = {
-        orderNumber: generateOrderNumber(),
-        orderDate: new Date().toLocaleDateString(),
-        paymentMethod: getPaymentMethodName(),
-        customer: shipping.value,
-        items: orderItems.value,
-        estimatedDelivery: calculateEstimatedDelivery(),
-        trackingNumber: generateTrackingNumber(),
-        transactionId: paymentResult.transactionId,
-        amount: calculateTotal()
+    const createdOrders = []
+    for (const group of groupedOrders) {
+      const response = await axios.post(`${API_BASE_URL}/orders`, {
+        order_code: generateOrderNumber(),
+        customer_id: customerId,
+        provider_id: group.providerId,
+        status: 'pending',
+        total: group.items.reduce((sum, item) => {
+          return sum + Number(item.unitPrice ?? item.price ?? 0) * item.quantity
+        }, 0),
+        item: group.items.reduce((sum, item) => sum + item.quantity, 0),
+        items: group.items.map(item => ({
+          product_id: item.id,
+          quantity: item.quantity,
+        })),
+      })
+
+      if (response.data?.error) {
+        throw new Error(response.data.error)
       }
 
-      // Store order data
-      localStorage.setItem('lastOrder', JSON.stringify(orderData))
-      
-      // Save to transaction history
-      saveTransaction(orderData)
-
-      loading.value = false
-      orderResult.value = 'success'
-      orderMessage.value = `Payment successful! Your order ${orderData.orderNumber} has been confirmed.`
-    } else {
-      loading.value = false
-      orderResult.value = 'error'
-      orderMessage.value = paymentResult.message || 'Payment failed. Please try again.'
+      createdOrders.push(response.data)
     }
+
+    const orderData = {
+      orderNumber: createdOrders.map(order => order?.data?.order_code || order?.order_code).filter(Boolean).join(', '),
+      orderDate: new Date().toLocaleDateString(),
+      paymentMethod: getPaymentMethodName(),
+      customer: shipping.value,
+      items: orderItems.value,
+      estimatedDelivery: calculateEstimatedDelivery(),
+      trackingNumber: generateTrackingNumber(),
+      amount: calculateTotal(),
+      backendOrders: createdOrders,
+    }
+
+    localStorage.setItem('lastOrder', JSON.stringify(orderData))
+    saveTransaction(orderData)
+    cartStore.clearCart()
+
+    loading.value = false
+    orderResult.value = 'success'
+    orderMessage.value = `Order placed successfully and saved to the backend.`
   } catch (error) {
     loading.value = false
     orderResult.value = 'error'
-    orderMessage.value = 'Payment processing error. Please try again.'
+    orderMessage.value = error.response?.data?.message || error.message || 'Payment processing error. Please try again.'
   }
+}
+
+const groupCartItemsByProvider = (items) => {
+  const groups = new Map()
+
+  items.forEach((item) => {
+    const providerId = Number(item.providerId ?? item.provider_id ?? 0) || null
+    const key = providerId ?? `product-${item.id}`
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        providerId,
+        items: [],
+      })
+    }
+
+    groups.get(key).items.push(item)
+  })
+
+  return Array.from(groups.values())
 }
 
 const processPayment = async () => {

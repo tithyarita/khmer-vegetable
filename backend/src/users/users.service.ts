@@ -11,6 +11,7 @@ import { users, UserRole } from './users.entity';
 import { Admin } from '../admin/admin.entity';
 import { Provider } from '../providers/providers.entity';
 import { Customer } from '../customer/customer.entity';
+import { CustomerStatus } from '../customer/customer.entity';
 import { Staff } from '../staff/staff.entity';
 import * as bcrypt from 'bcryptjs';
 
@@ -93,10 +94,21 @@ export class UsersService {
           });
         } else if (userRole === UserRole.CUSTOMER) {
           this.logger.log('Creating Customer record...');
-          await transactionalManager.save(Customer, { user_id: saved.id } as any);
+          await transactionalManager.save(Customer, {
+            user_id: saved.id,
+            name: saved.name,
+            phone: saved.phone,
+            status: CustomerStatus.ACTIVE,
+          });
         } else if (userRole === UserRole.STAFF) {
           this.logger.log('Creating Staff record...');
-          await transactionalManager.save(Staff, { user_id: saved.id } as any);
+          await transactionalManager.save(Staff, {
+            user_id: saved.id,
+            name: saved.name,
+            email: saved.email,
+            password: saved.password,
+            status: 'active',
+          });
         }
 
         return saved;

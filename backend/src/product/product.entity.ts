@@ -30,7 +30,7 @@ export class Product {
   @Column()
   discount!: number;
 
-  @Column('decimal')
+  @Column('decimal', { precision: 15, scale: 2 })
   price!: number;
 
   @Column({ nullable: true })

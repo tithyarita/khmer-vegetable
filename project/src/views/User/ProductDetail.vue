@@ -49,7 +49,7 @@
             <div class="pd-price-row">
               <span class="pd-price">${{ product.price.toFixed(2) }}</span>
               <span class="pd-orig">${{ product.originalPrice.toFixed(2) }}</span>
-              <span class="pd-off">{{ discPct }}% OFF</span>
+              <span class="pd-off" v-if="product.discount > 0">{{ product.discount }}% OFF</span>
             </div>
 
             <div class="pd-weight">
@@ -203,37 +203,63 @@
 import Card from '@/components/Customer/Card.vue';
 import Footer from '@/components/Customer/Footer.vue';
 import NavigationBar from '@/components/Customer/NavigationBar.vue';
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { useCartStore } from '@/stores/cartStore';
+import { useProductStore } from '@/stores/productStore';
 
-// Define props
-const props = defineProps({
-  id: {
-    type: [String, Number],
-    required: true
-  }
-});
+const route = useRoute();
+const productStore = useProductStore();
+const cartStore = useCartStore();
 
-// --- PRODUCT DATA ---
-// For now, hardcoded, but in future, fetch based on id
+const placeholderImage =
+  'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?auto=format&fit=crop&q=80&w=800';
+
 const product = reactive({
-  name: "Organic Heirloom Romanesco",
-  price: 4.50,
-  originalPrice: 5.95,
-  weight: "approx. 500g",
-  description: "A mathematical marvel of the vegetable world, Romanesco offers a nutty, delicate flavor profile that sits perfectly between broccoli and cauliflower. Grown in volcanic soil for enhanced mineral content.",
-  culinaryBody: "This Romanesco is sourced from small-scale organic farms. Its fractal peaks aren't just for show—they create a unique surface area that holds onto sauces and seasonings better than traditional cauliflower.",
-  benefits: ["USDA Organic Certified", "Rich in Vitamin C, K and Fiber", "Non-GMO Heirloom Variety"],
-  nutrition: [
-    { label: "Calories", value: "25 kcal" },
-    { label: "Vitamin C", value: "80% DV" },
-    { label: "Fiber", value: "2.5g" },
-    { label: "Protein", value: "2g" }
-  ],
-  images: [
-    "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?auto=format&fit=crop&q=80&w=800",
-    "https://images.unsplash.com/photo-1518843875459-f738682238a6?auto=format&fit=crop&q=80&w=800"
-  ]
+  id: null,
+  name: 'Loading product...',
+  price: 0,
+  originalPrice: 0,
+  weight: 'N/A',
+  description: '',
+  culinaryBody: '',
+  benefits: [],
+  nutrition: [],
+  images: [placeholderImage],
 });
+
+const applyProduct = (data) => {
+  if (!data) return;
+
+  const price = Number(data.price || 0);
+  const discount = Number(data.discount || data.discountPercentage || 0);
+  const originalPrice = Number(data.originalPrice || price);
+  const image = data.image || data.imageUrl || placeholderImage;
+
+  Object.assign(product, {
+    id: data.id,
+    name: data.name || 'Untitled product',
+    price,
+    discount,
+    originalPrice,
+    providerId: data.provider?.user_id || data.provider_id || data.providerId || null,
+    weight: data.weight || `${Number(data.stock || 0)} in stock`,
+    description: data.description || '',
+    culinaryBody:
+      data.description ||
+      'Fresh product information is loaded from the backend for this item.',
+    benefits: data.benefits || ['Fresh from local farms', 'Loaded from backend'],
+    nutrition: data.nutrition || [],
+    images: [image],
+  });
+};
+
+const loadProduct = async () => {
+  const id = route.params.id;
+  const data = await productStore.fetchProductById(id);
+  applyProduct(data);
+  activeIdx.value = 0;
+};
 
 // --- REVIEWS DATA ---
 const reviews = ref([
@@ -253,7 +279,7 @@ const toast = reactive({ show: false, msg: "" });
 const newReview = reactive({ rating: 0, body: '' });
 
 // --- COMPUTED ---
-const discPct = computed(() => Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100));
+const discPct = computed(() => Number(product.discount || 0));
 
 const avgRating = computed(() => {
   if (!reviews.value.length) return 0;
@@ -268,6 +294,15 @@ const filteredReviews = computed(() => {
 
 // --- METHODS ---
 const addToCart = () => {
+  cartStore.addToCart({
+    ...product,
+    unitPrice: Number(product.price ?? 0),
+    originalPrice: Number(product.originalPrice ?? product.price ?? 0),
+    quantity: qty.value,
+    unit: product.unit || 'item',
+    provider_id: product.providerId,
+  });
+
   cartCount.value += qty.value;
   cartBump.value = true;
   showToast(`${qty.value} items added to your basket`);
@@ -305,6 +340,14 @@ const submitReview = () => {
   newReview.body = ''
   showToast('Your review has been submitted!')
 }
+
+watch(
+  () => route.params.id,
+  () => {
+    loadProduct();
+  },
+  { immediate: true }
+)
 
 </script>
 

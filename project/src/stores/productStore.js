@@ -31,6 +31,14 @@ export const useProductStore = defineStore('product', () => {
   const formatImage = (product) => {
     if (!product) return product
 
+    const price = Number(product.price ?? 0)
+    const discount = Number(product.discount ?? 0)
+
+    product.price = price
+    product.discount = discount
+    product.originalPrice = Number(product.originalPrice ?? price)
+    product.discountPercentage = discount
+
     if (product.imageUrl && product.imageUrl.trim() !== '') {
       product.image = product.imageUrl.startsWith('http')
         ? product.imageUrl

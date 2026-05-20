@@ -38,7 +38,7 @@ export class ProductService {
 
     const product = this.productRepository.create({
       ...data,
-      provider: providerId ? { id: providerId } : undefined,
+      provider: providerId ? { user_id: providerId } : undefined,
     })
 
     const saved = await this.productRepository.save(product)
@@ -50,7 +50,7 @@ export class ProductService {
   // 📦 GET ALL PRODUCTS
   async findAll(providerId?: number) {
     const products = await this.productRepository.find({
-      where: providerId ? { provider: { id: providerId } } : {},
+      where: providerId ? { provider: { user_id: providerId } } : undefined,
       relations: ['provider'],
     })
 
@@ -74,7 +74,7 @@ export class ProductService {
       throw new NotFoundException('Product not found')
     }
 
-    if (providerId && product.provider?.id !== providerId) {
+    if (providerId && product.provider?.user_id !== providerId) {
       throw new ForbiddenException('You do not own this product')
     }
 
