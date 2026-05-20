@@ -6,6 +6,7 @@ import {
   Patch,
   Delete,
   Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto, UpdateOrderDto } from './dto/orders.dto';
@@ -34,7 +35,7 @@ export class OrdersController {
   // GET ORDERS BY PROVIDER ID
   // =========================
   @Get('provider/:providerId')
-  async findByProvider(@Param('providerId') providerId: number) {
+  async findByProvider(@Param('providerId', ParseIntPipe) providerId: number) {
     return this.ordersService.findByProvider(providerId);
   }
 
@@ -42,7 +43,7 @@ export class OrdersController {
   // GET ORDERS BY CUSTOMER ID
   // =========================
   @Get('customer/:customerId')
-  async findByCustomer(@Param('customerId') customerId: number) {
+  async findByCustomer(@Param('customerId', ParseIntPipe) customerId: number) {
     return this.ordersService.findByCustomer(customerId);
   }
 
@@ -50,7 +51,7 @@ export class OrdersController {
   // GET ORDER BY ID
   // =========================
   @Get(':id')
-  async findOne(@Param('id') id: number) {
+  async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ordersService.findOne(id);
   }
 
@@ -59,7 +60,7 @@ export class OrdersController {
   // =========================
   @Patch(':id')
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateOrderDto: UpdateOrderDto,
   ) {
     return this.ordersService.update(id, updateOrderDto);
@@ -69,7 +70,7 @@ export class OrdersController {
   // DELETE ORDER
   // =========================
   @Delete(':id')
-  async remove(@Param('id') id: number) {
+  async remove(@Param('id', ParseIntPipe) id: number) {
     return this.ordersService.remove(id);
   }
 }

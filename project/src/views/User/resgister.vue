@@ -40,7 +40,7 @@
         <div v-if="success" class="success">{{ success }}</div>
 
         <div class="login-link">
-          Already have an account? <a href="/login">Login</a>
+          Already have an account? <a href="#" @click.prevent="$router.push('/login')">Login</a>
         </div>
       </form>
     </div>
@@ -116,7 +116,7 @@ const handleRegister = async () => {
   loading.value = true
 
   try {
-    const res = await axios.post('http://localhost:3000/users/register', {
+    const res = await axios.post('http://localhost:3001/users/register', {
       name: name.value,
       email: email.value,
       phone: phone.value,

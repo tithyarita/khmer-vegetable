@@ -45,7 +45,6 @@ export class ProductService {
 
     const product = this.productRepository.create({
       ...data,
-      status,
       provider: providerId ? { user_id: providerId } : undefined,
     })
 
@@ -58,7 +57,7 @@ export class ProductService {
   // 📦 GET ALL PRODUCTS
   async findAll(providerId?: number) {
     const products = await this.productRepository.find({
-      where: providerId ? { provider: { user_id: providerId } } : {},
+      where: providerId ? { provider: { user_id: providerId } } : undefined,
       relations: ['provider'],
     })
 
@@ -82,8 +81,7 @@ export class ProductService {
       throw new NotFoundException('Product not found')
     }
 
-    // Allow admin to access any product
-    if (providerId && product.provider?.user_id !== providerId && userRole !== 'admin') {
+    if (providerId && product.provider?.user_id !== providerId) {
       throw new ForbiddenException('You do not own this product')
     }
 

@@ -119,7 +119,7 @@
                     <td class="col-customer">
                       <div class="customer-info">
                         <span class="customer-name">{{ order.customerName }}</span>
-                        <span class="customer-id">{{ order.customerId }}</span>
+                        <span v-if="order.customerIdRaw === 9" class="customer-id">{{ order.customerId }}</span>
                       </div>
                     </td>
                     <td class="col-items">
@@ -182,14 +182,14 @@
             <div class="info-card card-customer">
               <h3 class="card-title">Customer Information</h3>
               <div class="info-grid">
-                <div class="info-item">
-                  <span class="info-label">Name</span>
-                  <span class="info-value">{{ selectedOrder.customerName }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Customer ID</span>
-                  <span class="info-value">{{ selectedOrder.customerId }}</span>
-                </div>
+                  <div class="info-item">
+                    <span class="info-label">Name</span>
+                    <span class="info-value">{{ selectedOrder.customerName }}</span>
+                  </div>
+                  <div v-if="selectedOrder.customerIdRaw === 9" class="info-item">
+                    <span class="info-label">Customer ID</span>
+                    <span class="info-value">{{ selectedOrder.customerId }}</span>
+                  </div>
               </div>
             </div>
 
@@ -275,9 +275,15 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import axios from 'axios'
 import SideBar from "@/components/provider_com/sideBar.vue"
 import PageHeader from "@/components/provider_com/pageHeader.vue"
+import { useUserStore } from '@/stores/userStore'
 
 const API_BASE_URL = 'http://localhost:3000'
-const providerId = 1 // HARDCODED - Replace with auth.user.id when authentication is ready
+const userStore = useUserStore()
+
+const getProviderId = () => {
+  const user = userStore.user || JSON.parse(localStorage.getItem('user') || 'null')
+  return Number(user?.id ?? user?.providerId ?? user?.provider_id ?? 0) || null
+}
 
 // --- State ---
 const orders = ref([])
@@ -293,22 +299,34 @@ const sortOrder = ref('desc')
 const fetchOrders = async () => {
   loading.value = true
   error.value = null
+
+  const providerId = getProviderId()
+  if (!providerId) {
+    error.value = 'Provider account not found. Please log in again.'
+    loading.value = false
+    return
+  }
+
   try {
     const response = await axios.get(`${API_BASE_URL}/orders/provider/${providerId}`)
     
     // Transform API response to match component structure
-    orders.value = response.data.map(order => ({
-      id: order.order_code || `#O${order.id}`,
-      customerId: `#C${order.customer_id}`,
-      customerName: `Customer ${order.customer_id}`, // Will be updated when users API is connected
-      status: order.status,
-      total: parseFloat(order.total),
-      createdAt: new Date(order.created_at),
-      completedAt: order.completed_at ? new Date(order.completed_at) : null,
-      items: [], // Will be populated when order_items API is connected
-      item: order.item ?? 1, // Use nullish coalescing to preserve 0 values
-      orderId: order.id // Keep original ID for updates
-    }))
+    orders.value = response.data.map(order => {
+      const customerRawId = order.customer?.id ?? order.customer_id
+      return {
+        id: order.order_code || `#O${order.id}`,
+        customerIdRaw: customerRawId,
+        customerId: `#C${customerRawId}`,
+        customerName: order.customer?.name || `Customer ${order.customer_id}`,
+        status: order.status,
+        total: parseFloat(order.total),
+        createdAt: new Date(order.created_at),
+        completedAt: order.completed_at ? new Date(order.completed_at) : null,
+        items: [], // Will be populated when order_items API is connected
+        item: order.item ?? 1, // Use nullish coalescing to preserve 0 values
+        orderId: order.id // Keep original ID for updates
+      }
+    })
     
     console.log('Orders loaded:', orders.value)
   } catch (err) {

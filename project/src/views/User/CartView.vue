@@ -11,7 +11,7 @@
         </div>
         
         <!-- Cart Items -->
-        <div class="cart-items">
+        <div class="cart-items" v-if="cartItems.length > 0">
           <div v-for="item in cartItems" :key="item.id" class="cart-item">
             <div class="item-image">
               <img :src="item.image" :alt="item.name" />
@@ -19,7 +19,7 @@
             <div class="item-details">
               <h4>{{ item.name }}</h4>
               <p>{{ item.category }}</p>
-              <p class="unit-price">${{ item.unitPrice }}/{{ item.unit }}</p>
+              <p class="unit-price">${{ Number(item.unitPrice).toFixed(2) }}/{{ item.unit }}</p>
             </div>
             <div class="item-quantity">
               <div class="quantity-controls">
@@ -33,6 +33,11 @@
               <button @click="removeItem(item)" class="remove-btn">Remove</button>
             </div>
           </div>
+        </div>
+
+        <div v-else class="empty-cart">
+          <h3>Your cart is empty</h3>
+          <p>Add some products from the shop to start your order.</p>
         </div>
 
         <!-- Cart Summary -->
@@ -83,50 +88,24 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useCartStore } from '../../stores/cartStore'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Card from '../../components/Customer/Card.vue'
 import Footer from '../../components/Customer/Footer.vue'
 
 const router = useRouter()
+const cartStore = useCartStore()
 
 const couponCode = ref('')
 const shippingCost = ref('2.00')
 
-const cartItems = ref([
-  {
-    id: 1,
-    name: 'Organic Curly Kale Bunch',
-    category: 'Leafy Greens',
-    unit: 'per bunch',
-    unitPrice: '2.50',
-    quantity: 2,
-    image: 'https://images.unsplash.com/photo-1524179091875-bf99a9a6af57?w=400&q=80'
-  },
-  {
-    id: 2,
-    name: 'Fresh Garden Radish (Bunch)',
-    category: 'Root Veg',
-    unit: 'per bunch',
-    unitPrice: '1.99',
-    quantity: 3,
-    image: 'https://images.unsplash.com/photo-1585278407894-e2a1386378d9?w=400&q=80'
-  },
-  {
-    id: 3,
-    name: 'Sweet Red Bell Peppers (3 Pack)',
-    category: 'Peppers',
-    unit: 'per pack',
-    unitPrice: '3.45',
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1563565375-fc4c4e308637?w=400&q=80'
-  }
-])
+const cartItems = computed(() => cartStore.cartItems)
 
 const calculateSubtotal = () => {
   return cartItems.value.reduce((total, item) => {
-    return total + (item.unitPrice * item.quantity)
+    return total + (Number(item.unitPrice) * item.quantity)
   }, 0).toFixed(2)
 }
 
@@ -137,20 +116,15 @@ const calculateTotal = () => {
 }
 
 const increaseQuantity = (item) => {
-  item.quantity++
+  cartStore.addToCart({ ...item, quantity: 1 })
 }
 
 const decreaseQuantity = (item) => {
-  if (item.quantity > 1) {
-    item.quantity--
-  }
+  cartStore.removeFromCart(item.id)
 }
 
 const removeItem = (item) => {
-  const index = cartItems.value.findIndex(cartItem => cartItem.id === item.id)
-  if (index > -1) {
-    cartItems.value.splice(index, 1)
-  }
+  cartStore.removeItemCompletely(item.id)
 }
 
 const applyCoupon = () => {

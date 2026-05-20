@@ -72,6 +72,10 @@
                     <div class="item-info">
                       <h4>{{ item.name }}</h4>
                       <p>{{ item.quantity }} × ${{ item.price }}</p>
+                      <p class="provider-meta">
+                        Provider: {{ item.providerName || 'Unknown' }}
+                        <span v-if="item.providerId">(#{{ item.providerId }})</span>
+                      </p>
                     </div>
 
                     <div class="item-price">
@@ -88,25 +92,48 @@
                   <button @click="goToAddress" class="edit-btn">EDIT</button>
                 </div>
 
-                <div class="address-display">
-                  <p>
-                    <strong>
-                      {{ shipping.firstName }}
-                      {{ shipping.lastName }}
-                    </strong>
+                <div class="address-display editable-address">
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>First Name</label>
+                      <input v-model.trim="shipping.firstName" type="text" placeholder="Enter first name" />
+                    </div>
+                    <div class="form-group">
+                      <label>Last Name</label>
+                      <input v-model.trim="shipping.lastName" type="text" placeholder="Enter last name" />
+                    </div>
+                    <div class="form-group full-width">
+                      <label>Address</label>
+                      <input v-model.trim="shipping.address" type="text" placeholder="Street address" />
+                    </div>
+                    <div class="form-group">
+                      <label>City</label>
+                      <input v-model.trim="shipping.city" type="text" placeholder="City" />
+                    </div>
+                    <div class="form-group">
+                      <label>State / Province</label>
+                      <input v-model.trim="shipping.state" type="text" placeholder="State" />
+                    </div>
+                    <div class="form-group">
+                      <label>ZIP Code</label>
+                      <input v-model.trim="shipping.zip" type="text" placeholder="ZIP" />
+                    </div>
+                    <div class="form-group">
+                      <label>Country</label>
+                      <input v-model.trim="shipping.country" type="text" placeholder="Country" />
+                    </div>
+                    <div class="form-group">
+                      <label>Phone</label>
+                      <input v-model.trim="shipping.phone" type="text" placeholder="Phone number" />
+                    </div>
+                    <div class="form-group">
+                      <label>Email</label>
+                      <input v-model.trim="shipping.email" type="email" placeholder="Email" />
+                    </div>
+                  </div>
+                  <p v-if="!isShippingProfileComplete" class="profile-warning">
+                    Please complete your profile fields. "Unknown" values are not allowed for checkout.
                   </p>
-
-                  <p>{{ shipping.address }}</p>
-
-                  <p>
-                    {{ shipping.city }},
-                    {{ shipping.state }}
-                    {{ shipping.zip }}
-                  </p>
-
-                  <p>{{ shipping.country }}</p>
-                  <p>{{ shipping.phone }}</p>
-                  <p>{{ shipping.email }}</p>
                 </div>
               </div>
 
@@ -278,6 +305,7 @@
 
                 <button
                   class="confirm-order-btn"
+                  :disabled="!isShippingProfileComplete || loading"
                   @click="confirmOrder"
                 >
                   Confirm Order
@@ -330,24 +358,80 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { useCartStore } from '../../stores/cartStore'
+import { useUserStore } from '@/stores/userStore'
 
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Footer from '../../components/Customer/Footer.vue'
 
 const router = useRouter()
+const cartStore = useCartStore()
+const userStore = useUserStore()
+const API_BASE_URL = 'http://localhost:3000'
 
-const shipping = ref({
-  firstName: 'John',
-  lastName: 'Doe',
-  address: '123 Main Street',
-  city: 'Phnom Penh',
-  state: 'Phnom Penh',
-  zip: '12000',
-  country: 'Cambodia',
-  phone: '+855 12 345 678',
-  email: 'john.doe@example.com'
+const UNKNOWN = 'Unknown'
+
+const normalizeField = value => {
+  const normalized = String(value ?? '').trim()
+  return normalized || UNKNOWN
+}
+
+const splitName = (value) => {
+  const name = String(value ?? '').trim()
+  if (!name) {
+    return { firstName: UNKNOWN, lastName: UNKNOWN }
+  }
+
+  const [firstName, ...rest] = name.split(/\s+/)
+  return {
+    firstName: normalizeField(firstName),
+    lastName: normalizeField(rest.join(' ')),
+  }
+}
+
+const getLoggedInUser = () => {
+  return userStore.user || JSON.parse(localStorage.getItem('user') || 'null') || {}
+}
+
+const buildShippingFromAccount = () => {
+  const account = getLoggedInUser()
+  const fullName = splitName(account.name || account.fullName)
+
+  return {
+    firstName: normalizeField(account.firstName || fullName.firstName),
+    lastName: normalizeField(account.lastName || fullName.lastName),
+    address: normalizeField(account.address || account.street || account.location),
+    city: normalizeField(account.city),
+    state: normalizeField(account.state || account.province),
+    zip: normalizeField(account.zip || account.postalCode),
+    country: normalizeField(account.country),
+    phone: normalizeField(account.phone || account.phoneNumber),
+    email: normalizeField(account.email),
+  }
+}
+
+const shipping = ref(buildShippingFromAccount())
+
+const requiredShippingFields = [
+  'firstName',
+  'lastName',
+  'address',
+  'city',
+  'state',
+  'zip',
+  'country',
+  'phone',
+  'email',
+]
+
+const isShippingProfileComplete = computed(() => {
+  return requiredShippingFields.every((field) => {
+    const value = String(shipping.value[field] ?? '').trim()
+    return Boolean(value) && value.toLowerCase() !== UNKNOWN.toLowerCase()
+  })
 })
 
 const paymentMethod = ref('bank')
@@ -362,38 +446,16 @@ const card = ref({
 const loading = ref(false)
 const orderResult = ref('')
 const orderMessage = ref('')
+const orderItems = computed(() => cartStore.cartItems)
 
-const orderItems = ref([
-  {
-    id: 1,
-    name: 'Organic Curly Kale Bunch',
-    price: 2.50,
-    quantity: 2,
-    image:
-      'https://images.unsplash.com/photo-1524179091875-bf99a9a6af57?w=400&q=80'
-  },
-  {
-    id: 2,
-    name: 'Fresh Garden Radish (Bunch)',
-    price: 1.99,
-    quantity: 3,
-    image:
-      'https://images.unsplash.com/photo-1585278407894-e2a1386378d9?w=400&q=80'
-  },
-  {
-    id: 3,
-    name: 'Sweet Red Bell Peppers (3 Pack)',
-    price: 3.45,
-    quantity: 1,
-    image:
-      'https://images.unsplash.com/photo-1563565375-fc4c4e308637?w=400&q=80'
-  }
-])
+onMounted(() => {
+  shipping.value = buildShippingFromAccount()
+})
 
 const calculateSubtotal = () => {
   return orderItems.value
     .reduce((total, item) => {
-      return total + item.price * item.quantity
+      return total + Number(item.unitPrice ?? item.price ?? 0) * item.quantity
     }, 0)
     .toFixed(2)
 }
@@ -411,6 +473,25 @@ const calculateTotal = () => {
 }
 
 const confirmOrder = async () => {
+  if (!orderItems.value.length) {
+    orderResult.value = 'error'
+    orderMessage.value = 'Your cart is empty. Add products before placing an order.'
+    return
+  }
+
+  if (!isShippingProfileComplete.value) {
+    orderResult.value = 'error'
+    orderMessage.value = 'Please complete all shipping/account fields before confirming your order.'
+    return
+  }
+
+  const customerId = Number(userStore.user?.id ?? JSON.parse(localStorage.getItem('user') || 'null')?.id)
+  if (!customerId) {
+    orderResult.value = 'error'
+    orderMessage.value = 'Please log in before placing an order.'
+    return
+  }
+
   if (paymentMethod.value === 'card') {
     const { number, expiry, cvv, name } = card.value
 
@@ -428,42 +509,76 @@ const confirmOrder = async () => {
   orderMessage.value = ''
 
   try {
-    // Process payment based on selected method
-    const paymentResult = await processPayment()
+    const groupedOrders = groupCartItemsByProvider(orderItems.value)
 
-    if (paymentResult.success) {
-      // Save order data for receipt
-      const orderData = {
-        orderNumber: generateOrderNumber(),
-        orderDate: new Date().toLocaleDateString(),
-        paymentMethod: getPaymentMethodName(),
-        customer: shipping.value,
-        items: orderItems.value,
-        estimatedDelivery: calculateEstimatedDelivery(),
-        trackingNumber: generateTrackingNumber(),
-        transactionId: paymentResult.transactionId,
-        amount: calculateTotal()
+    const createdOrders = []
+    for (const group of groupedOrders) {
+      const response = await axios.post(`${API_BASE_URL}/orders`, {
+        order_code: generateOrderNumber(),
+        customer_id: customerId,
+        provider_id: group.providerId,
+        status: 'pending',
+        total: group.items.reduce((sum, item) => {
+          return sum + Number(item.unitPrice ?? item.price ?? 0) * item.quantity
+        }, 0),
+        item: group.items.reduce((sum, item) => sum + item.quantity, 0),
+        items: group.items.map(item => ({
+          product_id: item.id,
+          quantity: item.quantity,
+        })),
+      })
+
+      if (response.data?.error) {
+        throw new Error(response.data.error)
       }
 
-      // Store order data
-      localStorage.setItem('lastOrder', JSON.stringify(orderData))
-      
-      // Save to transaction history
-      saveTransaction(orderData)
-
-      loading.value = false
-      orderResult.value = 'success'
-      orderMessage.value = `Payment successful! Your order ${orderData.orderNumber} has been confirmed.`
-    } else {
-      loading.value = false
-      orderResult.value = 'error'
-      orderMessage.value = paymentResult.message || 'Payment failed. Please try again.'
+      createdOrders.push(response.data)
     }
+
+    const orderData = {
+      orderNumber: createdOrders.map(order => order?.data?.order_code || order?.order_code).filter(Boolean).join(', '),
+      orderDate: new Date().toLocaleDateString(),
+      paymentMethod: getPaymentMethodName(),
+      customer: shipping.value,
+      items: orderItems.value,
+      estimatedDelivery: calculateEstimatedDelivery(),
+      trackingNumber: generateTrackingNumber(),
+      amount: calculateTotal(),
+      backendOrders: createdOrders,
+    }
+
+    localStorage.setItem('lastOrder', JSON.stringify(orderData))
+    saveTransaction(orderData)
+    cartStore.clearCart()
+
+    loading.value = false
+    orderResult.value = 'success'
+    orderMessage.value = `Order placed successfully and saved to the backend.`
   } catch (error) {
     loading.value = false
     orderResult.value = 'error'
-    orderMessage.value = 'Payment processing error. Please try again.'
+    orderMessage.value = error.response?.data?.message || error.message || 'Payment processing error. Please try again.'
   }
+}
+
+const groupCartItemsByProvider = (items) => {
+  const groups = new Map()
+
+  items.forEach((item) => {
+    const providerId = Number(item.providerId ?? item.provider_id ?? 0) || null
+    const key = providerId ?? `product-${item.id}`
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        providerId,
+        items: [],
+      })
+    }
+
+    groups.get(key).items.push(item)
+  })
+
+  return Array.from(groups.values())
 }
 
 const processPayment = async () => {
@@ -633,6 +748,12 @@ const goToAddress = () => {
   margin: 0 0 24px;
 }
 
+.provider-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #475569;
+}
+
 .confirm-order-btn {
   width: 100%;
   padding: 16px;
@@ -644,6 +765,50 @@ const goToAddress = () => {
   font-weight: 600;
   cursor: pointer;
   margin-top: 24px;
+}
+
+.confirm-order-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.editable-address .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.editable-address .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editable-address .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.editable-address label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.editable-address input {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.profile-warning {
+  margin-top: 12px;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
 }
 
 .confirm-order-btn:hover {

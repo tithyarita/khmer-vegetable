@@ -38,11 +38,17 @@
         <label>Password</label>
         <input v-model="password" type="password" placeholder="••••••••" required />
 
+<<<<<<< HEAD
         <div class="row">
           <label class="remember">
             <input type="checkbox" />
             Remember me
           </label>
+=======
+          <button class="register-btn" type="button" @click="router.push('/register')">
+            Register Account
+          </button>
+>>>>>>> 20c47a3818bb09dac006de01bb4facc5c29a33ad
 
           <a href="#" class="forgot">Forgot?</a>
         </div>
@@ -94,10 +100,20 @@ async function handleLogin() {
   loading.value = true
 
   try {
+<<<<<<< HEAD
     const { data } = await axios.post('http://localhost:3000/auth/login', {
       email: email.value,
       password: password.value
     })
+=======
+    const res = await axios.post(
+      "http://localhost:3001/auth/login",
+      {
+        email: email.value,
+        password: password.value
+      }
+    )
+>>>>>>> 20c47a3818bb09dac006de01bb4facc5c29a33ad
 
     const user = data?.user
     const token = data?.token || data?.access_token

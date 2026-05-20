@@ -11,14 +11,18 @@
         <p>Track and manage your deliveries</p>
       </div>
 
+      <div v-if="loading" class="empty-state">Loading orders...</div>
+      <div v-else-if="error" class="empty-state">{{ error }}</div>
+      <div v-else-if="orders.length === 0" class="empty-state">No orders found yet.</div>
+
       <div v-for="order in orders" :key="order.id" class="order-card">
         <div class="card-top">
           <div>
             <div class="card-top-left">
-              <span class="order-number">Order #{{ order.id }}</span>
-              <span :class="['badge', order.status === 'IN PROGRESS' ? 'badge-progress' : 'badge-delivered']">
-                <span v-if="order.status === 'IN PROGRESS'" class="pulse-dot"></span>
-                {{ order.status }}
+              <span class="order-number">Order #{{ order.orderCode }}</span>
+              <span :class="['badge', order.statusClass]">
+                <span v-if="order.status === 'pending'" class="pulse-dot"></span>
+                {{ order.statusLabel }}
               </span>
             </div>
             <div class="order-meta">{{ order.meta }}</div>
@@ -28,24 +32,24 @@
 
         <div class="items-preview">
           <div class="item-images">
-            <div class="item-img" v-for="(emoji, idx) in order.emojis" :key="idx">{{ emoji }}</div>
+            <div class="item-img" v-for="(item, idx) in order.previewItems" :key="idx">{{ item }}</div>
             <div class="item-count-bubble">+{{ order.extraCount }}</div>
           </div>
           <div class="items-text">
             <div class="items-name">{{ order.itemsLabel }}</div>
-            <div class="items-farm">{{ order.farm }}</div>
+            <div class="items-farm">{{ order.providerName }}</div>
           </div>
         </div>
 
         <div class="card-actions">
           <button class="btn btn-primary" @click="handlePrimary(order)">
-            <svg v-if="order.status === 'IN PROGRESS'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg v-if="order.status === 'pending'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
             <svg v-else width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
             </svg>
-            {{ order.status === 'IN PROGRESS' ? 'Track Delivery' : 'Reorder' }}
+            {{ order.status === 'pending' ? 'Track Delivery' : 'Reorder' }}
           </button>
           <button class="btn btn-secondary" @click="viewDetails(order)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -63,56 +67,40 @@
 
 <script>
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
+import { useCustomerOrderStore } from '@/stores/customerOrderStore'
 
 export default {
   name: 'MyOrder',
   components: { NavigationBar },
   data() {
     return {
-      orders: [
-        {
-          id: 'EG-92841',
-          status: 'IN PROGRESS',
-          meta: 'Placed on Oct 24, 2024 • Expected Arrival: Today, 5:00 PM',
-          price: '42.80',
-          emojis: ['🥬', '🥕'],
-          extraCount: 4,
-          itemsLabel: 'Organic Kale, Heirloom Carrots + 4 more items',
-          farm: 'From Willow Creek Family Farm',
-        },
-        {
-          id: 'EG-81722',
-          status: 'DELIVERED',
-          meta: 'Placed on Oct 18, 2024 • Delivered on Oct 19, 2024',
-          price: '89.15',
-          emojis: ['🫐', '🍅'],
-          extraCount: 8,
-          itemsLabel: 'Weekly Harvest Box, Artisan Sourdough + 8 items',
-          farm: 'Multiple Partner Farms',
-        },
-        {
-          id: 'EG-71604',
-          status: 'DELIVERED',
-          meta: 'Placed on Oct 04, 2024 • Delivered on Oct 05, 2024',
-          price: '35.40',
-          emojis: ['🍅', '🌿'],
-          extraCount: 2,
-          itemsLabel: 'Vine-Ripened Tomatoes, Fresh Basil + 2 items',
-          farm: 'Emerald Grove Greenhouses',
-        },
-      ]
+      customerOrderStore: useCustomerOrderStore(),
     }
+  },
+  computed: {
+    orders() {
+      return this.customerOrderStore.orders
+    },
+    loading() {
+      return this.customerOrderStore.loading
+    },
+    error() {
+      return this.customerOrderStore.error
+    },
+  },
+  async mounted() {
+    await this.customerOrderStore.fetchCustomerOrders()
   },
   methods: {
     handlePrimary(order) {
-      if (order.status === 'IN PROGRESS') {
-        this.$router.push('/customer/order-tracker')
+      if (order.status === 'pending') {
+        this.$router.push('/order-tracker')
       } else {
-        alert(`Reordering #${order.id}…`)
+        alert(`Reordering #${order.orderCode}…`)
       }
     },
     viewDetails(order) {
-      alert(`Viewing details for order #${order.id}`)
+      alert(`Viewing details for order #${order.orderCode}`)
     }
   }
 }

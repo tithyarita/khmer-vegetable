@@ -28,10 +28,9 @@ export class ProductController {
 
   // 📦 GET ALL
   @Get()
-  // Removed JwtAuthGuard to allow public access
   findAll(@Query('provider_id') providerId?: string, @Req() req?: any) {
     // If provider_id is passed in query, use it. Otherwise, check if user is logged in.
-    const id = providerId ? Number(providerId) : req.user?.id;
+    const id = providerId ? Number(providerId) : req?.user?.id;
     return this.productService.findAll(id);
   }
 
