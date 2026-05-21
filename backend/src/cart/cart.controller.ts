@@ -14,14 +14,14 @@ import { CartService } from './cart.service';
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
-  @Get(':userId')
-  async getUserCart(@Param('userId', ParseIntPipe) userId: number) {
-    return this.cartService.getUserCart(userId);
-  }
-
   @Get('summary/:userId')
   async getCartSummary(@Param('userId', ParseIntPipe) userId: number) {
     return this.cartService.getCartSummary(userId);
+  }
+
+  @Get(':userId')
+  async getUserCart(@Param('userId', ParseIntPipe) userId: number) {
+    return this.cartService.getUserCart(userId);
   }
 
   @Post('add')
