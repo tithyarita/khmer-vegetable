@@ -10,7 +10,8 @@ import { Admin } from '../admin/admin.entity';
 import { Staff } from '../staff/staff.entity';
 import { Customer } from '../customer/customer.entity';
 import { Provider } from '../providers/providers.entity';
-import { Cart } from '../cart/cart.entity'
+import { Cart } from '../cart/cart.entity';
+import { Favorite } from '../favorite/favorite.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -59,4 +60,7 @@ export class users {
 
   @OneToMany(() => Cart, (cart) => cart.user)
   carts!: Cart[]
+
+  @OneToMany(() => Favorite, (favorite) => favorite.user)
+  favorites!: Favorite[]
 }

@@ -8,6 +8,7 @@ import { ApplicationsModule } from './providers/applications.module';
 import { ProductModule } from './product/product.module';
 import { ProviderApplicationsModule } from './provider-application/provider-application.module';
 import { CartModule } from './cart/cart.module';
+import { FavoriteModule } from './favorite/favorite.module';
 import { Customer } from './customer/customer.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -22,7 +23,7 @@ import { AppService } from './app.service';
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
       username: process.env.DB_USER || 'root',
-      password: process.env.DB_PASS || 'root',
+      password: process.env.DB_PASS || '110704',
       database: process.env.DB_NAME || 'khmer_vegetable_market',
       autoLoadEntities: true,
       synchronize: true, // set to false in production
@@ -36,6 +37,7 @@ import { AppService } from './app.service';
     ProductModule,
     ProviderApplicationsModule,
     CartModule,
+    FavoriteModule,
   ],
   controllers: [AppController],
   providers: [AppService],
