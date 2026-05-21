@@ -18,7 +18,7 @@ export class Admin {
   @Column()
   name!: string;
 
-  @Column()
+  @Column({ nullable: true })
   imageUrl!: string;
 
   @Column({ unique: true })

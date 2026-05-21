@@ -17,10 +17,10 @@ async function bootstrap() {
     }),
   );
 
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads',
-  });
+    app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+      prefix: '/uploads',
+    });
 
-  await app.listen(4000);
+  await app.listen(3000);
 }
 bootstrap();

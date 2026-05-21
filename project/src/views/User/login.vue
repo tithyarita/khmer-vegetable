@@ -38,17 +38,11 @@
         <label>Password</label>
         <input v-model="password" type="password" placeholder="••••••••" required />
 
-<<<<<<< HEAD
         <div class="row">
           <label class="remember">
             <input type="checkbox" />
             Remember me
           </label>
-=======
-          <button class="register-btn" type="button" @click="router.push('/register')">
-            Register Account
-          </button>
->>>>>>> 20c47a3818bb09dac006de01bb4facc5c29a33ad
 
           <a href="#" class="forgot">Forgot?</a>
         </div>
