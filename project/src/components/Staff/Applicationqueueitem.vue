@@ -1,13 +1,4 @@
 <template>
-  <!--
-    A single applicant row in the Application Queue list.
-
-    Props:
-      applicant  – { name, email, avatarUrl }
-      farm       – { name, category }
-      submittedAt – "Oct 24, 2023 · 14:22 PM"
-      status     – "pending" | "in-review" | "approved" | "rejected"
-  -->
   <div class="queue-item">
     <!-- Avatar + applicant info -->
     <div class="qi-applicant">
@@ -42,7 +33,7 @@
 
     <!-- Action button -->
     <div class="qi-action">
-      <router-link :to="`/staff/applications/${id}`" class="btn-details">
+      <router-link :to="`/staff/details/${id}`" class="btn-details">
         View Details
       </router-link>
 

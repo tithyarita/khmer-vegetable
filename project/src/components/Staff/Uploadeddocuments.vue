@@ -16,15 +16,32 @@
         v-for="doc in documents"
         :key="doc.name"
         class="doc-item"
+        :class="{ 'doc-item--image': doc.type === 'image' }"
         @click="$emit('open', doc)"
       >
-        <div class="doc-icon-wrap" :class="iconClass(doc.type)">
+        <!-- ── Image preview (fills top of card) ── -->
+        <div v-if="doc.type === 'image'" class="doc-preview">
+          <img
+            :src="doc.url"
+            :alt="doc.name"
+            class="doc-preview-img"
+            @error="onImgError($event)"
+          />
+          <div class="doc-preview-overlay">
+            <i class="bi bi-eye"></i>
+          </div>
+        </div>
+
+        <!-- ── Non-image: icon ── -->
+        <div v-else class="doc-icon-wrap" :class="iconClass(doc.type)">
           <i :class="iconName(doc.type)"></i>
         </div>
+
         <span class="doc-name">{{ doc.name }}</span>
         <span class="doc-meta">{{ doc.meta }}</span>
+
         <button class="doc-action" @click.stop="$emit('action', doc)">
-          <i :class="doc.type === 'image' ? 'bi bi-eye' : 'bi bi-box-arrow-up-right'"></i>
+          <i :class="doc.type === 'image' ? 'bi bi-box-arrow-up-right' : 'bi bi-box-arrow-up-right'"></i>
         </button>
       </div>
     </div>
@@ -39,7 +56,6 @@ export default {
     documents: {
       type: Array,
       required: true,
-      // [{ name, meta, type: 'pdf'|'image'|'doc'|'other', verified?: string }]
     },
   },
   methods: {
@@ -61,6 +77,11 @@ export default {
       };
       return map[type] ?? map.other;
     },
+    onImgError(e) {
+      // Replace broken image with a placeholder icon fallback
+      e.target.closest('.doc-preview').classList.add('doc-preview--broken')
+      e.target.style.display = 'none'
+    },
   },
 };
 </script>
@@ -81,18 +102,8 @@ export default {
   gap: 16px;
 }
 
-.card-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin: 0 0 3px;
-}
-
-.card-subtitle {
-  font-size: 12px;
-  color: #9aa0ab;
-  margin: 0;
-}
+.card-title    { font-size: 15px; font-weight: 700; color: #1a1a2e; margin: 0 0 3px; }
+.card-subtitle { font-size: 12px; color: #9aa0ab; margin: 0; }
 
 .files-badge {
   display: inline-flex;
@@ -114,6 +125,7 @@ export default {
   gap: 12px;
 }
 
+/* Base doc card */
 .doc-item {
   background: #fafafa;
   border: 1px solid #e5e7eb;
@@ -126,13 +138,73 @@ export default {
   text-align: center;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
+  overflow: hidden;
 }
-
 .doc-item:hover {
   border-color: #c4c9d4;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
+/* Image cards: no padding on top so preview bleeds to edge */
+.doc-item--image {
+  padding: 0 0 12px;
+  gap: 6px;
+}
+.doc-item--image .doc-name,
+.doc-item--image .doc-meta,
+.doc-item--image .doc-action {
+  padding: 0 12px;
+}
+
+/* ── Image preview ── */
+.doc-preview {
+  position: relative;
+  width: 100%;
+  height: 110px;
+  background: #e5e7eb;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.doc-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s;
+}
+.doc-item:hover .doc-preview-img {
+  transform: scale(1.04);
+}
+
+/* Eye overlay on hover */
+.doc-preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(31, 78, 46, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+.doc-item:hover .doc-preview-overlay { opacity: 1; }
+
+/* Broken image fallback */
+.doc-preview--broken {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: #c4c9d4;
+}
+.doc-preview--broken::after {
+  content: '\F3D6'; /* bi-image */
+  font-family: "Bootstrap Icons";
+}
+
+/* ── Non-image icon ── */
 .doc-icon-wrap {
   width: 42px;
   height: 42px;
@@ -142,7 +214,6 @@ export default {
   justify-content: center;
   font-size: 20px;
 }
-
 .icon-red    { background: #fde8ef; color: #c0392b; }
 .icon-blue   { background: #dbeafe; color: #1d4ed8; }
 .icon-green  { background: #d4edda; color: #276541; }
@@ -155,13 +226,11 @@ export default {
   word-break: break-all;
   line-height: 1.35;
 }
-
 .doc-meta {
   font-size: 10px;
   color: #9aa0ab;
   line-height: 1.3;
 }
-
 .doc-action {
   background: none;
   border: none;
@@ -173,8 +242,5 @@ export default {
   transition: color 0.15s;
   line-height: 1;
 }
-
-.doc-action:hover {
-  color: #1a1a2e;
-}
+.doc-action:hover { color: #1a1a2e; }
 </style>

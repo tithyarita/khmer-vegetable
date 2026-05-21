@@ -4,22 +4,13 @@ import {
   Column,
   CreateDateColumn,
   OneToOne,
-<<<<<<< HEAD
+  OneToMany,
 } from 'typeorm';
 import { Admin } from '../admin/admin.entity';
 import { Staff } from '../staff/staff.entity';
 import { Customer } from '../customer/customer.entity';
 import { Provider } from '../providers/providers.entity';
-=======
-  OneToMany,
-} from 'typeorm'
-
-import { Admin } from '../admin/admin.entity'
-import { Staff } from '../staff/staff.entity'
-import { Customer } from '../customer/customer.entity'
-import { Provider } from '../providers/providers.entity'
 import { Cart } from '../cart/cart.entity'
->>>>>>> 20c47a3818bb09dac006de01bb4facc5c29a33ad
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -64,13 +55,8 @@ export class users {
   customer!: Customer;
 
   @OneToOne(() => Provider, (provider) => provider.user)
-<<<<<<< HEAD
-  provider!: Provider;
-}
-=======
   provider!: Provider
 
   @OneToMany(() => Cart, (cart) => cart.user)
   carts!: Cart[]
 }
->>>>>>> 20c47a3818bb09dac006de01bb4facc5c29a33ad

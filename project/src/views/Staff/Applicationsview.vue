@@ -99,7 +99,7 @@
 import { ref, computed, onMounted } from 'vue'
 import ApplicationQueueItem from '../../components/Staff/Applicationqueueitem.vue'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
 
 const applications = ref([])   // raw records from GET /api/applications
 const loading      = ref(true)
