@@ -22,6 +22,7 @@ import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
 import ProviderOrders from '../views/Provider/ProviderOrders.vue'
 import ProfileSettingProvider from '../views/Provider/ProfileSettingProvider.vue'
 import ProductDetail from '../views/Provider/ProductDetail.vue'
+import Providerapplicationform from '@/views/Provider/Providerapplicationform.vue'
 
 // ==================== Staff ====================
 import DashboardView from '../views/Staff/Dashboardview.vue'
@@ -91,7 +92,7 @@ const routes = [
       { path: '', redirect: '/staff/dashboard' },
       { path: 'dashboard', component: DashboardView },
       { path: 'applications', component: ApplicationsView },
-      { path: 'details', component: ApplicationDetailsView },
+      { path: 'details/:id', component: ApplicationDetailsView, props: true },
       { path: 'profile', component: ProfileView },
     ],
   },
@@ -113,6 +114,9 @@ const routes = [
       { path: 'profile', component: AdminProfile },
     ],
   },
+
+  // PROVIDER APPLICATION
+  { path: '/application-form', component: Providerapplicationform },
 
   // AUTH
   { path: '/user/login', component: () => import('../views/User/login.vue') },

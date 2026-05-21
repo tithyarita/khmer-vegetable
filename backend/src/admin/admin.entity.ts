@@ -18,11 +18,11 @@ export class Admin {
   @Column()
   name!: string;
 
+  @Column()
+  imageUrl!: string;
+
   @Column({ unique: true })
   email!: string;
-
-  @Column()
-  role!: string;
 
   @Column()
   password!: string;

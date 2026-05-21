@@ -18,7 +18,7 @@ async function bootstrap() {
   );
 
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/images',
+    prefix: '/uploads',
   });
 
   await app.listen(4000);
