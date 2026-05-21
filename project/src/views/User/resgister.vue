@@ -116,7 +116,7 @@ const handleRegister = async () => {
   loading.value = true
 
   try {
-    const res = await axios.post('http://localhost:3001/users/register', {
+    const res = await axios.post('http://localhost:3000/users/register', {
       name: name.value,
       email: email.value,
       phone: phone.value,
