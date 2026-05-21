@@ -24,7 +24,7 @@
         No recent applications found.
       </div>
       <div
-        v-for="app in applications"
+        v-for="app in pagedItems"
         :key="app.id"
         class="app-row"
       >
@@ -54,32 +54,48 @@
     </div>
 
     <div class="table-footer">
-      <span class="footer-count">Showing {{ applications.length }} applications</span>
-      <div class="pagination">
-        <button class="page-btn"><i class="bi bi-chevron-left"></i></button>
+      <span class="footer-count">
+        Showing {{ pagedItems.length }} of {{ applications.length }} applications
+      </span>
+      <div v-if="totalPages > 1" class="pagination">
+        <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">
+          <i class="bi bi-chevron-left"></i>
+        </button>
         <button
-          v-for="n in 3" :key="n"
+          v-for="n in totalPages"
+          :key="n"
           :class="['page-btn', { 'page-btn--active': n === currentPage }]"
           @click="currentPage = n"
         >{{ n }}</button>
-        <button class="page-btn"><i class="bi bi-chevron-right"></i></button>
+        <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++">
+          <i class="bi bi-chevron-right"></i>
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
-defineProps({
+const props = defineProps({
   applications: { type: Array,   default: () => [] },
   loading:      { type: Boolean, default: false },
   error:        { type: String,  default: null },
 })
 defineEmits(['view-all'])
 
+const PAGE_SIZE   = 6
 const currentPage = ref(1)
 
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(props.applications.length / PAGE_SIZE))
+)
+
+const pagedItems = computed(() => {
+  const start = (currentPage.value - 1) * PAGE_SIZE
+  return props.applications.slice(start, start + PAGE_SIZE)
+})
 </script>
 
 <style scoped>
@@ -114,12 +130,11 @@ const currentPage = ref(1)
 }
 .btn-view-all:hover { background: var(--brand-green); }
 
-.col { display: flex; align-items: center; }
+.col        { display: flex; align-items: center; }
 .col-vendor { flex: 2.2; }
 .col-cat    { flex: 1.6; }
 .col-date   { flex: 1.4; }
 .col-status { flex: 1.1; }
-.col-score  { flex: 1.8; }
 .col-menu   { flex: 0 0 36px; justify-content: flex-end; }
 
 .col-headings {
@@ -152,8 +167,8 @@ const currentPage = ref(1)
 .app-row:hover      { background: #f9fafb; }
 .row-text           { font-size: 13px; color: #374151; }
 
-.vendor-cell  { display: flex; align-items: center; gap: 11px; }
-.vendor-logo  {
+.vendor-cell { display: flex; align-items: center; gap: 11px; }
+.vendor-logo {
   width: 36px; height: 36px;
   border-radius: 8px;
   overflow: hidden;
@@ -161,9 +176,9 @@ const currentPage = ref(1)
   flex-shrink: 0;
   border: 1px solid #e5e7eb;
 }
-.vendor-logo img  { width: 100%; height: 100%; object-fit: cover; }
-.vendor-initial   { font-size: 14px; font-weight: 700; color: #9ca3af; }
-.vendor-name      { font-size: 13px; font-weight: 600; color: #111827; }
+.vendor-logo img { width: 100%; height: 100%; object-fit: cover; }
+.vendor-initial  { font-size: 14px; font-weight: 700; color: #9ca3af; }
+.vendor-name     { font-size: 13px; font-weight: 600; color: #111827; }
 
 .status-badge {
   padding: 3px 10px;
@@ -176,11 +191,6 @@ const currentPage = ref(1)
 .status-badge--in-review { background: var(--badge-review-bg);   color: var(--badge-review-text); }
 .status-badge--approved  { background: var(--badge-approved-bg); color: var(--badge-approved-text); }
 .status-badge--rejected  { background: var(--badge-rejected-bg); color: var(--badge-rejected-text); }
-
-.score-cell  { display: flex; align-items: center; gap: 8px; }
-.score-track { flex: 1; height: 6px; background: #e5e7eb; border-radius: 99px; overflow: hidden; }
-.score-fill  { height: 100%; border-radius: 99px; transition: width .4s ease; }
-.score-pct   { font-size: 12px; font-weight: 600; color: #374151; min-width: 32px; }
 
 .menu-btn {
   border: none; background: none;
@@ -210,6 +220,7 @@ const currentPage = ref(1)
   display: flex; align-items: center; justify-content: center;
   transition: background .12s, border-color .12s;
 }
-.page-btn:hover       { background: #f0f7f0; border-color: var(--brand-accent); }
-.page-btn--active     { background: var(--brand-dark); color: #fff; border-color: var(--brand-dark); }
+.page-btn:hover:not(:disabled) { background: #f0f7f0; border-color: var(--brand-accent); }
+.page-btn--active  { background: var(--brand-dark); color: #fff; border-color: var(--brand-dark); }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>

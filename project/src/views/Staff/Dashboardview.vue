@@ -99,13 +99,13 @@ const counts = computed(() => ({
 const recentApplications = computed(() =>
   [...applications.value]
     .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
-    .slice(0, 5)
     .map(a => ({
       id:         a.id,
       vendorName: a.business_name || a.owner_name || '—',
       category:   a.farm_category || '—',
       date:       formatDate(a.submitted_at),
       status:     normalizeStatus(a.application_status),
+      score:      a.id_document_path ? 80 : 40,
       logoUrl:    a.profile_photo_path
         ? `${API_BASE}/${a.profile_photo_path}`
         : null,
