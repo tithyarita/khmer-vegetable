@@ -5,20 +5,20 @@ import axios from 'axios'
 const API_BASE_URL = 'http://localhost:3000'
 
 export const useProductStore = defineStore('product', () => {
-  // ================= STATE =================
   const products = ref([])
   const selectedProduct = ref(null)
   const loading = ref(false)
   const error = ref(null)
 
-  // ================= API INSTANCE =================
   const api = axios.create({
     baseURL: API_BASE_URL,
   })
 
-  // ================= AUTH INTERCEPTOR (FIX 401) =================
+  // ================= TOKEN =================
   api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token')
+
+    console.log('TOKEN SENT:', token)
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
@@ -27,60 +27,77 @@ export const useProductStore = defineStore('product', () => {
     return config
   })
 
-  // ================= HELPERS =================
-  const formatImage = (product) => {
+  // ================= IMAGE FIX (MAIN FIX) =================
+  const formatProduct = (product) => {
     if (!product) return product
 
-    if (product.imageUrl && product.imageUrl.trim() !== '') {
-      product.image = product.imageUrl.startsWith('http')
-        ? product.imageUrl
-        : API_BASE_URL + product.imageUrl
-    } else {
-      product.image = null
+    const img = product.imageUrl || ''
+
+    console.log('RAW imageUrl:', img)
+
+    let finalImage = null
+
+    if (img) {
+      if (img.startsWith('http')) {
+        finalImage = img
+      } else {
+        // FORCE correct /images path
+        finalImage = `${API_BASE_URL}/images/${img.replace('/images/', '')}`
+      }
     }
+
+    product.image = finalImage
+
+    console.log('FINAL image URL:', product.image)
 
     return product
   }
 
-  // ================= ACTIONS =================
-
-  // GET ALL PRODUCTS
+  // ================= GET ALL =================
   const fetchAllProducts = async () => {
     loading.value = true
     error.value = null
 
     try {
       const res = await api.get('/products')
-      products.value = res.data.map(formatImage)
+
+      console.log('API RESPONSE:', res.data)
+
+      products.value = res.data.map(formatProduct)
+
+      console.log('FINAL PRODUCTS:', products.value)
+
       return products.value
     } catch (err) {
-      error.value = err.response?.data?.message || err.message
-      console.error('Fetch products error:', err)
+      console.error('FETCH ERROR:', err)
+      error.value = err.message
       return []
     } finally {
       loading.value = false
     }
   }
 
-  // GET ONE PRODUCT
+  // ================= GET ONE =================
   const fetchProductById = async (id) => {
     loading.value = true
     error.value = null
 
     try {
       const res = await api.get(`/products/${id}`)
-      selectedProduct.value = formatImage(res.data)
+
+      selectedProduct.value = formatProduct(res.data)
+
       return selectedProduct.value
     } catch (err) {
-      error.value = err.response?.data?.message || err.message
       console.error(err)
+      error.value = err.message
       return null
     } finally {
       loading.value = false
     }
   }
 
-  // CREATE PRODUCT
+  // ================= CREATE =================
   const createProduct = async (data) => {
     loading.value = true
     error.value = null
@@ -95,34 +112,32 @@ export const useProductStore = defineStore('product', () => {
       formData.append('description', data.description || '')
       formData.append('discount', data.discount || 0)
 
-      if (data.imageFile instanceof File) {
+      if (data.imageFile) {
         formData.append('image', data.imageFile)
       }
 
-      // FIXED: correct user structure
       const user = JSON.parse(localStorage.getItem('user') || 'null')
-      if (user?.id) {
-        formData.append('provider_id', user.id)
-      }
+      if (user?.id) formData.append('provider_id', user.id)
 
       const res = await api.post('/products', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
 
-      const newProduct = formatImage(res.data)
+      const newProduct = formatProduct(res.data)
+
       products.value.push(newProduct)
 
       return newProduct
     } catch (err) {
-      error.value = err.response?.data?.message || err.message
-      console.error('Create product error:', err)
+      console.error(err)
+      error.value = err.message
       throw err
     } finally {
       loading.value = false
     }
   }
 
-  // UPDATE PRODUCT
+  // ================= UPDATE =================
   const updateProduct = async (id, data) => {
     loading.value = true
     error.value = null
@@ -135,9 +150,9 @@ export const useProductStore = defineStore('product', () => {
       formData.append('stock', Number(data.stock))
       formData.append('category', data.category)
       formData.append('description', data.description || '')
-      formData.append('discount', data.discount ?? 0)
+      formData.append('discount', data.discount || 0)
 
-      if (data.imageFile instanceof File) {
+      if (data.imageFile) {
         formData.append('image', data.imageFile)
       }
 
@@ -145,25 +160,21 @@ export const useProductStore = defineStore('product', () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
 
-      const updated = formatImage(res.data)
+      selectedProduct.value = formatProduct(res.data)
 
       await fetchAllProducts()
 
-      if (selectedProduct.value?.id === id) {
-        selectedProduct.value = updated
-      }
-
-      return updated
+      return selectedProduct.value
     } catch (err) {
-      error.value = err.response?.data?.message || err.message
-      console.error('Update product error:', err)
+      console.error('UPDATE ERROR:', err)
+      error.value = err.message
       throw err
     } finally {
       loading.value = false
     }
   }
 
-  // DELETE PRODUCT
+  // ================= DELETE =================
   const deleteProduct = async (id) => {
     loading.value = true
     error.value = null
@@ -175,17 +186,12 @@ export const useProductStore = defineStore('product', () => {
 
       return true
     } catch (err) {
-      error.value = err.response?.data?.message || err.message
       console.error(err)
       throw err
     } finally {
       loading.value = false
     }
   }
-
-  // ================= UTIL =================
-  const clearError = () => (error.value = null)
-  const clearSelectedProduct = () => (selectedProduct.value = null)
 
   // ================= COMPUTED =================
   const productCount = computed(() => products.value.length)
@@ -200,13 +206,12 @@ export const useProductStore = defineStore('product', () => {
     const query = q.toLowerCase()
 
     return products.value.filter(p =>
-      p.name.toLowerCase().includes(query) ||
-      p.category.toLowerCase().includes(query) ||
-      (p.description || '').toLowerCase().includes(query)
+      p.name?.toLowerCase().includes(query) ||
+      p.category?.toLowerCase().includes(query) ||
+      p.description?.toLowerCase().includes(query)
     )
   })
 
-  // ================= EXPORT =================
   return {
     products,
     selectedProduct,
@@ -218,9 +223,6 @@ export const useProductStore = defineStore('product', () => {
     createProduct,
     updateProduct,
     deleteProduct,
-
-    clearError,
-    clearSelectedProduct,
 
     productCount,
     getProductById,

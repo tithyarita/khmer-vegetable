@@ -20,7 +20,7 @@ export class ProductService {
     private readonly httpService: HttpService,
   ) {}
 
-  // 🌐 fallback image
+  // ================= RANDOM IMAGE =================
   async getRandomImage(): Promise<string> {
     const res = await firstValueFrom(
       this.httpService.get<{ message: string }>(
@@ -30,48 +30,34 @@ export class ProductService {
     return res.data.message
   }
 
-  // ➕ CREATE PRODUCT
-  async create(data: Partial<Product>, providerId?: number) {
+  // ================= CREATE =================
+  async create(data: Partial<Product>, providerId: number) {
     if (!data.imageUrl) {
       data.imageUrl = await this.getRandomImage()
     }
 
-    // Set status based on stock
-    let status = 'In Stock';
-    if (typeof data.stock === 'number') {
-      if (data.stock === 0) status = 'Out of Stock';
-      else if (data.stock < 10) status = 'Low Stock';
-    }
-
     const product = this.productRepository.create({
       ...data,
-      provider: providerId ? { user_id: providerId } : undefined,
+      provider: { user_id: providerId },
     })
 
-    const saved = await this.productRepository.save(product)
-
-    this.logger.log(`Created product ID: ${saved.id}`)
-    return saved
+    return this.productRepository.save(product)
   }
 
-  // 📦 GET ALL PRODUCTS
-  async findAll(providerId?: number) {
-    const products = await this.productRepository.find({
-      where: providerId ? { provider: { user_id: providerId } } : undefined,
+  // ================= GET ALL (FIXED ISOLATION) =================
+  async findAll(userId: number, userRole: string) {
+    const isAdmin = userRole === 'admin'
+
+    return this.productRepository.find({
+      where: isAdmin
+        ? undefined
+        : { provider: { user_id: userId } },
       relations: ['provider'],
     })
-
-    this.logger.log(
-      `Loaded ${products.length} products (${
-        providerId ? 'provider ' + providerId : 'ALL'
-      })`,
-    )
-
-    return products
   }
 
-  // 🔍 GET ONE PRODUCT
-  async findOne(id: number, providerId?: number, userRole?: string) {
+  // ================= GET ONE =================
+  async findOne(id: number) {
     const product = await this.productRepository.findOne({
       where: { id },
       relations: ['provider'],
@@ -81,47 +67,68 @@ export class ProductService {
       throw new NotFoundException('Product not found')
     }
 
-    if (providerId && product.provider?.user_id !== providerId) {
-      throw new ForbiddenException('You do not own this product')
-    }
-
     return product
   }
 
-  // ✏️ UPDATE PRODUCT
-  async update(id: number, data: Partial<Product>, providerId: number, userRole?: string) {
-    const product = await this.findOne(id, providerId, userRole)
+  // ================= UPDATE =================
+  async update(
+    id: number,
+    data: Partial<Product>,
+    userId: number,
+    userRole: string,
+  ) {
+    const product = await this.findOne(id)
+
+    const isAdmin = userRole === 'admin'
+    const isOwner =
+      product.provider?.user_id === userId
+
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException(
+        'You cannot update this product',
+      )
+    }
 
     Object.assign(product, {
       name: data.name ?? product.name,
       price: data.price ?? product.price,
       stock: data.stock ?? product.stock,
       category: data.category ?? product.category,
-      description: data.description ?? product.description,
+      description:
+        data.description ?? product.description,
       discount: data.discount ?? product.discount,
       imageUrl: data.imageUrl ?? product.imageUrl,
     })
 
-    // Update status based on new stock value
-    if (typeof product.stock === 'number') {
-      if (product.stock === 0) product.status = 'Out of Stock';
-      else if (product.stock < 10) product.status = 'Low Stock';
-      else product.status = 'In Stock';
-    }
+    product.status =
+      product.stock === 0
+        ? 'Out of Stock'
+        : product.stock < 10
+        ? 'Low Stock'
+        : 'In Stock'
 
-    const updated = await this.productRepository.save(product)
-
-    this.logger.log(`Updated product ID: ${id}`)
-    return updated
+    return this.productRepository.save(product)
   }
 
-  // ❌ DELETE PRODUCT
-  async remove(id: number, providerId: number, userRole?: string) {
-    const product = await this.findOne(id, providerId, userRole)
+  // ================= DELETE =================
+  async remove(
+    id: number,
+    userId: number,
+    userRole: string,
+  ) {
+    const product = await this.findOne(id)
+
+    const isAdmin = userRole === 'admin'
+    const isOwner =
+      product.provider?.user_id === userId
+
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException(
+        'You cannot delete this product',
+      )
+    }
 
     await this.productRepository.remove(product)
-
-    this.logger.log(`Deleted product ID: ${id}`)
 
     return {
       message: 'Product deleted',
