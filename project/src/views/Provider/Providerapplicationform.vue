@@ -298,7 +298,7 @@
 </template>
 
 <script>
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 export default {
   name: "ProviderApplicationForm",

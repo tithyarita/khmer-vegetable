@@ -1,6 +1,5 @@
 <template>
   <div class="card">
-    <!-- Card Header -->
     <div class="card-header-row">
       <div class="avatar-wrap">
         <img
@@ -18,7 +17,6 @@
       </div>
     </div>
 
-    <!-- Fields Grid -->
     <div class="identity-grid">
       <div class="field-group">
         <label class="field-label">FULL NAME</label>
@@ -38,7 +36,6 @@
       </div>
     </div>
 
-    <!-- Verification Note -->
     <div class="verification-note">
       <span class="note-label">INTERNAL VERIFICATION NOTE</span>
       <p class="note-text">{{ applicant.verificationNote }}</p>
@@ -53,15 +50,18 @@ export default {
     applicant: {
       type: Object,
       required: true,
-      // { fullName, registrationId, email, phone, verificationNote }
     },
   },
-  methods: {
-    onImgError(e) {
-      e.target.style.display = 'none'
-      e.target.nextElementSibling.style.display = 'flex'
+  data() {
+    return {
+      imgError: false,
     }
-  }
+  },
+  methods: {
+    onImgError() {
+      this.imgError = true
+    },
+  },
 }
 </script>
 
