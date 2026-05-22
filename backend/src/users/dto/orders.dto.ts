@@ -1,4 +1,13 @@
-import { IsString, IsNumber, IsNotEmpty, IsOptional, IsDate, IsEnum, ValidateNested, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsNotEmpty,
+  IsOptional,
+  IsDate,
+  IsEnum,
+  ValidateNested,
+  IsArray,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderStatus } from '../orders.entity';
 

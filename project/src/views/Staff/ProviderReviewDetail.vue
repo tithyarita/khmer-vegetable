@@ -78,7 +78,7 @@ import UploadedDocuments     from '../../components/Staff/Uploadeddocuments.vue'
 import VerificationHealth    from '../../components/Staff/Verificationhealth.vue'
 import ProcessTimeline       from '../../components/Staff/Processtimeline.vue'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 /** Guess a document type from its file-path extension */
 function fileType(path) {
@@ -92,7 +92,8 @@ function fileType(path) {
 
 /** Build a public URL for a stored file path */
 function fileUrl(path) {
-  return path ? `${API_BASE}/${path}` : null
+  if (!path) return null
+  return `${API_BASE}/images/${path.replace(/\\/g, '/').replace('uploads/', '')}`
 }
 
 export default {
@@ -134,9 +135,9 @@ export default {
         registrationId:   `APP-${String(r.id).padStart(7, '0')}`,
         email:            r.contact_email  ?? '—',
         phone:            r.phone          ?? '—',
-        profilePhotoUrl:  r.profile_photo_path   // ← add this
-      ? `${API_BASE}/${r.profile_photo_path}`
-      : null,
+        profilePhotoUrl: r.profile_photo_path
+          ? `${API_BASE}/images/${r.profile_photo_path.replace(/\\/g, '/').replace('uploads/', '')}`
+          : null,
         verificationNote: r.village || r.commune || r.district
           ? `Farm located in ${[r.village, r.commune, r.district, r.city_province].filter(Boolean).join(', ')}.`
           : 'No additional notes.',
@@ -158,8 +159,9 @@ export default {
         crops:    r.primary_vegetable
           ? r.primary_vegetable.split(',').map(s => s.trim())
           : [],
-        imageUrl: fileUrl(r.farm_angle1_path)
-          ?? 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=500&h=180&fit=crop',
+        imageUrl: r.farm_angle1_path
+          ? fileUrl(r.farm_angle1_path)
+          : 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=500&h=180&fit=crop',
         imageAlt: `${r.business_name} farm`,
       }
     },

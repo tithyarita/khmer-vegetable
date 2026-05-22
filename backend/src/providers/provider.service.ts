@@ -35,4 +35,58 @@ export class ProvidersService {
   async deleteProvider(userId: number) {
     return this.providerRepo.delete({ user_id: userId });
   }
+
+  // =============================
+  // UPLOAD AVATAR
+  // =============================
+  async updateAvatar(userId: number, avatar: string) {
+    await this.providerRepo.update({ user_id: userId }, { avatar });
+
+    return {
+      avatar: `http://localhost:3000${avatar}`,
+    };
+  }
+
+  // =============================
+  // UPLOAD FARM IMAGE
+  // =============================
+  async updateFarmImage(userId: number, farm_image: string) {
+    await this.providerRepo.update({ user_id: userId }, { farm_image });
+
+    return {
+      farm_image: `http://localhost:3000${farm_image}`,
+    };
+  }
+
+  // =============================
+  // UPLOAD QR IMAGE
+  // =============================
+  async updateBankQr(userId: number, qr: string, bankIndex: number) {
+    const provider = await this.providerRepo.findOne({
+      where: { user_id: userId },
+    });
+
+    if (!provider) {
+      throw new Error('Provider not found');
+    }
+
+    const banks = provider.banks || [];
+
+    // make sure bank exists
+    if (!banks[bankIndex]) {
+      banks[bankIndex] = {
+        name: '',
+        account: '',
+        qr: '',
+      };
+    }
+
+    banks[bankIndex].qr = `http://localhost:3000${qr}`;
+
+    await this.providerRepo.update({ user_id: userId }, { banks });
+
+    return {
+      qr: `http://localhost:3000${qr}`,
+    };
+  }
 }

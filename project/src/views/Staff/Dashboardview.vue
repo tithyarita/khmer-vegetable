@@ -54,7 +54,7 @@ import { ref, computed, onMounted } from 'vue'
 import StatsCard               from '../../components/Staff/StateCard.vue'
 import RecentApplicationsTable from '../../components/Staff/Recentapplicationstable.vue'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 const applications = ref([])
 const loading      = ref(true)
@@ -106,8 +106,8 @@ const recentApplications = computed(() =>
       date:       formatDate(a.submitted_at),
       status:     normalizeStatus(a.application_status),
       score:      a.id_document_path ? 80 : 40,
-      logoUrl:    a.profile_photo_path
-        ? `${API_BASE}/${a.profile_photo_path}`
+      logoUrl: a.profile_photo_path
+        ? `${API_BASE}/images/${a.profile_photo_path.replace(/\\/g, '/').replace('uploads/', '')}`
         : null,
       logoStyle: { background: '#f0f4f8' },
     }))

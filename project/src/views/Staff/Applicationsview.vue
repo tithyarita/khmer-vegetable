@@ -57,7 +57,7 @@
           name:      app.owner_name,
           email:     app.contact_email,
           avatarUrl: app.profile_photo_path
-            ? `${API_BASE}/${app.profile_photo_path}`
+            ? `${API_BASE}/images/${app.profile_photo_path.replace(/\\/g, '/').replace('uploads/', '')}`
             : '',
         }"
         :farm="{
@@ -99,7 +99,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import ApplicationQueueItem from '../../components/Staff/Applicationqueueitem.vue'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 const applications = ref([])
 const loading      = ref(true)

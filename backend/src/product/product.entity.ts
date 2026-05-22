@@ -20,7 +20,6 @@ export class Product {
   @Column()
   name!: string;
 
-
   @Column()
   stock!: number;
 

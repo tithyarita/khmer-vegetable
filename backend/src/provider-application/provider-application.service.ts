@@ -15,6 +15,11 @@ export interface UploadedFiles {
   farm_angle3?: Express.Multer.File[];
 }
 
+/** Convert Windows backslashes to forward slashes for URLs */
+function normalizePath(path: string | undefined): string | undefined {
+  return path?.replace(/\\/g, '/')
+}
+
 @Injectable()
 export class ApplicationsService {
   [x: string]: any;
@@ -27,31 +32,28 @@ export class ApplicationsService {
     dto: CreateApplicationDto,
     files: UploadedFiles,
   ): Promise<ProviderApplication> {
-    // Explicitly typed as DeepPartial<ProviderApplication> so TypeScript
-    // picks the single-entity overload of repo.create(), not the array one.
     const data: DeepPartial<ProviderApplication> = {
-      business_name: dto.business_name,
-      owner_name: dto.owner_name,
-      contact_email: dto.contact_email,
-      phone: dto.phone,
-      village: dto.village,
-      commune: dto.commune,
-      district: dto.district,
-      city_province: dto.city_province,
-      primary_vegetable: dto.primary_vegetable,
-      farm_category: dto.farm_category,
+      business_name:      dto.business_name,
+      owner_name:         dto.owner_name,
+      contact_email:      dto.contact_email,
+      phone:              dto.phone,
+      village:            dto.village,
+      commune:            dto.commune,
+      district:           dto.district,
+      city_province:      dto.city_province,
+      primary_vegetable:  dto.primary_vegetable,
+      farm_category:      dto.farm_category,
       application_status: ApplicationStatus.SUBMITTED,
-      submitted_at: new Date(),
-      id_document_path: files.id_document?.[0]?.path,
-      profile_photo_path: files.profile_photo?.[0]?.path,
-      farm_angle1_path: files.farm_angle1?.[0]?.path,
-      farm_angle2_path: files.farm_angle2?.[0]?.path,
-      farm_angle3_path: files.farm_angle3?.[0]?.path,
+      submitted_at:       new Date(),
+      id_document_path:   normalizePath(files.id_document?.[0]?.path),
+      profile_photo_path: normalizePath(files.profile_photo?.[0]?.path),
+      farm_angle1_path:   normalizePath(files.farm_angle1?.[0]?.path),
+      farm_angle2_path:   normalizePath(files.farm_angle2?.[0]?.path),
+      farm_angle3_path:   normalizePath(files.farm_angle3?.[0]?.path),
     };
 
-    const application = this.repo.create(data); // TS now picks the correct overload
-    const saved = await this.repo.save(application); // save(entity) → entity, not array
-    return saved;
+    const application = this.repo.create(data);
+    return this.repo.save(application);
   }
 
   async updateStatus(id: number, status: string): Promise<ProviderApplication> {
