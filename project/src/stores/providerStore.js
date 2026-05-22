@@ -1,64 +1,51 @@
 import { defineStore } from 'pinia'
+import axios from 'axios'
 
-const STORAGE_KEY = "khmer_provider"
+const BASE = 'http://localhost:3000'
+
+function fullUrl(path) {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return BASE + path
+}
 
 export const useProviderStore = defineStore('provider', {
   state: () => ({
-    provider: {
-      name: "",
-      farm: "",
-      location: "",
-      story: "",
-      id: "",
-      joined: "",
-      idNumber: "",
-      banks: [],
-      // Added fields for persistence
-      avatar: null, 
-      farmImage: null 
-    }
+    provider: {},
   }),
 
   actions: {
-    loadProvider() {
-      const stored = localStorage.getItem(STORAGE_KEY)
+    async loadProvider(userId) {
+      const res = await axios.get(`${BASE}/providers/${userId}`)
+      const d   = res.data
 
-      if (stored) {
-        this.provider = JSON.parse(stored)
-      } else {
-        // Set default initial data
-        this.provider = {
-          name: "Sok Min",
-          farm: "Ta Min Farm",
-          location: "Phnom Penh",
-          story: "TA MIN Farms began as a three-acre project dedicated to heirloom vegetable varieties.",
-          id: "#V-10293",
-          joined: "Oct 12, 2023",
-          idNumber: "1578234899",
-          banks: [
-            { name: "ABA Bank", account: "001 234 567", qr: "" },
-            { name: "ACLEDA", account: "987 654 321", qr: "" }
-          ],
-          avatar: null,
-          farmImage: null
-        }
-        this.saveProvider()
+      this.provider = {
+        ...d,
+        avatar:     fullUrl(d.avatar),
+        farm_image: fullUrl(d.farm_image),
+        banks: (d.banks || []).map(b => ({
+          ...b,
+          qr: fullUrl(b.qr),
+        })),
       }
     },
 
-    saveProvider() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.provider))
-    },
+    async updateProvider(data) {
+      const res = await axios.put(
+        `${BASE}/providers/${this.provider.user_id}`,
+        data
+      )
+      const d = res.data
 
-    // New helper to handle image updates specifically
-    updateImage(key, base64Data) {
-      this.provider[key] = base64Data
-      this.saveProvider()
+      this.provider = {
+        ...d,
+        avatar:     fullUrl(d.avatar),
+        farm_image: fullUrl(d.farm_image),
+        banks: (d.banks || []).map(b => ({
+          ...b,
+          qr: fullUrl(b.qr),
+        })),
+      }
     },
-
-    updateProfile(newData) {
-      this.provider = { ...this.provider, ...newData }
-      this.saveProvider()
-    }
-  }
+  },
 })
