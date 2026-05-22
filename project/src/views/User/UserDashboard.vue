@@ -76,7 +76,7 @@
         </div>
         <div class="summary-card">
           <div class="summary-title">Items in Cart</div>
-          <div class="summary-value">{{ userStore.cart.length }} <span class="summary-change">items waiting</span></div>
+          <div class="summary-value">{{ cartStore.cartCount }} <span class="summary-change">items waiting</span></div>
         </div>
       </section>
 
@@ -132,10 +132,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/userStore'
+import { useCartStore } from '@/stores/cartStore'
 import axios from 'axios'
 
 const activeMenu = ref('dashboard')
 const userStore = useUserStore()
+const cartStore = useCartStore()
 const user = userStore.user
 const orders = ref([])
 const loading = ref(true)
@@ -176,6 +178,9 @@ async function saveProfile() {
 }
 
 onMounted(async () => {
+  // Fetch cart data from backend
+  await cartStore.fetchCartFromBackend()
+
   if (user && user.id) {
     try {
       // Replace with your actual backend endpoint

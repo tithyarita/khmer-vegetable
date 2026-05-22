@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -61,6 +61,38 @@ export const useCartStore = defineStore('cart', () => {
     return api.delete(`/cart/clear/${userId}`)
   }
 
+  const fetchCartFromBackend = async () => {
+    const user = JSON.parse(localStorage.getItem('user') || 'null')
+    const userId = Number(user?.id ?? user?.user_id ?? 0)
+
+    if (!userId) return
+
+    try {
+      const response = await api.get(`/cart/${userId}`)
+      const backendCart = response.data || []
+
+      // Map backend cart items to frontend format
+      cartItems.value = backendCart.map(item => ({
+        id: item.product_id || item.productId,
+        name: item.product_name || item.name,
+        price: Number(item.price || item.unitPrice || 0),
+        unitPrice: Number(item.price || item.unitPrice || 0),
+        originalPrice: Number(item.originalPrice || item.price || 0),
+        image: item.image || item.imageUrl,
+        category: item.category,
+        unit: item.unit || 'item',
+        providerId: Number(item.provider_id || item.providerId || 0),
+        providerName: item.provider_name || item.providerName || 'Unknown',
+        quantity: Number(item.quantity || 1)
+      }))
+
+      persistCart()
+    } catch (err) {
+      console.error('Failed to fetch cart from backend:', err)
+      // Keep localStorage cart as fallback
+    }
+  }
+
   // ================= ACTIONS =================
   const addToCart = async (product) => {
     const existingItem = cartItems.value.find(item => item.id === product.id || item.id === product.product_id || item.id === product.productId)
@@ -81,7 +113,9 @@ export const useCartStore = defineStore('cart', () => {
 
     if (userId && productId) {
       syncAddToCart(userId, productId, quantityToAdd).catch((err) => {
-        console.warn('Failed to persist cart item to backend:', err)
+        console.error('Failed to persist cart item to backend:', err)
+        console.error('Error details:', err.response?.data || err.message)
+        alert('Failed to add to cart: ' + (err.response?.data?.message || err.message))
       })
     }
 
@@ -167,6 +201,7 @@ export const useCartStore = defineStore('cart', () => {
     addToCart,
     removeFromCart,
     removeItemCompletely,
-    clearCart
+    clearCart,
+    fetchCartFromBackend
   }
 })
