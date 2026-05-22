@@ -76,7 +76,11 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 .provider-page {
   display: flex;
@@ -88,15 +92,26 @@ onMounted(async () => {
 /* SIDEBAR */
 .sidebar {
   width: 250px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+
   background: white;
   border-right: 1px solid #e5e7eb;
-  flex-shrink: 0;
+
+  overflow-y: auto;
+  z-index: 1000;
 }
 
 /* MAIN */
 .main-content {
   flex: 1;
+  margin-left: 250px;
+
+  min-height: 100vh;
   overflow-y: auto;
+
   padding-bottom: 40px;
 }
 
@@ -125,15 +140,30 @@ onMounted(async () => {
   height: 48px;
   border-radius: 12px;
   background: #f0fdf4;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   margin-bottom: 16px;
 }
-.stats-icon i { color: #16a34a; font-size: 1.3rem; }
 
-.stats-card h2 { font-size: 1.6rem; font-weight: 700; color: #111827; }
-.stats-card p  { margin-top: 4px; color: #6b7280; font-size: 0.9rem; }
+.stats-icon i {
+  color: #16a34a;
+  font-size: 1.3rem;
+}
+
+.stats-card h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.stats-card p {
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
 
 /* CONTENT GRID */
 .content-grid {
@@ -151,14 +181,35 @@ onMounted(async () => {
 
 /* RESPONSIVE */
 @media (max-width: 1100px) {
-  .content-grid  { grid-template-columns: 1fr; }
-  .stats-grid    { grid-template-columns: repeat(2, 1fr); }
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
-  .sidebar       { display: none; }
-  .section-pad   { padding: 0 16px; }
-  .stats-grid    { grid-template-columns: 1fr 1fr; }
-  .content-grid  { grid-template-columns: 1fr; }
+
+  .sidebar {
+    display: none;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .section-pad {
+    padding: 0 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

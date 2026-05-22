@@ -12,6 +12,43 @@ const token = localStorage.getItem("token")
 const avatarInput = ref(null)
 const farmInput = ref(null)
 
+const editingId = ref(false)
+
+const localIdNumber = ref(
+  store.provider.id_number || ""
+)
+
+async function saveIdNumber() {
+  try {
+    await axios.put(
+      `${BASE}/providers/${store.provider.user_id}`,
+      {
+        id_number: localIdNumber.value,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+
+    // update local store
+    store.provider.id_number =
+      localIdNumber.value
+
+    editingId.value = false
+
+    alert("ID number updated!")
+  } catch (err) {
+    console.error(err)
+
+    alert(
+      "Failed to update ID number: " +
+      (err.response?.data?.message || err.message)
+    )
+  }
+}
+
 function fullUrl(path) {
   if (!path) return null
 
@@ -166,7 +203,7 @@ async function handleFarm(e) {
           <span class="meta-lbl">Joined</span>
           <span class="meta-val">
             {{ store.provider.user?.created_at
-              ? new Date(store.provider.user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+              ? new Date(store.provider.user.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })
               : "—" }}
           </span>
         </div>
