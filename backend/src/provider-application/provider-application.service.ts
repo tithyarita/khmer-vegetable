@@ -62,8 +62,21 @@ export class ApplicationsService {
     return this.repo.save(app);
   }
 
-  async findAll(): Promise<ProviderApplication[]> {
-    return this.repo.find({ order: { created_at: 'DESC' } });
+  async findAll(search?: string): Promise<ProviderApplication[]> {
+    if (!search || search.trim() === '') {
+      return this.repo.find({ order: { created_at: 'DESC' } });
+    }
+  
+    const q = search.trim();
+  
+    return this.repo
+      .createQueryBuilder('app')
+      .where('app.business_name LIKE :q', { q: `%${q}%` })
+      .orWhere('app.owner_name LIKE :q',  { q: `%${q}%` })
+      .orWhere('CAST(app.id AS CHAR) LIKE :q', { q: `%${q}%` })
+      .orderBy('app.created_at', 'DESC')
+      .limit(20)
+      .getMany();
   }
 
   async findOne(id: number): Promise<ProviderApplication> {

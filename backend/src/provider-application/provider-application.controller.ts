@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   BadRequestException,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -114,10 +115,10 @@ export class ApplicationsController {
   ): Promise<ProviderApplication> {
     return this.service.updateStatus(id, status);
   }
-  /** GET /api/applications */
+  /** GET /api/applications?search= */
   @Get()
-  findAll(): Promise<ProviderApplication[]> {
-    return this.service.findAll();
+  findAll(@Query('search') search?: string): Promise<ProviderApplication[]> {
+    return this.service.findAll(search);
   }
 
   /** GET /api/applications/:id */
