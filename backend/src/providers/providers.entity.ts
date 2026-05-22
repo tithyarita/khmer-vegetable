@@ -6,6 +6,7 @@ import {
   OneToMany,
   JoinColumn,
   PrimaryColumn,
+  CreateDateColumn,
 } from 'typeorm';
 import { users } from '../users/users.entity';
 import { ProviderApplication } from '../provider-application/provider-application.entity';
@@ -28,15 +29,46 @@ export class Provider {
   @Column()
   status!: string;
 
+  @Column({ name: 'farm_name', nullable: true })
+  farm_name?: string;
+
+  @Column({ nullable: true })
+  location?: string;
+
+  @Column({ nullable: true })
+  story?: string;
+
+  @Column({ name: 'id_number', nullable: true })
+  id_number?: string;
+
+  @Column({ type: 'simple-json', nullable: true })
+  banks?: { name: string; account: string; qr: string }[];
+
+  @Column({ name: 'qr_image', nullable: true })
+  qr_image?: string;
+
+  @Column({ nullable: true })
+  avatar?: string;
+
+  @Column({ name: 'farm_image', nullable: true })
+  farm_image?: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  created_at!: Date;
+
   @OneToOne(() => users, (user) => user.provider)
   @JoinColumn({ name: 'user_id' })
   user!: users;
 
-  @OneToOne(() => ProviderApplication, (app) => app.provider, { nullable: true })
+  @OneToOne(() => ProviderApplication, (app) => app.provider, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'application_id' })
   application!: ProviderApplication;
 
-  @ManyToOne(() => Admin, (admin) => admin.created_providers, { nullable: true })
+  @ManyToOne(() => Admin, (admin) => admin.created_providers, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'created_by_admin' })
   createdByAdmin!: Admin;
 
