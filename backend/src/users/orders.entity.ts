@@ -15,6 +15,7 @@ export enum OrderStatus {
   PENDING = 'pending',
   SHIPPED = 'shipped',
   DELIVERING = 'delivering',
+  COMPLETED = 'completed',
 }
 @Entity('orders')
 export class orders {
@@ -40,7 +41,7 @@ export class orders {
   @Column('decimal')
   total!: number;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'timestamp', nullable: true })
   created_at!: Date;
 
   @Column({ nullable: true })

@@ -36,7 +36,6 @@ export class users {
   @Column()
   phone!: string;
 
-
   @Column({ nullable: true })
   avatar?: string;
 
@@ -56,11 +55,12 @@ export class users {
   customer!: Customer;
 
   @OneToOne(() => Provider, (provider) => provider.user)
-  provider!: Provider
+  provider!: Provider;
 
   @OneToMany(() => Cart, (cart) => cart.user)
-  carts!: Cart[]
+  carts!: Cart[];
 
   @OneToMany(() => Favorite, (favorite) => favorite.user)
-  favorites!: Favorite[]
+  favorites!: Favorite[];
+
 }

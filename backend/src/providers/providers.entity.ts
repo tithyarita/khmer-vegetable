@@ -12,6 +12,7 @@ import { users } from '../users/users.entity';
 import { ProviderApplication } from '../provider-application/provider-application.entity';
 import { Admin } from '../admin/admin.entity';
 import { Product } from '../product/product.entity';
+import { orders } from '../users/orders.entity';
 @Entity('providers')
 export class Provider {
   @PrimaryColumn({ name: 'user_id' })
@@ -74,4 +75,7 @@ export class Provider {
 
   @OneToMany(() => Product, (product) => product.provider)
   products!: Product[];
+
+  @OneToMany(() => orders, (order) => order.provider)
+  orders!: orders[];
 }
