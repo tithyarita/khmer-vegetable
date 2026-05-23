@@ -46,12 +46,9 @@
       class="table-card"
     >
 
-      <h2>
-        {{ providerName }}
-      </h2>
+      <h2>{{ providerName }}</h2>
 
       <table>
-
         <thead>
           <tr>
             <th>PRODUCT</th>
@@ -64,200 +61,134 @@
         </thead>
 
         <tbody>
-
-          <tr
-            v-for="p in products"
-            :key="p.id"
-          >
+          <tr v-for="p in products" :key="p.id">
 
             <!-- PRODUCT -->
             <td class="product">
-
-              <img :src="p.image" />
+              <img :src="getImageUrl(p.image)" @error="console.log('Image failed to load:', p.image)" />
 
               <div>
-                <div class="name">
-                  {{ p.name }}
-                </div>
-
-                <div class="date">
-                  {{ formatDate(p.createdAt) }}
-                </div>
+                <div class="name">{{ p.name }}</div>
+                <div class="date">{{ formatDate(p.createdAt) }}</div>
               </div>
-
             </td>
 
             <!-- PRICE -->
-            <td class="price">
-              ${{ p.price }}
-            </td>
+            <td class="price">${{ p.price }}</td>
 
             <!-- DISCOUNT -->
             <td>
-
-              <span
-                v-if="p.discount > 0"
-                class="discount"
-              >
+              <span v-if="p.discount > 0" class="discount">
                 -{{ p.discount }}%
               </span>
-
               <span v-else>-</span>
-
             </td>
 
             <!-- STOCK -->
             <td>
-
               <span :class="stockClass(p.stock)">
                 {{ p.stock }}
               </span>
-
             </td>
 
             <!-- STATUS -->
             <td>
-
-              <span
-                :class="['status', stockClass(p.stock)]"
-              >
+              <span :class="['status', stockClass(p.stock)]">
                 {{ stockStatus(p.stock) }}
               </span>
-
             </td>
 
             <!-- ACTIONS -->
             <td class="actions">
-
-              <button @click="openProduct(p)">
-                👁
-              </button>
-
-              <button @click="editProduct(p)">
-                ✏️
-              </button>
-
-              <button @click="deleteProduct(p)">
-                🗑
-              </button>
-
+              <button @click="openProduct(p)">👁</button>
+              <button @click="editProduct(p)">✏️</button>
+              <button @click="deleteProduct(p)">🗑</button>
             </td>
 
           </tr>
-
         </tbody>
-
       </table>
 
     </div>
 
     <!-- EDIT DRAWER -->
     <transition name="slide">
-
-      <aside
-        v-if="showEdit"
-        class="drawer"
-      >
+      <aside v-if="showEdit" class="drawer">
 
         <div class="drawer-header">
-
-          <span class="drawer-title">
-            Edit Product
-          </span>
-
-          <button
-            class="close"
-            @click="closeEdit"
-          >
-            ×
-          </button>
-
+          <span class="drawer-title">Edit Product</span>
+          <button class="close" @click="closeEdit">×</button>
         </div>
 
         <form @submit.prevent="submitEdit" class="edit-form">
+
           <div class="form-row">
             <div class="form-group">
               <label>Name</label>
-              <input v-model="editForm.name" required placeholder="Product name" />
+              <input v-model="editForm.name" required />
             </div>
+
             <div class="form-group">
               <label>Category</label>
-              <input v-model="editForm.category" required placeholder="Category" />
+              <input v-model="editForm.category" required />
             </div>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Price</label>
-              <input v-model.number="editForm.price" type="number" min="0" required placeholder="Price" />
+              <input v-model.number="editForm.price" type="number" min="0" />
             </div>
+
             <div class="form-group">
               <label>Stock</label>
-              <input v-model.number="editForm.stock" type="number" min="0" required placeholder="Stock" />
+              <input v-model.number="editForm.stock" type="number" min="0" />
             </div>
+
             <div class="form-group">
               <label>Discount (%)</label>
-              <input v-model.number="editForm.discount" type="number" min="0" max="100" placeholder="Discount" />
+              <input v-model.number="editForm.discount" type="number" min="0" max="100" />
             </div>
           </div>
+
           <div class="form-group">
             <label>Description</label>
-            <textarea v-model="editForm.description" placeholder="Description" rows="3" />
+            <textarea v-model="editForm.description"></textarea>
           </div>
+
           <div class="form-group">
             <label>Image</label>
             <input type="file" @change="onImageChange" />
           </div>
+
           <button type="submit" class="save-btn">Save Changes</button>
         </form>
 
-
       </aside>
-
     </transition>
 
     <!-- PRODUCT DRAWER -->
     <transition name="slide">
-
-      <aside
-        v-if="showProduct"
-        class="drawer"
-      >
+      <aside v-if="showProduct" class="drawer">
 
         <div class="drawer-header">
-
-          <span class="drawer-title">
-            Product Preview
-          </span>
-
-          <button
-            class="close"
-            @click="showProduct = false"
-          >
-            ×
-          </button>
-
+          <span class="drawer-title">Product Preview</span>
+          <button class="close" @click="showProduct = false">×</button>
         </div>
 
-        <img
-          :src="selected.image"
-          class="drawer-img"
-        />
+        <img :src="getImageUrl(selected.image)" class="drawer-img" />
 
         <div class="drawer-id-badge">
           ID: {{ selected.id }}
         </div>
 
-        <h2 class="drawer-prod-name">
-          {{ selected.name }}
-        </h2>
+        <h2 class="drawer-prod-name">{{ selected.name }}</h2>
 
         <div class="drawer-date">
           {{ formatDate(selected.createdAt) }}
         </div>
 
-        <p class="desc">
-          {{ selected.description }}
-        </p>
+        <p class="desc">{{ selected.description }}</p>
 
         <div class="drawer-grid">
 
@@ -283,36 +214,51 @@
 
           <div style="grid-column: span 2;">
             <label>Provider</label>
-
-            <div>
-              {{ selected.provider?.provider_name || 'Unknown' }}
-            </div>
+            <div>{{ selected.provider?.provider_name || 'Unknown' }}</div>
           </div>
 
         </div>
 
       </aside>
-
     </transition>
 
   </div>
 </template>
 
 <script setup>
-import {
-  ref,
-  computed,
-  watch,
-  onMounted,
-  nextTick
-} from 'vue'
-
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useProductStore } from '@/stores/productStore'
 
 const store = useProductStore()
-
 const { products } = storeToRefs(store)
+
+/* =========================
+   IMAGE FIX (IMPORTANT)
+========================= */
+const IMAGE_BASE_URL = 'http://localhost:3000/uploads/'
+
+function getImageUrl(image) {
+  if (!image) {
+    console.log('No image value:', image)
+    return ''
+  }
+
+  if (image.startsWith('http')) {
+    console.log('Image is full URL:', image)
+    return image
+  }
+
+  if (image.startsWith('/uploads/')) {
+    const url = `http://localhost:3000${image}`
+    console.log('Image with /uploads/ prefix:', url)
+    return url
+  }
+
+  const url = IMAGE_BASE_URL + image
+  console.log('Image as filename:', url)
+  return url
+}
 
 /* =========================
    FILTERS
@@ -329,7 +275,6 @@ const selected = ref(null)
 
 const showEdit = ref(false)
 const editForm = ref({})
-
 let editImageFile = null
 
 /* =========================
@@ -343,17 +288,12 @@ onMounted(async () => {
    PROVIDERS
 ========================= */
 const providers = computed(() => {
-
   const names = new Set()
-
   products.value.forEach(p => {
-
     if (p.provider?.provider_name) {
       names.add(p.provider.provider_name)
     }
-
   })
-
   return Array.from(names)
 })
 
@@ -361,122 +301,63 @@ const providers = computed(() => {
    CATEGORIES
 ========================= */
 const categories = computed(() => {
-
-  return [
-    ...new Set(
-      products.value.map(p => p.category)
-    )
-  ]
-
+  return [...new Set(products.value.map(p => p.category))]
 })
 
 /* =========================
    STOCK STATUS
 ========================= */
 function stockClass(stock) {
-
-  if (stock === 0) {
-    return 'out'
-  }
-
-  if (stock <= 10) {
-    return 'low'
-  }
-
+  if (stock === 0) return 'out'
+  if (stock <= 10) return 'low'
   return 'ok'
 }
 
 function stockStatus(stock) {
-
-  if (stock === 0) {
-    return 'Out of Stock'
-  }
-
-  if (stock <= 10) {
-    return 'Low Stock'
-  }
-
+  if (stock === 0) return 'Out of Stock'
+  if (stock <= 10) return 'Low Stock'
   return 'In Stock'
 }
 
 /* =========================
-   FILTER PRODUCTS
+   FILTER
 ========================= */
 const filteredProducts = computed(() => {
-
   return products.value.filter(p => {
-
-    const matchStatus =
-      status.value === 'All' ||
-      stockStatus(p.stock) === status.value
-
-    const matchProvider =
-      provider.value === 'All Providers' ||
-      p.provider?.provider_name === provider.value
-
-    const matchCategory =
-      category.value === 'All' ||
-      p.category === category.value
-
     return (
-      matchStatus &&
-      matchProvider &&
-      matchCategory
+      (status.value === 'All' || stockStatus(p.stock) === status.value) &&
+      (provider.value === 'All Providers' || p.provider?.provider_name === provider.value) &&
+      (category.value === 'All' || p.category === category.value)
     )
   })
 })
 
 /* =========================
-   GROUP PRODUCTS
+   GROUP
 ========================= */
 const groupedProducts = computed(() => {
-
   const groups = {}
 
   filteredProducts.value.forEach(p => {
-
-    const providerName =
-      p.provider?.provider_name ||
-      'Unknown Provider'
-
-    if (!groups[providerName]) {
-      groups[providerName] = []
-    }
-
+    const providerName = p.provider?.provider_name || 'Unknown Provider'
+    if (!groups[providerName]) groups[providerName] = []
     groups[providerName].push(p)
-
   })
 
   return groups
 })
 
 /* =========================
-   WATCH
-========================= */
-watch(
-  [status, provider, category],
-  () => {}
-)
-
-/* =========================
-   OPEN PRODUCT
+   ACTIONS
 ========================= */
 function openProduct(p) {
-
   selected.value = p
   showProduct.value = true
-
 }
 
-/* =========================
-   EDIT PRODUCT
-========================= */
 function editProduct(p) {
-
   editForm.value = { ...p }
-
   editImageFile = null
-
   showEdit.value = true
 }
 
@@ -485,88 +366,52 @@ function closeEdit() {
 }
 
 function onImageChange(e) {
-
   const file = e.target.files[0]
-
-  if (file) {
-    editImageFile = file
-  }
+  if (file) editImageFile = file
 }
 
 async function submitEdit() {
-
   try {
-
-    const payload = {
-      ...editForm.value
-    }
+    const payload = { ...editForm.value }
 
     if (editImageFile) {
       payload.imageFile = editImageFile
     }
 
-    await store.updateProduct(
-      editForm.value.id,
-      payload
-    )
+    await store.updateProduct(editForm.value.id, payload)
 
     showEdit.value = false
-
     await nextTick()
-
     await store.fetchAllProducts()
 
     alert('Product updated!')
-
   } catch (err) {
-
     alert('Failed to update product')
-
   }
 }
 
-/* =========================
-   DELETE PRODUCT
-========================= */
 async function deleteProduct(p) {
-
-  const confirmDelete = confirm(
-    'Are you sure you want to delete this product?'
-  )
-
-  if (!confirmDelete) return
+  if (!confirm('Are you sure?')) return
 
   try {
-
     await store.deleteProduct(p.id)
-
     await store.fetchAllProducts()
-
     alert('Product deleted!')
-
   } catch (err) {
-
     alert('Failed to delete product')
-
   }
 }
 
 /* =========================
-   DATE FORMAT
+   DATE
 ========================= */
 function formatDate(date) {
-
   if (!date) return ''
-
-  return new Date(date)
-    .toLocaleDateString(
-      'en-US',
-      {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      }
-    )
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
 }
 </script>
 <style scoped>

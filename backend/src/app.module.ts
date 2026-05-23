@@ -7,11 +7,15 @@ import { ProvidersModule } from './providers/providers.module';
 import { ApplicationsModule } from './providers/applications.module';
 import { ProductModule } from './product/product.module';
 import { ProviderApplicationsModule } from './provider-application/provider-application.module';
+import { CartModule } from './cart/cart.module';
+import { FavoriteModule } from './favorite/favorite.module';
 import { Customer } from './customer/customer.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
+import { AddressModule } from './address/address.module';
 import { AppService } from './app.service';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -34,6 +38,11 @@ import { AppService } from './app.service';
     ApplicationsModule,
     ProductModule,
     ProviderApplicationsModule,
+    CartModule,
+    FavoriteModule,
+    AddressModule,
+    MailModule,
+    Customer,
   ],
   controllers: [AppController],
   providers: [AppService],

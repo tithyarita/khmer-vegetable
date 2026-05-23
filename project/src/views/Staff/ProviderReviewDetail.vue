@@ -20,8 +20,18 @@
           </p>
         </div>
         <div class="header-actions">
-          <button class="btn-reject" @click="handleDecision('reject')">Not Accept</button>
-          <button class="btn-accept" @click="handleDecision('accept')">Accept</button>
+          <span v-if="isDecided" :class="['decision-badge', `decision-badge--${record.application_status}`]">
+            <i :class="record.application_status === 'approved' ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i>
+            {{ record.application_status === 'approved' ? 'Accepted' : 'Not Accepted' }}
+          </span>
+          <template v-else>
+            <button class="btn-reject" :disabled="deciding" @click="handleDecision('reject')">
+              Not Accept
+            </button>
+            <button class="btn-accept" :disabled="deciding" @click="handleDecision('accept')">
+              {{ deciding ? 'Saving…' : 'Accept' }}
+            </button>
+          </template>
         </div>
       </div>
 
@@ -82,7 +92,8 @@ function fileType(path) {
 
 /** Build a public URL for a stored file path */
 function fileUrl(path) {
-  return path ? `${API_BASE}/${path}` : null
+  if (!path) return null
+  return `${API_BASE}/images/${path.replace(/\\/g, '/').replace('uploads/', '')}`
 }
 
 export default {
@@ -96,7 +107,8 @@ export default {
     return {
       loading: true,
       error:   null,
-      record:  null,   // raw ProviderApplication from the API
+      record:  null,   
+      deciding: false,
     }
   },
 
@@ -123,10 +135,17 @@ export default {
         registrationId:   `APP-${String(r.id).padStart(7, '0')}`,
         email:            r.contact_email  ?? '—',
         phone:            r.phone          ?? '—',
+        profilePhotoUrl: r.profile_photo_path
+          ? `${API_BASE}/images/${r.profile_photo_path.replace(/\\/g, '/').replace('uploads/', '')}`
+          : null,
         verificationNote: r.village || r.commune || r.district
           ? `Farm located in ${[r.village, r.commune, r.district, r.city_province].filter(Boolean).join(', ')}.`
           : 'No additional notes.',
       }
+    },
+
+    isDecided() {
+      return ['approved', 'rejected'].includes(this.record?.application_status)
     },
 
     /** FarmDetailsCard */
@@ -140,8 +159,9 @@ export default {
         crops:    r.primary_vegetable
           ? r.primary_vegetable.split(',').map(s => s.trim())
           : [],
-        imageUrl: fileUrl(r.farm_angle1_path)
-          ?? 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=500&h=180&fit=crop',
+        imageUrl: r.farm_angle1_path
+          ? fileUrl(r.farm_angle1_path)
+          : 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=500&h=180&fit=crop',
         imageAlt: `${r.business_name} farm`,
       }
     },
@@ -224,6 +244,8 @@ export default {
 
   methods: {
     async handleDecision(type) {
+      if (this.isDecided || this.deciding) return   // ← guard
+      this.deciding = true
       const status = type === 'accept' ? 'approved' : 'rejected'
       try {
         const res = await fetch(
@@ -236,9 +258,10 @@ export default {
         )
         if (!res.ok) throw new Error('Failed to update status')
         this.record = { ...this.record, application_status: status }
-        alert(type === 'accept' ? '✅ Application Accepted!' : '❌ Application Not Accepted.')
       } catch (err) {
         alert(`Error: ${err.message}`)
+      } finally {
+        this.deciding = false
       }
     },
 
@@ -276,4 +299,24 @@ export default {
 .page-footer span { font-size: 10px; color: #b0b7c3; letter-spacing: .5px; text-transform: uppercase; }
 .system-status  { display: flex; align-items: center; gap: 6px; }
 .status-dot     { font-size: 8px; color: #2d7a4f; }
+
+.decision-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.decision-badge--approved {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+.decision-badge--rejected {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
 </style>

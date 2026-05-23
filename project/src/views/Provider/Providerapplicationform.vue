@@ -11,7 +11,7 @@
         <nav class="nav-links">
           <a href="#" class="nav-link">Guidelines</a>
           <a href="#" class="nav-link">Help Center</a>
-          <router-link to="/signin" class="btn-signin">Sign In</router-link>
+          <router-link to="/login" class="btn-signin">Sign In</router-link>
         </nav>
       </div>
     </header>

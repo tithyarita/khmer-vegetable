@@ -28,6 +28,22 @@
         <div v-if="product.label" class="image-label">
           {{ product.label }}
         </div>
+
+        <button
+          class="btn-favorite"
+          @click.stop="toggleFavorite(product)"
+          :class="{ active: isFavorite(product.id) }"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.08C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 12 21 12 21Z"
+              :stroke="isFavorite(product.id) ? 'transparent' : '#2D7A3A'"
+              :fill="isFavorite(product.id) ? '#2D7A3A' : 'none'"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
       </div>
 
       <div class="card-body">
@@ -65,6 +81,7 @@ import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cartStore'
 import { useProductStore } from '../../stores/productStore'
+import { useFavoriteStore } from '../../stores/favoriteStore'
 
 const props = defineProps({
   product: {
@@ -80,6 +97,7 @@ const props = defineProps({
 const router = useRouter()
 const cartStore = useCartStore()
 const productStore = useProductStore()
+const favoriteStore = useFavoriteStore()
 
 const normalizeProduct = product => ({
   ...product,
@@ -128,6 +146,18 @@ const addToCart = product => {
     provider_id: product.provider_id ?? product.provider?.user_id ?? product.providerId ?? null,
     providerName: product.providerName || product.provider?.provider_name || 'Unknown',
   })
+}
+
+const toggleFavorite = product => {
+  if (favoriteStore.isFavorite(product.id)) {
+    favoriteStore.removeFromFavorite(product.id)
+  } else {
+    favoriteStore.addToFavorite(product)
+  }
+}
+
+const isFavorite = productId => {
+  return favoriteStore.isFavorite(productId)
 }
 
 const goToProductDetail = productId => {
@@ -208,6 +238,36 @@ onMounted(async () => {
   font-weight: 600;
   white-space: pre-line;
   text-align: right;
+}
+
+.btn-favorite {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-favorite:hover {
+  background: #fff;
+  transform: scale(1.1);
+}
+
+.btn-favorite.active {
+  background: #2D7A3A;
+}
+
+.btn-favorite.active svg {
+  fill: #fff;
 }
 
 .card-body {

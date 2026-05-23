@@ -22,6 +22,7 @@ import ProviderRevenue from '../views/Provider/ProviderRevenue.vue'
 import ProviderOrders from '../views/Provider/ProviderOrders.vue'
 import ProfileSettingProvider from '../views/Provider/ProfileSettingProvider.vue'
 import ProductDetail from '../views/Provider/ProductDetail.vue'
+import Providerapplicationform from '@/views/Provider/Providerapplicationform.vue'
 
 // ==================== Staff ====================
 import DashboardView from '../views/Staff/Dashboardview.vue'
@@ -91,7 +92,7 @@ const routes = [
       { path: '', redirect: '/staff/dashboard' },
       { path: 'dashboard', component: DashboardView },
       { path: 'applications', component: ApplicationsView },
-      { path: 'details', component: ApplicationDetailsView },
+      { path: 'details/:id', component: ApplicationDetailsView, props: true },
       { path: 'profile', component: ProfileView },
     ],
   },
@@ -114,9 +115,17 @@ const routes = [
     ],
   },
 
+  // PROVIDER APPLICATION
+  { path: '/application-form', component: Providerapplicationform },
+
   // AUTH
   { path: '/user/login', component: () => import('../views/User/login.vue') },
+  { path: '/user/register', component: () => import('../views/User/resgister.vue') },
   { path: '/provider/login', component: () => import('../views/Provider/login.vue') },
+  
+  // AUTH ALIASES
+  { path: '/login', redirect: '/user/login' },
+  { path: '/register', redirect: '/user/register' },
 ]
 
 // ==================== ROUTER ====================
@@ -132,8 +141,20 @@ router.beforeEach((to, from) => {
   const role = user?.role?.trim()?.toLowerCase()
 
   // NOT LOGGED IN
-  if ((to.path.startsWith('/admin') || to.path.startsWith('/provider')) && !token) {
+  if (
+    (to.path.startsWith('/admin') ||
+     to.path.startsWith('/provider') ||
+     to.path.startsWith('/staff')) &&
+    !token
+  ) {
     return `/user/login?redirect=${to.fullPath}`
+  }
+
+  // STAFF PROTECTION  ← new
+  if (to.path.startsWith('/staff')) {
+    if (!user || role !== 'staff') {
+      return `/user/login?redirect=${to.fullPath}`
+    }
   }
 
   // ADMIN PROTECTION

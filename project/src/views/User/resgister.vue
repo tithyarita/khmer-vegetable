@@ -40,7 +40,7 @@
         <div v-if="success" class="success">{{ success }}</div>
 
         <div class="login-link">
-          Already have an account? <a href="/login">Login</a>
+          Already have an account? <a href="#" @click.prevent="$router.push('/login')">Login</a>
         </div>
       </form>
     </div>

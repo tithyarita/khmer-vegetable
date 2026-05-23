@@ -1,75 +1,76 @@
 <template>
   <div class="login-page">
 
-    <!-- LEFT -->
-    <div class="login-left">
+    <!-- LEFT PANEL -->
+    <div class="login-card">
 
       <div class="brand">
-        <h2>Organic Editorial</h2>
+        <h1>🌿 Organic Editorial</h1>
+        <p>Admin & Provider Dashboard</p>
       </div>
 
-      <template v-if="userStore.isLoggedIn">
-        <h1>Welcome, {{ userStore.user?.name || userStore.user?.email }}</h1>
-        <p class="subtitle">You are logged in as <b>{{ userStore.user?.email }}</b></p>
-        <button class="login-btn" @click="userStore.logout()">Logout</button>
-      </template>
-      <template v-else>
-        <h1>Welcome Back</h1>
-        <p class="subtitle">
-          Login to your account to manage your fresh harvest.
+      <!-- LOGGED IN STATE -->
+      <div v-if="userStore?.isLoggedIn" class="logged-in">
+        <h2>Welcome back 👋</h2>
+
+        <p class="email">
+          {{ userStore?.user?.name || userStore?.user?.email }}
         </p>
 
-        <!-- FORM -->
-        <form class="login-form" @submit="handleLogin">
+        <small>
+          Role: <b>{{ userStore?.user?.role }}</b>
+        </small>
 
-          <label>Email</label>
-          <input
-            v-model="email"
-            type="email"
-            placeholder="name@example.com"
-            required
-          />
+        <button class="btn logout" @click="userStore.logout()">
+          Logout
+        </button>
+      </div>
 
-          <label>Password</label>
-          <input
-            v-model="password"
-            type="password"
-            placeholder="********"
-            required
-          />
+      <!-- LOGIN FORM -->
+      <form v-else class="form" @submit.prevent="handleLogin">
 
-          <div class="form-options">
-            <label>
-              <input type="checkbox" />
-              Remember Me
-            </label>
+        <h2>Sign in</h2>
+        <p class="sub">Enter your credentials to continue</p>
 
-            <a href="#" class="forgot">Forgot Password?</a>
-          </div>
+        <label>Email</label>
+        <input v-model="email" type="email" placeholder="you@example.com" required />
 
-          <button class="login-btn" type="submit" :disabled="loading">
-            {{ loading ? "Logging in..." : "Login" }}
-          </button>
+        <label>Password</label>
+        <input v-model="password" type="password" placeholder="••••••••" required />
 
-          <button class="register-btn" type="button">
-            Register Account
-          </button>
+        <div class="row">
+          <label class="remember">
+            <input type="checkbox" />
+            Remember me
+          </label>
 
-        </form>
-      </template>
+          <a href="#" class="forgot">Forgot?</a>
+        </div>
+
+        <button class="btn primary" type="submit" :disabled="loading">
+          {{ loading ? "Logging in..." : "Login" }}
+        </button>
+
+        <button class="btn ghost" type="button">
+          Create account
+        </button>
+
+      </form>
 
       <footer>
-        <small>© 2024 The Digital Greenhouse</small>
+        <small>© 2026 Digital Greenhouse System</small>
       </footer>
 
     </div>
 
-    <!-- RIGHT -->
-    <div class="login-right">
-      <h2>Supporting local Cambodian farmers since 2012</h2>
-      <p>
-        Join the most efficient organic marketplace.
-      </p>
+    <!-- RIGHT PANEL -->
+    <div class="hero">
+      <div class="overlay">
+        <h2>Smart Agricultural Marketplace</h2>
+        <p>
+          Manage users, providers, orders and products in one unified system.
+        </p>
+      </div>
     </div>
 
   </div>
@@ -77,72 +78,83 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { useUserStore } from '@/stores/userStore'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
 
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-
-async function handleLogin(e) {
-  e.preventDefault()
+async function handleLogin() {
   loading.value = true
 
   try {
-    const res = await axios.post(
-      "http://localhost:3000/auth/login",
-      {
-        email: email.value,
-        password: password.value
-      }
-    )
+    const { data } = await axios.post('http://localhost:3000/auth/login', {
+      email: email.value,
+      password: password.value
+    })
 
-    const user = res.data.user
-    const token = res.data.access_token
+    const user = data?.user
+    const token = data?.token || data?.access_token
 
-    // ❗ safety check
-    if (!user || !user.role) {
-      throw new Error("Role missing from backend response")
+    if (!user || !token) {
+      throw new Error('Invalid login response')
     }
 
-    // save session in store
+
+    // Normalize role robustly
+    let role = user.role
+    if (typeof role === 'string') {
+      role = role.toLowerCase().replace(/\s+/g, '')
+    } else {
+      role = ''
+    }
+
+    // Extra debug logging
+    console.log('[LOGIN DEBUG] user:', user)
+    console.log('[LOGIN DEBUG] role:', role)
+    console.log('[LOGIN DEBUG] redirect:', route.query.redirect)
+
     userStore.setUser(user, token)
 
-    // 🚀 ROLE REDIRECT
-    // If redirected here, only allow if role matches
-    const redirectPath = route.query.redirect || null
-    if (redirectPath) {
+    // SAFE redirect handling
+    const redirect = route.query.redirect
+
+    if (typeof redirect === 'string' && redirect.startsWith('/')) {
       if (
-        (user.role === 'admin' && redirectPath.startsWith('/admin')) ||
-        (user.role === 'provider' && redirectPath.startsWith('/provider'))
+        (role === 'admin' && redirect.startsWith('/admin')) ||
+        (role === 'provider' && redirect.startsWith('/provider')) ||
+        (role === 'staff' && redirect.startsWith('/staff'))
       ) {
-        router.push(redirectPath)
-      } else if (user.role === 'admin') {
-        router.push('/admin/dashboard')
-      } else if (user.role === 'provider') {
-        router.push('/provider/dashboard')
-      } else {
-        router.push('/') // customer goes to homepage
+        console.log('[LOGIN DEBUG] Redirecting to:', redirect)
+        router.replace(redirect)
+        return
       }
-    } else if (user.role === 'admin') {
-      router.push('/admin/dashboard')
-    } else if (user.role === 'provider') {
-      router.push('/provider/dashboard')
+    }
+
+    // default routing
+    if (role === 'admin') {
+      console.log('[LOGIN DEBUG] Default admin redirect')
+      router.replace('/admin/dashboard')
+    } else if (role === 'provider') {
+      console.log('[LOGIN DEBUG] Default provider redirect')
+      router.replace('/provider/dashboard')
+    } else if (role === 'staff') {
+      console.log('[LOGIN DEBUG] Default staff redirect')
+      router.replace('/staff/dashboard')
     } else {
-      router.push('/') // customer goes to homepage
+      console.log('[LOGIN DEBUG] Default home redirect')
+      router.replace('/home')
     }
 
   } catch (err) {
     console.error(err)
-    alert("Login failed. Wrong email or password.")
+    alert(err?.message || 'Login failed')
   } finally {
     loading.value = false
   }
@@ -151,87 +163,125 @@ async function handleLogin(e) {
 
 <style scoped>
 .login-page {
-  display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 420px 1fr;
   font-family: system-ui;
 }
 
-/* LEFT SIDE */
-.login-left {
-  flex: 1;
-  background: #fff;
-  padding: 60px;
+/* LEFT CARD */
+.login-card {
+  background: white;
+  padding: 40px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
+  border-right: 1px solid #eee;
 }
 
-.brand h2 {
-  color: #1a3c1a;
-  margin-bottom: 40px;
+/* BRAND */
+.brand h1 {
+  font-size: 22px;
+  margin: 0;
 }
 
-h1 {
-  font-size: 2rem;
-  margin-bottom: 10px;
-}
-
-.subtitle {
-  color: #666;
-  margin-bottom: 30px;
+.brand p {
+  font-size: 13px;
+  color: #777;
 }
 
 /* FORM */
-.login-form {
+.form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+}
+
+.form h2 {
+  margin-bottom: 0;
+}
+
+.sub {
+  font-size: 13px;
+  color: #777;
+  margin-bottom: 10px;
 }
 
 input {
-  padding: 12px;
+  padding: 10px;
+  border-radius: 10px;
   border: 1px solid #ddd;
-  border-radius: 8px;
+  outline: none;
 }
 
-.form-options {
+input:focus {
+  border-color: #16a34a;
+}
+
+/* ROW */
+.row {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
+  align-items: center;
+  font-size: 12px;
 }
 
 .forgot {
-  color: #1a3c1a;
+  color: #16a34a;
+  text-decoration: none;
 }
 
-.login-btn {
-  background: #1a3c1a;
-  color: white;
-  padding: 12px;
+/* BUTTONS */
+.btn {
+  padding: 10px;
+  border-radius: 10px;
   border: none;
-  border-radius: 8px;
   cursor: pointer;
+  font-weight: 500;
 }
 
-.login-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.primary {
+  background: #16a34a;
+  color: white;
 }
 
-.register-btn {
-  background: transparent;
-  border: 1px solid #ddd;
-  padding: 12px;
-  border-radius: 8px;
+.logout {
+  background: #ef4444;
+  color: white;
+  margin-top: 10px;
 }
 
-/* RIGHT SIDE */
-.login-right {
-  flex: 1;
-  background: linear-gradient(120deg, #e6f4e6, #f8f8f8);
+.ghost {
+  background: #f3f4f6;
+}
+
+/* LOGGED IN */
+.logged-in {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.email {
+  font-weight: bold;
+}
+
+/* RIGHT HERO */
+.hero {
+  background: linear-gradient(135deg, #16a34a, #14532d);
+  color: white;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 60px;
+}
+
+.overlay {
+  text-align: center;
+  max-width: 400px;
+  padding: 20px;
+}
+
+.overlay h2 {
+  font-size: 28px;
 }
 </style>

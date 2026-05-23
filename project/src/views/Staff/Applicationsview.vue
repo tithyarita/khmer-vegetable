@@ -1,6 +1,5 @@
 <template>
   <div class="applications">
-    <!-- Page heading + queue health badge -->
     <div class="page-heading">
       <div>
         <h1 class="page-title">Application Queue</h1>
@@ -12,7 +11,6 @@
       </div>
     </div>
 
-    <!-- Filter bar -->
     <div class="filter-bar">
       <button class="filter-chip filter-chip--outline">
         <i class="bi bi-funnel me-1"></i> Filter
@@ -22,20 +20,26 @@
         @click="activeFilter = 'all'"
       >All Statuses</button>
       <button
-        :class="['filter-chip', activeFilter === 'submitted' && 'filter-chip--active']"
-        @click="activeFilter = 'submitted'"
-      >Pending Only</button>
+        :class="['filter-chip', activeFilter === 'pending' && 'filter-chip--active']"
+        @click="activeFilter = 'pending'"
+      >Pending</button>
+      <button
+        :class="['filter-chip', activeFilter === 'approved' && 'filter-chip--active']"
+        @click="activeFilter = 'approved'"
+      >Approved</button>
+      <button
+        :class="['filter-chip', activeFilter === 'rejected' && 'filter-chip--active']"
+        @click="activeFilter = 'rejected'"
+      >Rejected</button>
 
       <span class="filter-count">
-        Displaying 1–{{ filtered.length }} of {{ applications.length }} applications
+        Displaying 1–{{ pagedItems.length }} of {{ filtered.length }} applications
       </span>
     </div>
 
-    <!-- Loading / error states -->
     <div v-if="loading" class="state-msg">Loading applications…</div>
     <div v-else-if="error" class="state-msg state-msg--error">{{ error }}</div>
 
-    <!-- Queue card -->
     <div v-else class="queue-card">
       <div class="col-headings">
         <span class="qcol qcol-app">Applicant Name</span>
@@ -45,16 +49,15 @@
         <span class="qcol qcol-action"></span>
       </div>
 
-      <!-- Each row maps one ProviderApplication record → ApplicationQueueItem props -->
       <ApplicationQueueItem
-        v-for="app in filtered"
+        v-for="app in pagedItems"
         :key="app.id"
         :id="app.id"
         :applicant="{
           name:      app.owner_name,
           email:     app.contact_email,
           avatarUrl: app.profile_photo_path
-            ? `${API_BASE}/${app.profile_photo_path}`
+            ? `${API_BASE}/images/${app.profile_photo_path.replace(/\\/g, '/').replace('uploads/', '')}`
             : '',
         }"
         :farm="{
@@ -65,49 +68,46 @@
         :status="normalizeStatus(app.application_status)"
       />
 
-      <!-- Empty state -->
       <div v-if="filtered.length === 0" class="empty-state">
         No applications match the current filter.
       </div>
 
-      <!-- Pagination footer -->
       <div class="table-footer">
-        <span class="footer-count">Showing {{ filtered.length }} of {{ applications.length }} applications</span>
+        <span class="footer-count">
+          Showing {{ pagedItems.length }} of {{ filtered.length }} applications
+        </span>
         <div class="pagination">
-          <button class="page-btn"><i class="bi bi-chevron-left"></i></button>
+          <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">
+            <i class="bi bi-chevron-left"></i>
+          </button>
           <button
-            v-for="n in 3" :key="n"
+            v-for="n in totalPages"
+            :key="n"
             :class="['page-btn', { 'page-btn--active': n === currentPage }]"
             @click="currentPage = n"
           >{{ n }}</button>
-          <button class="page-btn"><i class="bi bi-chevron-right"></i></button>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++">
+            <i class="bi bi-chevron-right"></i>
+          </button>
         </div>
       </div>
-    </div>
-
-    <!-- Footer strip -->
-    <div class="system-footer">
-      <span>The Organic Editorial System v2.4</span>
-      <span class="system-status">
-        <span class="status-dot"></span> Cloud Services Operational
-      </span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import ApplicationQueueItem from '../../components/Staff/Applicationqueueitem.vue'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
-const applications = ref([])   // raw records from GET /api/applications
+const applications = ref([])
 const loading      = ref(true)
 const error        = ref(null)
 const currentPage  = ref(1)
 const activeFilter = ref('all')
+const PAGE_SIZE    = 6
 
-// ─── Fetch all applications on mount ────────────────────────────────────────
 onMounted(async () => {
   try {
     const res = await fetch(`${API_BASE}/api/applications`)
@@ -120,12 +120,9 @@ onMounted(async () => {
   }
 })
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// Reset to page 1 whenever filter changes
+watch(activeFilter, () => { currentPage.value = 1 })
 
-/**
- * DB stores "submitted" | "in_review" | "approved" | "rejected"
- * The queue item badge expects "pending" | "in-review" | "approved" | "rejected"
- */
 function normalizeStatus(dbStatus) {
   const map = {
     draft:     'pending',
@@ -137,9 +134,6 @@ function normalizeStatus(dbStatus) {
   return map[dbStatus] ?? 'pending'
 }
 
-/**
- * Format ISO timestamp → "Oct 24, 2023 14:22 PM"
- */
 function formatDate(iso) {
   if (!iso) return '—'
   const d = new Date(iso)
@@ -148,19 +142,22 @@ function formatDate(iso) {
   return `${date} ${time}`
 }
 
-// ─── Filtering ───────────────────────────────────────────────────────────────
-const filtered = computed(() =>
-  activeFilter.value === 'all'
-    ? applications.value
-    : applications.value.filter(a =>
-        normalizeStatus(a.application_status) === activeFilter.value
-      )
-)
+const filtered = computed(() => {
+  if (activeFilter.value === 'all') return applications.value
+  return applications.value.filter(a =>
+    normalizeStatus(a.application_status) === activeFilter.value
+  )
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / PAGE_SIZE)))
+
+const pagedItems = computed(() => {
+  const start = (currentPage.value - 1) * PAGE_SIZE
+  return filtered.value.slice(start, start + PAGE_SIZE)
+})
 
 const pendingCount = computed(() =>
-  applications.value.filter(a =>
-    ['draft', 'submitted'].includes(a.application_status)
-  ).length
+  applications.value.filter(a => ['draft', 'submitted'].includes(a.application_status)).length
 )
 </script>
 
@@ -175,15 +172,15 @@ const pendingCount = computed(() =>
 .qh-label     { font-size: 9.5px; font-weight: 700; letter-spacing: .6px; color: #9ca3af; text-transform: uppercase; }
 .qh-value     { font-size: 20px; font-weight: 800; color: var(--brand-dark); margin-top: 2px; }
 
-.filter-bar   { display: flex; align-items: center; gap: 8px; }
+.filter-bar   { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .filter-chip  { padding: 6px 14px; border-radius: 20px; border: 1px solid #d1d5db; background: #fff; font-size: 12.5px; font-weight: 500; color: #374151; cursor: pointer; transition: background .12s, border-color .12s, color .12s; }
 .filter-chip:hover { border-color: var(--brand-accent); color: var(--brand-green); }
 .filter-chip--active { background: var(--brand-dark); border-color: var(--brand-dark); color: #fff; }
 .filter-chip--outline { display: flex; align-items: center; }
 .filter-count { margin-left: auto; font-size: 11.5px; color: #9ca3af; }
 
-.state-msg         { padding: 32px; text-align: center; color: #6b7280; font-size: 13.5px; }
-.state-msg--error  { color: #dc2626; }
+.state-msg        { padding: 32px; text-align: center; color: #6b7280; font-size: 13.5px; }
+.state-msg--error { color: #dc2626; }
 
 .queue-card   { background: var(--card-bg); border: 1px solid #eaeaea; border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
 
@@ -201,10 +198,11 @@ const pendingCount = computed(() =>
 .footer-count  { font-size: 11.5px; color: #9ca3af; }
 .pagination    { display: flex; gap: 4px; }
 .page-btn      { width: 28px; height: 28px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; font-size: 12px; font-weight: 500; color: #374151; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .12s; }
-.page-btn:hover { background: #f0f7f0; border-color: var(--brand-accent); }
+.page-btn:hover:not(:disabled) { background: #f0f7f0; border-color: var(--brand-accent); }
 .page-btn--active { background: var(--brand-dark); color: #fff; border-color: var(--brand-dark); }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .system-footer  { display: flex; justify-content: space-between; font-size: 10.5px; color: #9ca3af; padding: 4px 0; }
 .system-status  { display: flex; align-items: center; gap: 6px; }
-.status-dot     { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+.status-dot     { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; display: inline-block; }
 </style>

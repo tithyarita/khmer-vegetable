@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
 import {
@@ -6,6 +6,10 @@ import {
   ApplicationStatus,
 } from './provider-application.entity';
 import { CreateApplicationDto } from './dto/provider-application.dto';
+import { users, UserRole } from '../users/users.entity';
+import { Provider } from '../providers/providers.entity';
+import * as bcrypt from 'bcryptjs';
+import { MailService } from '../mail/mail.service';
 
 export interface UploadedFiles {
   id_document?: Express.Multer.File[];
@@ -15,53 +19,132 @@ export interface UploadedFiles {
   farm_angle3?: Express.Multer.File[];
 }
 
+function normalizePath(path: string | undefined): string | undefined {
+  return path?.replace(/\\/g, '/');
+}
+
+const DEFAULT_PASSWORD = 'user12345';
+
 @Injectable()
 export class ApplicationsService {
-  [x: string]: any;
   constructor(
     @InjectRepository(ProviderApplication)
     private readonly repo: Repository<ProviderApplication>,
+
+    @InjectRepository(users)
+    private readonly usersRepo: Repository<users>,
+
+    @InjectRepository(Provider)
+    private readonly providerRepo: Repository<Provider>,
+
+    private readonly mailService: MailService,
   ) {}
 
   async create(
     dto: CreateApplicationDto,
     files: UploadedFiles,
   ): Promise<ProviderApplication> {
-    // Explicitly typed as DeepPartial<ProviderApplication> so TypeScript
-    // picks the single-entity overload of repo.create(), not the array one.
     const data: DeepPartial<ProviderApplication> = {
-      business_name: dto.business_name,
-      owner_name: dto.owner_name,
-      contact_email: dto.contact_email,
-      phone: dto.phone,
-      village: dto.village,
-      commune: dto.commune,
-      district: dto.district,
-      city_province: dto.city_province,
-      primary_vegetable: dto.primary_vegetable,
-      farm_category: dto.farm_category,
+      business_name:      dto.business_name,
+      owner_name:         dto.owner_name,
+      contact_email:      dto.contact_email,
+      phone:              dto.phone,
+      village:            dto.village,
+      commune:            dto.commune,
+      district:           dto.district,
+      city_province:      dto.city_province,
+      primary_vegetable:  dto.primary_vegetable,
+      farm_category:      dto.farm_category,
       application_status: ApplicationStatus.SUBMITTED,
-      submitted_at: new Date(),
-      id_document_path: files.id_document?.[0]?.path,
-      profile_photo_path: files.profile_photo?.[0]?.path,
-      farm_angle1_path: files.farm_angle1?.[0]?.path,
-      farm_angle2_path: files.farm_angle2?.[0]?.path,
-      farm_angle3_path: files.farm_angle3?.[0]?.path,
+      submitted_at:       new Date(),
+      id_document_path:   normalizePath(files.id_document?.[0]?.path),
+      profile_photo_path: normalizePath(files.profile_photo?.[0]?.path),
+      farm_angle1_path:   normalizePath(files.farm_angle1?.[0]?.path),
+      farm_angle2_path:   normalizePath(files.farm_angle2?.[0]?.path),
+      farm_angle3_path:   normalizePath(files.farm_angle3?.[0]?.path),
     };
 
-    const application = this.repo.create(data); // TS now picks the correct overload
-    const saved = await this.repo.save(application); // save(entity) → entity, not array
-    return saved;
+    const application = this.repo.create(data);
+    return this.repo.save(application);
   }
 
   async updateStatus(id: number, status: string): Promise<ProviderApplication> {
     const app = await this.findOne(id);
+
+    // Guard: already decided — prevent double-processing
+    if (
+      app.application_status === ApplicationStatus.APPROVED ||
+      app.application_status === ApplicationStatus.REJECTED
+    ) {
+      throw new BadRequestException('Application has already been decided');
+    }
+
     app.application_status = status as ApplicationStatus;
-    return this.repo.save(app);
+    const saved = await this.repo.save(app);
+
+    // Auto-create provider account on approval
+    if (status === 'approved') {
+      await this.createProviderAccount(app);
+    }
+
+    return saved;
   }
 
-  async findAll(): Promise<ProviderApplication[]> {
-    return this.repo.find({ order: { created_at: 'DESC' } });
+  private async createProviderAccount(app: ProviderApplication): Promise<void> {
+    // Skip silently if this email already has an account
+    const existing = await this.usersRepo.findOne({
+      where: { email: app.contact_email },
+    });
+    if (existing) return;
+
+    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+
+    await this.usersRepo.manager.transaction(async (tx) => {
+      // 1. Create users table record
+      const user = tx.create(users, {
+        name:     app.owner_name,
+        email:    app.contact_email,
+        phone:    app.phone ?? '',
+        password: hashedPassword,
+        role:     UserRole.PROVIDER,
+      });
+      const savedUser = await tx.save(user);
+
+      // 2. Create provider table record
+      await tx.save(Provider, {
+        user_id:       savedUser.id,
+        provider_name: app.business_name,
+        email:         app.contact_email,
+        password:      hashedPassword,
+        status:        'active',
+      });
+
+      // Send approval email — after transaction succeeds
+      await this.mailService.sendProviderApproval({
+        to:           app.contact_email,
+        ownerName:    app.owner_name,
+        businessName: app.business_name,
+        password:     DEFAULT_PASSWORD,       // plain text for the email
+        loginUrl:     'http://localhost:5173/provider/login', // change to your real domain in production
+      });
+    });
+  }
+
+  async findAll(search?: string): Promise<ProviderApplication[]> {
+    if (!search || search.trim() === '') {
+      return this.repo.find({ order: { created_at: 'DESC' } });
+    }
+
+    const q = search.trim();
+
+    return this.repo
+      .createQueryBuilder('app')
+      .where('app.business_name LIKE :q', { q: `%${q}%` })
+      .orWhere('app.owner_name LIKE :q',  { q: `%${q}%` })
+      .orWhere('CAST(app.id AS CHAR) LIKE :q', { q: `%${q}%` })
+      .orderBy('app.created_at', 'DESC')
+      .limit(20)
+      .getMany();
   }
 
   async findOne(id: number): Promise<ProviderApplication> {

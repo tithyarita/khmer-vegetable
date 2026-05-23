@@ -116,7 +116,7 @@ export class UsersService {
 
       return { message: 'Registration successful!', user: savedUser };
     } catch (error) {
-      this.logger.error('Registration transaction failed:', error.stack);
+      this.logger.error('Registration transaction failed:', error instanceof Error ? error.stack : error);
       throw new InternalServerErrorException('Failed to create user. Please try again later.');
     }
   }
@@ -139,8 +139,18 @@ export class UsersService {
     return undefined;
   }
 
+  async findById(id: number): Promise<users | undefined> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    return user === null ? undefined : user;
+  }
+
   async findByEmail(email: string): Promise<users | undefined> {
     const user = await this.usersRepository.findOne({ where: { email } });
+    return user === null ? undefined : user;
+  }
+
+  async findByPhone(phone: string): Promise<users | undefined> {
+    const user = await this.usersRepository.findOne({ where: { phone } });
     return user === null ? undefined : user;
   }
 
@@ -148,5 +158,50 @@ export class UsersService {
     return this.providerRepository.findOne({
       where: { user_id: userId },
     });
+  }
+
+  async setResetToken(userId: number, token: string, expires: Date): Promise<void> {
+    await this.usersRepository.update(userId, {
+      reset_token: token,
+      reset_token_expires: expires,
+    });
+  }
+
+  async clearResetToken(userId: number): Promise<void> {
+    await this.usersRepository.update(userId, {
+      reset_token: null,
+      reset_token_expires: null,
+    });
+  }
+
+  async updatePassword(userId: number, password: string): Promise<void> {
+    const hashed = await bcrypt.hash(password, 10);
+    await this.usersRepository.update(userId, { password: hashed });
+  }
+
+  async changePassword(
+    id: number,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) throw new BadRequestException('User not found');
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) throw new BadRequestException('Current password is incorrect');
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+
+    await this.usersRepository.update(id, { password: newHash });
+  
+    if (user.role === UserRole.STAFF) {
+      const staffRecord = await this.staffRepository.findOne({ where: { user_id: id } });
+      if (staffRecord) {
+        staffRecord.password = newHash;
+        await this.staffRepository.save(staffRecord);
+      }
+    }
+
+    return { message: 'Password updated successfully' };
   }
 }

@@ -136,13 +136,15 @@
 <script>
 import { useCartStore } from '../../stores/cartStore'
 import { useSearchStore } from '../../stores/searchStore'
+import { useFavoriteStore } from '../../stores/favoriteStore'
 
 export default {
   name: 'NavigationBar',
   setup() {
     const cartStore = useCartStore()
     const searchStore = useSearchStore()
-    return { cartStore, searchStore }
+    const favoriteStore = useFavoriteStore()
+    return { cartStore, searchStore, favoriteStore }
   },
   data() {
     return {
@@ -167,7 +169,7 @@ export default {
       return this.cartStore.cartCount
     },
     favoriteCount() {
-      return 0
+      return this.favoriteStore.favoriteCount
     },
     userInitials() {
       if (!this.user.name) return '?'

@@ -8,7 +8,15 @@ import {
   Param,
   Query,
   Put,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+  Patch,
+  ParseIntPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { users, UserRole } from './users.entity';
@@ -29,8 +37,37 @@ export class UsersController {
   // UPDATE USER PROFILE
   // =========================
   @Put(':id')
-  async updateUser(@Param('id') id: string, @Body() body: Partial<users>) {
-    await this.usersRepository.update(id, body);
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, unique + extname(file.originalname));
+        },
+      }),
+    })
+  )
+  async updateUser(
+    @Param('id') id: string,
+    @Body() body: any,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    // Build update object manually to avoid type issues
+    const update: any = {};
+    if (body.name) update.name = body.name;
+    if (body.email) update.email = body.email;
+    if (body.phone) update.phone = body.phone;
+    if (body.address) update.address = body.address;
+    if (body.role) update.role = body.role;
+    if (body.password) {
+      const bcrypt = require('bcryptjs');
+      update.password = await bcrypt.hash(body.password, 10);
+    }
+    if (file) {
+      update.avatar = `/images/${file.filename}`;
+    }
+    await this.usersRepository.update(id, update);
     return await this.usersRepository.findOne({ where: { id: Number(id) } });
   }
 
@@ -99,5 +136,20 @@ export class UsersController {
     },
   ) {
     return this.usersService.register(body);
+  }
+
+  // =========================
+  // CHANGE PASSWORD
+  // =========================
+  @Patch(':id/password')
+  async changePassword(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('currentPassword') currentPassword: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    if (!currentPassword || !newPassword) {
+      throw new BadRequestException('Both currentPassword and newPassword are required');
+    }
+    return this.usersService.changePassword(id, currentPassword, newPassword);
   }
 }

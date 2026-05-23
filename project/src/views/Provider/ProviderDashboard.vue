@@ -127,13 +127,13 @@ import { useProductStore } from '@/stores/productStore'
 
 import SideBar from '@/components/provider_com/sideBar.vue'
 
-import PageHeader from '@/components/provider_com/pageHeader.vue'
+import PageHeader from '@/components/provider_com/PageHeader.vue'
 
-import AnalyseBar from '@/components/provider_com/analyseBar.vue'
+import AnalyseBar from '@/components/provider_com/AnalyseBar.vue'
 
 import ProductsSellAnalysis from '@/components/provider_com/ProductsSellAnalysis.vue'
 
-import ProductCard from '@/components/provider_com/productCard.vue'
+import ProductCard from '@/components/provider_com/ProductCard.vue'
 
 import TopCustomers from '@/components/provider_com/TopCustomers.vue'
 import TopOrders from '@/components/provider_com/TopOrders.vue'

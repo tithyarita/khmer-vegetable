@@ -10,8 +10,8 @@ async function bootstrap() {
   const usersRepo = app.get(getRepositoryToken(users));
   const adminRepo = app.get(getRepositoryToken(Admin));
 
-  const email = 'admin@example.com';
-  const password = 'admin123';
+  const email = 'adminproject@gmail.com';
+  const password = 'admin12345';
   const name = 'Admin';
   const phone = '0123456789';
 

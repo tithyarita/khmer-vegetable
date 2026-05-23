@@ -1,9 +1,15 @@
 <template>
   <div class="card">
-    <!-- Card Header -->
     <div class="card-header-row">
-      <div class="icon-wrap">
-        <i class="bi bi-person-badge"></i>
+      <div class="avatar-wrap">
+        <img
+          v-if="applicant.profilePhotoUrl"
+          :src="applicant.profilePhotoUrl"
+          :alt="applicant.fullName"
+          class="avatar-img"
+          @error="onImgError"
+        />
+        <i v-else class="bi bi-person-fill avatar-fallback"></i>
       </div>
       <div>
         <h3 class="card-title">Applicant Identity</h3>
@@ -11,7 +17,6 @@
       </div>
     </div>
 
-    <!-- Fields Grid -->
     <div class="identity-grid">
       <div class="field-group">
         <label class="field-label">FULL NAME</label>
@@ -31,7 +36,6 @@
       </div>
     </div>
 
-    <!-- Verification Note -->
     <div class="verification-note">
       <span class="note-label">INTERNAL VERIFICATION NOTE</span>
       <p class="note-text">{{ applicant.verificationNote }}</p>
@@ -46,10 +50,19 @@ export default {
     applicant: {
       type: Object,
       required: true,
-      // { fullName, registrationId, email, phone, verificationNote }
     },
   },
-};
+  data() {
+    return {
+      imgError: false,
+    }
+  },
+  methods: {
+    onImgError() {
+      this.imgError = true
+    },
+  },
+}
 </script>
 
 <style scoped>
@@ -67,17 +80,27 @@ export default {
   margin-bottom: 20px;
 }
 
-.icon-wrap {
-  width: 42px;
-  height: 42px;
-  background: #f0f4f8;
-  border-radius: 10px;
+.avatar-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  color: #6b7280;
+  background: #f0f4f8;
   flex-shrink: 0;
+}
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.avatar-fallback {
+  font-size: 26px;
+  color: #9aa0ab;
 }
 
 .card-title {
