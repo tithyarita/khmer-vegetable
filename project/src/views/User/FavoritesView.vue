@@ -7,29 +7,14 @@
       <div class="section-inner">
         <div class="section-header">
           <h2 class="section-title">My Favorites</h2>
-          <a href="#" class="see-all">All Favorites →</a>
+          <span class="item-count">{{ favoriteStore.favoriteCount }} items</span>
         </div>
-        <Card />
-      </div>
-    </section>
-
-    <section class="section popular-vegetables">
-      <div class="section-inner">
-        <div class="section-header">
-          <h2 class="section-title">Popular Vegetables</h2>
-          <a href="#" class="see-all">All Deals →</a>
+        <div v-if="favoriteStore.favoriteCount > 0" class="favorites-grid">
+          <Card :products="favoriteStore.favoriteItems" />
         </div>
-        <Card />
-      </div>
-    </section>
-
-    <section class="section farmers-section">
-      <div class="section-inner">
-        <div class="section-header">
-          <h2 class="section-title">Featured Farmers</h2>
-          <a href="#" class="see-all">View All →</a>
+        <div v-else class="empty-state">
+          <p>No favorites yet. Start adding products you love!</p>
         </div>
-        <Farm />
       </div>
     </section>
 
@@ -38,19 +23,34 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Card from '../../components/Customer/Card.vue'
-import Farm from '../../components/Customer/FarmerCard.vue'
-import Deals from '../../components/Customer/DealsCard.vue'
 import Footer from '../../components/Customer/Footer.vue'
+import { useFavoriteStore } from '../../stores/favoriteStore'
+
+const favoriteStore = useFavoriteStore()
+
+onMounted(async () => {
+  await favoriteStore.fetchFavoritesFromBackend()
+})
 </script>
 
 <style scoped>
-.see-all {
-  font-family: "DM Serif Display", serif;
-  color: rgb(101, 142, 101);
-  text-decoration: none;
-  font-size: 1.2rem;
+.item-count {
+  font-size: 1rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #888;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
 }
 
 .favorites {
@@ -88,23 +88,8 @@ import Footer from '../../components/Customer/Footer.vue'
   color: #1a2e1a;
 }
 
-/* ── GRIDS ── */
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
-}
-
-.farmers-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-}
-
-.deals-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+.favorites-grid {
+  margin-top: 20px;
 }
 
 /* ── RESPONSIVE ── */
