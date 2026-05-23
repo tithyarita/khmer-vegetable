@@ -88,7 +88,28 @@
               </td>
               <td>{{ order.provider }}</td>
               <td>{{ order.price }}</td>
-              <td><span :class="['status-badge', order.statusClass]">{{ order.status }}</span></td>
+              <td class="col-status" @click.stop>
+                <!-- STEP 1: pending → delivering -->
+                <button
+                  v-if="order.status === 'pending'"
+                  class="btn btn-pending"
+                  @click="updateStatus(order, 'delivering')"
+                >
+                  Pending
+                </button>
+              
+                <!-- STEP 2: delivering → completed -->
+                <button
+                  v-else-if="order.status === 'delivering'"
+                  class="btn btn-delivering"
+                  @click="updateStatus(order, 'completed')"
+                >
+                  Delivering
+                </button>
+              
+                <!-- STEP 3: completed - no more clicks -->
+                <span v-else class="done-text">✓ Completed</span>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -188,7 +209,8 @@ const fetchOrders = async () => {
         customerColor: '#e0e7ff',
         provider: order.provider?.provider_name || `Provider ${order.provider_id}`,
         price: `$${parseFloat(order.total).toFixed(2)}`,
-        status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
+        // status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
+        status: order.status, 
         statusClass: order.status.toLowerCase(),
         items: [], // Will be populated when order_items API is connected
         item: order.item || 1,
@@ -210,6 +232,7 @@ const fetchOrders = async () => {
 // --- Load orders on mount ---
 onMounted(() => {
   fetchOrders()
+  
 })
 
 const filteredOrders = computed(() => {
@@ -240,6 +263,24 @@ const formatDate = (date) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+// In updateStatus function
+const updateStatus = async (order, newStatus) => {
+  try {
+    console.log('Updating order:', order.id, 'to status:', newStatus)
+    await axios.patch(`${API_BASE_URL}/orders/${order.id}/status`, {
+      status: newStatus
+    })
+    await fetchOrders()
+
+      if (selectedOrder.value?.id === order.id) {
+        selectedOrder.value.status = newStatus
+      }
+    showToast('Status updated successfully', 'success')
+  } catch (err) {
+    console.error('Update failed:', err.response?.data || err.message)
+    showToast('Failed to update status', 'error')
+  }
 }
 </script>
 
@@ -435,6 +476,43 @@ const formatDate = (date) => {
   font-weight: 700;
   color: #222;
   margin-right: 0.5rem;
+}
+.btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-pending {
+  background: #FF9800;
+  color: white;
+}
+
+.btn-pending:hover {
+  background: #F57C00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
+}
+
+.btn-delivering {
+  background: #2196F3;
+  color: white;
+}
+
+.btn-delivering:hover {
+  background: #1976D2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+}
+
+.done-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4CAF50;
 }
 .status-badge {
   display: inline-block;
@@ -637,5 +715,20 @@ const formatDate = (date) => {
 .error-state {
   background: #fee2e2;
   color: #dc2626;
+}
+.status-select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: white;
+}
+
+.status-select:focus {
+  border-color: #14532d;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(20,83,45,0.15);
 }
 </style>
