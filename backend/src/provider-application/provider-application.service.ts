@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
 import {
@@ -6,6 +6,9 @@ import {
   ApplicationStatus,
 } from './provider-application.entity';
 import { CreateApplicationDto } from './dto/provider-application.dto';
+import { users, UserRole } from '../users/users.entity';
+import { Provider } from '../providers/providers.entity';
+import * as bcrypt from 'bcryptjs';
 
 export interface UploadedFiles {
   id_document?: Express.Multer.File[];
@@ -15,17 +18,23 @@ export interface UploadedFiles {
   farm_angle3?: Express.Multer.File[];
 }
 
-/** Convert Windows backslashes to forward slashes for URLs */
 function normalizePath(path: string | undefined): string | undefined {
-  return path?.replace(/\\/g, '/')
+  return path?.replace(/\\/g, '/');
 }
+
+const DEFAULT_PASSWORD = 'user12345';
 
 @Injectable()
 export class ApplicationsService {
-  [x: string]: any;
   constructor(
     @InjectRepository(ProviderApplication)
     private readonly repo: Repository<ProviderApplication>,
+
+    @InjectRepository(users)
+    private readonly usersRepo: Repository<users>,
+
+    @InjectRepository(Provider)
+    private readonly providerRepo: Repository<Provider>,
   ) {}
 
   async create(
@@ -58,17 +67,64 @@ export class ApplicationsService {
 
   async updateStatus(id: number, status: string): Promise<ProviderApplication> {
     const app = await this.findOne(id);
+
+    // Guard: already decided — prevent double-processing
+    if (
+      app.application_status === ApplicationStatus.APPROVED ||
+      app.application_status === ApplicationStatus.REJECTED
+    ) {
+      throw new BadRequestException('Application has already been decided');
+    }
+
     app.application_status = status as ApplicationStatus;
-    return this.repo.save(app);
+    const saved = await this.repo.save(app);
+
+    // Auto-create provider account on approval
+    if (status === 'approved') {
+      await this.createProviderAccount(app);
+    }
+
+    return saved;
+  }
+
+  private async createProviderAccount(app: ProviderApplication): Promise<void> {
+    // Skip silently if this email already has an account
+    const existing = await this.usersRepo.findOne({
+      where: { email: app.contact_email },
+    });
+    if (existing) return;
+
+    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+
+    await this.usersRepo.manager.transaction(async (tx) => {
+      // 1. Create users table record
+      const user = tx.create(users, {
+        name:     app.owner_name,
+        email:    app.contact_email,
+        phone:    app.phone ?? '',
+        password: hashedPassword,
+        role:     UserRole.PROVIDER,
+      });
+      const savedUser = await tx.save(user);
+
+      // 2. Create provider table record
+      await tx.save(Provider, {
+        user_id:       savedUser.id,
+        provider_name: app.business_name,
+        email:         app.contact_email,
+        password:      hashedPassword,
+        status:        'active',
+      });
+    });
   }
 
   async findAll(search?: string): Promise<ProviderApplication[]> {
     if (!search || search.trim() === '') {
       return this.repo.find({ order: { created_at: 'DESC' } });
     }
-  
+
     const q = search.trim();
-  
+
     return this.repo
       .createQueryBuilder('app')
       .where('app.business_name LIKE :q', { q: `%${q}%` })
