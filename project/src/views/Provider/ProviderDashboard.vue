@@ -64,6 +64,13 @@
 
           </div>
 
+                    
+          <!-- Top Orders Section -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <TopOrders :limit="5" />
+            </div>
+          </div>
 
 
           <!-- Popular Products Section -->
@@ -129,6 +136,7 @@ import ProductsSellAnalysis from '@/components/provider_com/ProductsSellAnalysis
 import ProductCard from '@/components/provider_com/productCard.vue'
 
 import TopCustomers from '@/components/provider_com/TopCustomers.vue'
+import TopOrders from '@/components/provider_com/TopOrders.vue'
 
 import tomatoesImg from '@/assets/img-provider/tomatoes.jpg'
 

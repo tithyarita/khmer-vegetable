@@ -1,5 +1,13 @@
 <template>
   <div class="revenue-stats">
+    <div v-if="error" class="alert alert-warning mb-3">
+      {{ error }}
+    </div>
+
+    <div v-if="loading" class="mb-3 text-muted small">
+      Loading revenue summary...
+    </div>
+
     <div class="row g-3">
       <div v-for="stat in stats" :key="stat.id" class="col-12 col-sm-6 col-lg-3">
         <div class="stat-card card h-100 border-0 shadow-sm rounded-3">
@@ -20,42 +28,100 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import axios from 'axios'
+import { useUserStore } from '@/stores/userStore'
 
-const stats = ref([
+const API_BASE_URL = 'http://localhost:3000'
+const userStore = useUserStore()
+
+const loading = ref(false)
+const error = ref('')
+const summary = ref({
+  totalRevenue: 0,
+  monthRevenue: 0,
+  totalOrders: 0,
+  monthOrders: 0,
+  revenueOrders: 0,
+})
+
+const getProviderId = () => {
+  const user = userStore.user || JSON.parse(localStorage.getItem('user') || 'null')
+  return Number(user?.id ?? user?.providerId ?? user?.provider_id ?? 0) || null
+}
+
+const formatCurrency = (value) => {
+  return `$${Number(value || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+const stats = computed(() => [
   {
     id: 1,
     icon: 'bi bi-wallet2',
-    label: 'Total Earning',
-    value: '$350.4',
-    sublabel: '',
-    color: '#e0a0e3'
+    label: 'Total Revenue',
+    value: formatCurrency(summary.value.totalRevenue),
+    sublabel: 'All revenue orders',
+    color: '#1a3d2a',
   },
   {
     id: 2,
     icon: 'bi bi-cash-coin',
-    label: 'Earn this month',
-    value: '$642.39',
-    sublabel: '',
-    color: '#8ec5fc'
+    label: 'Revenue This Month',
+    value: formatCurrency(summary.value.monthRevenue),
+    sublabel: 'Current month only',
+    color: '#2d7a3a',
   },
   {
     id: 3,
     icon: 'bi bi-bag-check',
     label: 'Total Orders',
-    value: '57',
-    sublabel: '',
-    color: '#d97ef1'
+    value: String(summary.value.totalOrders),
+    sublabel: 'All provider orders',
+    color: '#0f766e',
   },
   {
     id: 4,
-    icon: 'bi bi-percent',
-    label: 'Orders This month',
-    value: '57',
-    sublabel: '',
-    color: '#ffc56d'
-  }
+    icon: 'bi bi-calendar-check',
+    label: 'Orders This Month',
+    value: String(summary.value.monthOrders),
+    sublabel: 'Orders placed this month',
+    color: '#c97b63',
+  },
 ])
+
+const fetchRevenueSummary = async () => {
+  loading.value = true
+  error.value = ''
+
+  const providerId = getProviderId()
+  if (!providerId) {
+    error.value = 'Provider account not found. Please log in again.'
+    loading.value = false
+    return
+  }
+
+  try {
+    const response = await axios.get(`${API_BASE_URL}/orders/provider/${providerId}/revenue`)
+    summary.value = {
+      totalRevenue: Number(response.data?.totalRevenue ?? 0),
+      monthRevenue: Number(response.data?.monthRevenue ?? 0),
+      totalOrders: Number(response.data?.totalOrders ?? 0),
+      monthOrders: Number(response.data?.monthOrders ?? 0),
+      revenueOrders: Number(response.data?.revenueOrders ?? 0),
+    }
+  } catch (err) {
+    error.value = err.response?.data?.message || err.message || 'Failed to load revenue summary.'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchRevenueSummary()
+})
 </script>
 
 <style scoped>

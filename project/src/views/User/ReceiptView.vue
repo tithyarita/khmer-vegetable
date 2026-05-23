@@ -5,7 +5,7 @@
 
     <section class="section receipt-section">
       <div class="section-inner">
-        <div class="receipt-container">
+        <div ref="receiptContainer" class="receipt-container">
           <!-- Receipt Header -->
           <div class="receipt-header">
             <div class="success-badge">
@@ -132,6 +132,93 @@
             </button>
           </div>
         </div>
+
+        <div ref="receiptExport" class="receipt-export" aria-hidden="true">
+          <div class="export-header">
+            <div>
+              <p class="export-kicker">Khmer Vegetable Market</p>
+              <h1>Receipt</h1>
+            </div>
+            <div class="export-status">Confirmed</div>
+          </div>
+
+          <div class="export-meta">
+            <div>
+              <span>Order Number</span>
+              <strong>{{ orderNumber }}</strong>
+            </div>
+            <div>
+              <span>Order Date</span>
+              <strong>{{ orderDate }}</strong>
+            </div>
+            <div>
+              <span>Payment Method</span>
+              <strong>{{ paymentMethod }}</strong>
+            </div>
+            <div>
+              <span>Tracking Number</span>
+              <strong>{{ trackingNumber }}</strong>
+            </div>
+          </div>
+
+          <div class="export-section">
+            <h2>Customer</h2>
+            <p><strong>{{ customer.firstName }} {{ customer.lastName }}</strong></p>
+            <p>{{ customer.address }}</p>
+            <p>{{ customer.city }}, {{ customer.state }} {{ customer.zip }}</p>
+            <p>{{ customer.country }}</p>
+            <p>{{ customer.phone }} | {{ customer.email }}</p>
+          </div>
+
+          <div class="export-section">
+            <h2>Items</h2>
+            <table class="export-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th class="center">Qty</th>
+                  <th class="right">Unit Price</th>
+                  <th class="right">Line Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in orderItems" :key="item.id">
+                  <td>
+                    <div class="item-name">{{ item.name }}</div>
+                    <div class="item-provider">{{ item.providerName || 'Unknown' }}</div>
+                  </td>
+                  <td class="center">{{ item.quantity }}</td>
+                  <td class="right">${{ Number(item.unitPrice ?? item.price ?? 0).toFixed(2) }}</td>
+                  <td class="right">${{ (Number(item.unitPrice ?? item.price ?? 0) * Number(item.quantity ?? 0)).toFixed(2) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="export-summary">
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <strong>${{ calculateSubtotal() }}</strong>
+            </div>
+            <div class="summary-row">
+              <span>Delivery Fee</span>
+              <strong>${{ getShippingCost() }}</strong>
+            </div>
+            <div class="summary-row">
+              <span>Service Fee</span>
+              <strong>$1.00</strong>
+            </div>
+            <div class="summary-row total">
+              <span>Total</span>
+              <strong>${{ calculateTotal() }}</strong>
+            </div>
+          </div>
+
+          <div class="export-section export-footer">
+            <p>Estimated Delivery: {{ estimatedDelivery }}</p>
+            <p>Thank you for your purchase.</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -140,8 +227,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import html2pdf from 'html2pdf.js'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Footer from '../../components/Customer/Footer.vue'
 
@@ -155,6 +243,8 @@ const customer = ref({})
 const orderItems = ref([])
 const estimatedDelivery = ref('')
 const trackingNumber = ref('')
+const receiptContainer = ref(null)
+const receiptExport = ref(null)
 
 const UNKNOWN = 'Unknown'
 
@@ -297,21 +387,51 @@ const printReceipt = () => {
   window.print()
 }
 
-const downloadReceipt = () => {
-  // In a real application, this would generate and download a PDF
-  console.log('Downloading receipt as PDF...')
-  
-  // Create a simple text download for demo
-  const receiptContent = generateReceiptText()
-  const blob = new Blob([receiptContent], { type: 'text/plain' })
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `receipt-${orderNumber.value}.txt`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  window.URL.revokeObjectURL(url)
+const downloadReceipt = async () => {
+  await nextTick()
+
+  if (!receiptExport.value) {
+    alert('Receipt is not ready to download yet.')
+    return
+  }
+
+  const filename = `receipt-${orderNumber.value || 'order'}.pdf`
+  const exportClone = receiptExport.value.cloneNode(true)
+  const exportWrapper = document.createElement('div')
+
+  exportClone.classList.remove('receipt-export')
+  exportClone.style.width = '210mm'
+  exportClone.style.padding = '18mm'
+  exportClone.style.background = '#ffffff'
+  exportClone.style.color = '#102016'
+  exportClone.style.fontFamily = "Georgia, 'Times New Roman', serif"
+  exportClone.style.boxSizing = 'border-box'
+
+  exportWrapper.style.position = 'fixed'
+  exportWrapper.style.left = '0'
+  exportWrapper.style.top = '0'
+  exportWrapper.style.width = '210mm'
+  exportWrapper.style.background = '#ffffff'
+  exportWrapper.style.zIndex = '-1'
+  exportWrapper.style.pointerEvents = 'none'
+  exportWrapper.style.opacity = '1'
+  exportWrapper.appendChild(exportClone)
+  document.body.appendChild(exportWrapper)
+
+  const options = {
+    margin: [10, 8, 10, 8],
+    filename,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css'] },
+  }
+
+  try {
+    await html2pdf().set(options).from(exportClone).save()
+  } finally {
+    document.body.removeChild(exportWrapper)
+  }
 }
 
 const generateReceiptText = () => {
@@ -628,6 +748,176 @@ const goHome = () => {
 
 .home-btn:hover {
   background: #e5e7eb;
+}
+
+.receipt-export {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 210mm;
+  padding: 18mm;
+  background: #ffffff;
+  color: #102016;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.export-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  border-bottom: 3px solid #2d7a3a;
+  padding-bottom: 16px;
+  margin-bottom: 18px;
+}
+
+.export-kicker {
+  margin: 0 0 4px;
+  color: #2d7a3a;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.export-header h1 {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.1;
+}
+
+.export-status {
+  border: 1px solid #2d7a3a;
+  color: #2d7a3a;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.export-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin-bottom: 18px;
+}
+
+.export-meta div,
+.export-section,
+.export-summary {
+  border: 1px solid #d9e2d9;
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fbfdfb;
+}
+
+.export-meta span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #607264;
+  margin-bottom: 4px;
+}
+
+.export-meta strong,
+.export-section p,
+.summary-row strong,
+.export-table,
+.export-table th,
+.export-table td {
+  font-size: 13px;
+}
+
+.export-section {
+  margin-bottom: 16px;
+}
+
+.export-section h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: #17301d;
+}
+
+.export-section p {
+  margin: 0 0 6px;
+  color: #324436;
+}
+
+.export-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.export-table th,
+.export-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e4ece4;
+  vertical-align: top;
+}
+
+.export-table th {
+  text-align: left;
+  color: #607264;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+}
+
+.export-table .center {
+  text-align: center;
+}
+
+.export-table .right {
+  text-align: right;
+}
+
+.item-name {
+  font-weight: 700;
+  color: #102016;
+}
+
+.item-provider {
+  margin-top: 2px;
+  color: #607264;
+  font-size: 12px;
+}
+
+.export-summary {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-row.total {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 2px solid #2d7a3a;
+  font-size: 15px;
+}
+
+.summary-row.total strong {
+  color: #2d7a3a;
+  font-size: 16px;
+}
+
+.export-footer {
+  text-align: center;
+  background: #f6faf6;
+}
+
+.export-footer p:last-child {
+  margin-bottom: 0;
+  font-weight: 700;
+  color: #17301d;
 }
 
 /* Print Styles */

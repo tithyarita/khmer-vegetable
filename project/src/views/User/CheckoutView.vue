@@ -305,7 +305,7 @@
 
                 <button
                   class="confirm-order-btn"
-                  :disabled="!isShippingProfileComplete || loading"
+                  :disabled="loading"
                   @click="confirmOrder"
                 >
                   Confirm Order
@@ -476,12 +476,6 @@ const confirmOrder = async () => {
   if (!orderItems.value.length) {
     orderResult.value = 'error'
     orderMessage.value = 'Your cart is empty. Add products before placing an order.'
-    return
-  }
-
-  if (!isShippingProfileComplete.value) {
-    orderResult.value = 'error'
-    orderMessage.value = 'Please complete all shipping/account fields before confirming your order.'
     return
   }
 
