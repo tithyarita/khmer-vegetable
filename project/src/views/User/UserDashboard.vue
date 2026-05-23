@@ -78,6 +78,10 @@
           <div class="summary-title">Items in Cart</div>
           <div class="summary-value">{{ cartStore.cartCount }} <span class="summary-change">items waiting</span></div>
         </div>
+        <div class="summary-card">
+          <div class="summary-title">Favorites</div>
+          <div class="summary-value">{{ favoriteStore.favoriteCount }} <span class="summary-change">saved items</span></div>
+        </div>
       </section>
 
       <!-- Recent Orders Table -->
@@ -133,11 +137,13 @@
 import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/userStore'
 import { useCartStore } from '@/stores/cartStore'
+import { useFavoriteStore } from '@/stores/favoriteStore'
 import axios from 'axios'
 
 const activeMenu = ref('dashboard')
 const userStore = useUserStore()
 const cartStore = useCartStore()
+const favoriteStore = useFavoriteStore()
 const user = userStore.user
 const orders = ref([])
 const loading = ref(true)
@@ -180,6 +186,9 @@ async function saveProfile() {
 onMounted(async () => {
   // Fetch cart data from backend
   await cartStore.fetchCartFromBackend()
+
+  // Fetch favorites data from backend
+  await favoriteStore.fetchFavoritesFromBackend()
 
   if (user && user.id) {
     try {
