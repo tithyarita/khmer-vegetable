@@ -7,12 +7,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, In, Repository } from 'typeorm';
+
 import { orders, OrderStatus } from './orders.entity';
 import {
   CreateOrderDto,
   CreateOrderItemDto,
   UpdateOrderDto,
 } from './dto/orders.dto';
+
 import { orderItems } from './order-items.entity';
 import { Product } from '../product/product.entity';
 import { Customer, CustomerStatus } from '../customer/customer.entity';
@@ -23,20 +25,30 @@ export class OrdersService {
   constructor(
     @InjectRepository(orders)
     private readonly ordersRepository: Repository<orders>,
+
     @InjectRepository(orderItems)
     private readonly orderItemsRepository: Repository<orderItems>,
+
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
+
     @InjectRepository(users)
     private readonly usersRepository: Repository<users>,
   ) {}
 
+  // =========================
+  // GENERATE ORDER CODE
+  // =========================
   private generateOrderCode() {
     return `ORD-${Date.now().toString(36).toUpperCase()}`;
   }
 
+  // =========================
+  // ENSURE CUSTOMER PROFILE
+  // =========================
   private async ensureCustomerProfile(customerId: number) {
     const existingCustomer = await this.customerRepository.findOne({
       where: { user_id: customerId },
@@ -46,9 +58,14 @@ export class OrdersService {
       return existingCustomer.user_id;
     }
 
-    const user = await this.usersRepository.findOne({ where: { id: customerId } });
+    const user = await this.usersRepository.findOne({
+      where: { id: customerId },
+    });
+
     if (!user) {
-      throw new BadRequestException('Invalid customer id. Please log in again.');
+      throw new BadRequestException(
+        'Invalid customer id. Please log in again.',
+      );
     }
 
     const createdCustomer = this.customerRepository.create({
@@ -59,9 +76,13 @@ export class OrdersService {
     });
 
     await this.customerRepository.save(createdCustomer);
+
     return createdCustomer.user_id;
   }
 
+  // =========================
+  // SAVE ORDER FOR PROVIDER
+  // =========================
   private async saveOrderForProvider(
     customerId: number,
     providerId: number,
@@ -71,23 +92,33 @@ export class OrdersService {
   ) {
     const resolvedCustomerId = await this.ensureCustomerProfile(customerId);
 
+    // get all product ids
     const productIds = items.map((item) => item.product_id);
+
+    // find products
     const products = await this.productRepository.find({
       where: { id: In(productIds) },
       relations: ['provider'],
     });
 
+    // check missing product
     if (products.length !== productIds.length) {
       throw new NotFoundException('One or more products were not found');
     }
 
-    const productsById = new Map(products.map((product) => [product.id, product]));
+    // map products
+    const productsById = new Map(
+      products.map((product) => [product.id, product]),
+    );
 
+    // get provider from first product
     const resolvedProviderId = products[0].provider?.user_id;
+
     if (!resolvedProviderId) {
       throw new BadRequestException('Product provider is missing');
     }
 
+    // ensure all products belong to same provider
     for (const product of products) {
       if (product.provider?.user_id !== resolvedProviderId) {
         throw new BadRequestException(
@@ -96,16 +127,23 @@ export class OrdersService {
       }
     }
 
+    // validate provider
     if (providerId && providerId !== resolvedProviderId) {
-      throw new BadRequestException('Provider does not match the selected products');
+      throw new BadRequestException(
+        'Provider does not match the selected products',
+      );
     }
 
+    // calculate total
     const total = items.reduce((sum, item) => {
       const product = productsById.get(item.product_id);
+
       if (!product) return sum;
+
       return sum + Number(product.price) * Number(item.quantity);
     }, 0);
 
+    // create order
     const order = this.ordersRepository.create({
       order_code: orderCode || this.generateOrderCode(),
       customer_id: resolvedCustomerId,
@@ -113,14 +151,16 @@ export class OrdersService {
       status,
       total,
       item: items.reduce((sum, item) => sum + Number(item.quantity), 0),
-      completed_at:
-        status === OrderStatus.DELIVERING ? new Date() : undefined,
+      completed_at: status === OrderStatus.DELIVERING ? new Date() : undefined,
     } as DeepPartial<orders>);
 
+    // save order
     const savedOrder = await this.ordersRepository.save(order);
 
+    // create order items
     const orderItemEntities = items.map((item) => {
       const product = productsById.get(item.product_id);
+
       return this.orderItemsRepository.create({
         order_id: savedOrder.id,
         product_id: item.product_id,
@@ -129,17 +169,22 @@ export class OrdersService {
       });
     });
 
+    // save order items
     await this.orderItemsRepository.save(orderItemEntities);
 
+    // return order with relations
     return this.ordersRepository.findOne({
       where: { id: savedOrder.id },
       relations: ['provider', 'customer', 'order_items', 'order_items.product'],
     });
   }
 
-  // Create a new order
+  // =========================
+  // CREATE ORDER
+  // =========================
   async create(createOrderDto: CreateOrderDto) {
     try {
+      // if order has items
       if (createOrderDto.items?.length) {
         const createdOrder = await this.saveOrderForProvider(
           createOrderDto.customer_id,
@@ -155,16 +200,21 @@ export class OrdersService {
         };
       }
 
+      // ensure customer exists
       const resolvedCustomerId = await this.ensureCustomerProfile(
         createOrderDto.customer_id,
       );
 
+      // create order
       const order = this.ordersRepository.create({
         ...createOrderDto,
         customer_id: resolvedCustomerId,
         status: createOrderDto.status as OrderStatus,
       });
+
+      // save order
       const savedOrder = await this.ordersRepository.save(order);
+
       return {
         message: 'Order created successfully!',
         data: savedOrder,
@@ -180,26 +230,36 @@ export class OrdersService {
     }
   }
 
-  // Get all orders
+  // =========================
+  // GET ALL ORDERS
+  // =========================
   async findAll() {
     return this.ordersRepository.find({
       relations: ['provider', 'customer', 'order_items', 'order_items.product'],
     });
   }
 
-  // Get order by ID
+  // =========================
+  // GET ORDER BY ID
+  // =========================
   async findOne(id: number) {
     const order = await this.ordersRepository.findOne({
       where: { id },
       relations: ['provider', 'customer', 'order_items', 'order_items.product'],
     });
+
     if (!order) {
-      return { message: 'Order not found.' };
+      return {
+        message: 'Order not found.',
+      };
     }
+
     return order;
   }
 
-  // Get orders by provider ID
+  // =========================
+  // GET ORDERS BY PROVIDER
+  // =========================
   async findByProvider(providerId: number) {
     return this.ordersRepository.find({
       where: { provider_id: providerId },
@@ -207,7 +267,9 @@ export class OrdersService {
     });
   }
 
-  // Get orders by customer ID
+  // =========================
+  // GET ORDERS BY CUSTOMER
+  // =========================
   async findByCustomer(customerId: number) {
     return this.ordersRepository.find({
       where: { customer_id: customerId },
@@ -215,17 +277,30 @@ export class OrdersService {
     });
   }
 
-  // Update order
+  // =========================
+  // UPDATE ORDER
+  // =========================
   async update(id: number, updateOrderDto: UpdateOrderDto) {
-    const order = await this.ordersRepository.findOne({ where: { id } });
+    const order = await this.ordersRepository.findOne({
+      where: { id },
+    });
+
     if (!order) {
-      return { message: 'Order not found.' };
+      return {
+        message: 'Order not found.',
+      };
     }
 
     Object.assign(order, updateOrderDto);
-    if (updateOrderDto.status === OrderStatus.DELIVERING && !order.completed_at) {
+
+    // if delivering -> set completed_at
+    if (
+      updateOrderDto.status === OrderStatus.DELIVERING &&
+      !order.completed_at
+    ) {
       order.completed_at = new Date();
     }
+
     await this.ordersRepository.save(order);
 
     return {
@@ -234,17 +309,53 @@ export class OrdersService {
     };
   }
 
-  // Delete order
-  async remove(id: number) {
-    const order = await this.ordersRepository.findOne({ where: { id } });
+  // =========================
+  // UPDATE ORDER STATUS ONLY
+  // =========================
+  async updateStatus(id: number, status: string) {
+    const order = await this.ordersRepository.findOne({
+      where: { id },
+    });
+
     if (!order) {
-      return { message: 'Order not found.' };
+      throw new NotFoundException('Order not found');
+    }
+
+    // update status
+    order.status = status as OrderStatus;
+
+    // set completed date
+    if (status === 'completed') {
+      order.completed_at = new Date();
+    }
+
+    // save
+    await this.ordersRepository.save(order);
+
+    return {
+      message: 'Order status updated successfully!',
+      data: order,
+    };
+  }
+
+  // =========================
+  // DELETE ORDER
+  // =========================
+  async remove(id: number) {
+    const order = await this.ordersRepository.findOne({
+      where: { id },
+    });
+
+    if (!order) {
+      return {
+        message: 'Order not found.',
+      };
     }
 
     await this.ordersRepository.delete(id);
+
     return {
       message: 'Order deleted successfully!',
     };
   }
 }
-

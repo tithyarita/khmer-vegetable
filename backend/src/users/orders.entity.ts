@@ -13,7 +13,7 @@ import { orderItems } from './order-items.entity';
 
 export enum OrderStatus {
   PENDING = 'pending',
-  SHIPPED = 'shipped',
+  // SHIPPED = 'shipped',
   DELIVERING = 'delivering',
   COMPLETED = 'completed',
 }

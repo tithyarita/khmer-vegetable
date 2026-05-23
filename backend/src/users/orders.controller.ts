@@ -8,7 +8,9 @@ import {
   Param,
   ParseIntPipe,
 } from '@nestjs/common';
+
 import { OrdersService } from './orders.service';
+import { OrderStatus } from './orders.entity';
 import { CreateOrderDto, UpdateOrderDto } from './dto/orders.dto';
 
 @Controller('orders')
@@ -20,7 +22,7 @@ export class OrdersController {
   // =========================
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto) {
-    return this.ordersService.create(createOrderDto);
+    return await this.ordersService.create(createOrderDto);
   }
 
   // =========================
@@ -28,31 +30,54 @@ export class OrdersController {
   // =========================
   @Get()
   async findAll() {
-    return this.ordersService.findAll();
+    return await this.ordersService.findAll();
   }
 
   // =========================
-  // GET ORDERS BY PROVIDER ID
+  // GET ORDERS BY PROVIDER
   // =========================
   @Get('provider/:providerId')
-  async findByProvider(@Param('providerId', ParseIntPipe) providerId: number) {
-    return this.ordersService.findByProvider(providerId);
+  async findByProvider(
+    @Param('providerId', ParseIntPipe)
+    providerId: number,
+  ) {
+    return await this.ordersService.findByProvider(providerId);
   }
 
   // =========================
-  // GET ORDERS BY CUSTOMER ID
+  // GET ORDERS BY CUSTOMER
   // =========================
   @Get('customer/:customerId')
-  async findByCustomer(@Param('customerId', ParseIntPipe) customerId: number) {
-    return this.ordersService.findByCustomer(customerId);
+  async findByCustomer(
+    @Param('customerId', ParseIntPipe)
+    customerId: number,
+  ) {
+    return await this.ordersService.findByCustomer(customerId);
   }
 
   // =========================
   // GET ORDER BY ID
   // =========================
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.ordersService.findOne(id);
+  async findOne(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
+    return await this.ordersService.findOne(id);
+  }
+
+  // =========================
+  // UPDATE STATUS ONLY
+  // =========================
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id', ParseIntPipe)
+    id: number,
+
+    @Body()
+    body: { status: OrderStatus },
+  ) {
+    return await this.ordersService.updateStatus(id, body.status);
   }
 
   // =========================
@@ -60,17 +85,23 @@ export class OrdersController {
   // =========================
   @Patch(':id')
   async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateOrderDto: UpdateOrderDto,
+    @Param('id', ParseIntPipe)
+    id: number,
+
+    @Body()
+    updateOrderDto: UpdateOrderDto,
   ) {
-    return this.ordersService.update(id, updateOrderDto);
+    return await this.ordersService.update(id, updateOrderDto);
   }
 
   // =========================
   // DELETE ORDER
   // =========================
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    return this.ordersService.remove(id);
+  async remove(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
+    return await this.ordersService.remove(id);
   }
 }
