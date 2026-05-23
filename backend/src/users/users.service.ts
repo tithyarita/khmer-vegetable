@@ -178,4 +178,30 @@ export class UsersService {
     const hashed = await bcrypt.hash(password, 10);
     await this.usersRepository.update(userId, { password: hashed });
   }
+
+  async changePassword(
+    id: number,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) throw new BadRequestException('User not found');
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) throw new BadRequestException('Current password is incorrect');
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+
+    await this.usersRepository.update(id, { password: newHash });
+  
+    if (user.role === UserRole.STAFF) {
+      const staffRecord = await this.staffRepository.findOne({ where: { user_id: id } });
+      if (staffRecord) {
+        staffRecord.password = newHash;
+        await this.staffRepository.save(staffRecord);
+      }
+    }
+
+    return { message: 'Password updated successfully' };
+  }
 }

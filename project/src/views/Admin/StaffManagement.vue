@@ -136,66 +136,73 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
-const staff = ref([])
-const selected = ref(null)
+const API = 'http://localhost:3000'
 
-const search = ref('')
-const showEdit = ref(false)
-const showView = ref(false)
-const editForm = ref({})
+const staff       = ref([])
+const selected    = ref(null)
+const search      = ref('')
+const showEdit    = ref(false)
+const showView    = ref(false)
+const editForm    = ref({})
 const viewStaffData = ref({})
 
-// Top staff logic (e.g., by status or custom sort)
-const topStaff = computed(() => {
-  // Example: top 3 active staff, sorted by name (customize as needed)
-  return staff.value
-    .filter(s => s.status === 'Active')
+// Top 3 staff by name
+const topStaff = computed(() =>
+  staff.value
+    .filter(s => s.status.toLowerCase() === 'active')
     .sort((a, b) => a.name.localeCompare(b.name))
     .slice(0, 3)
-})
+)
 
-// FETCH
+// ── Fetch ─────────────────────────────────────────────────────────────────
 const fetchStaff = async () => {
-  const res = await axios.get('http://localhost:3000/users', {
-    params: { role: 'staff' }
-  })
+  const res = await axios.get(`${API}/users`, { params: { role: 'staff' } })
 
   staff.value = res.data.map(u => ({
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    role: u.roleKey || 'Staff',
+    id:     u.id,
+    name:   u.name,
+    email:  u.email,
+    role:   u.role || 'staff',       // ← was u.roleKey (wrong)
     status: u.status || 'Active',
-    avatar: `https://randomuser.me/api/portraits/men/${u.id % 100}.jpg`
+    avatar: `https://randomuser.me/api/portraits/men/${u.id % 100}.jpg`,
   }))
 
-  selected.value = staff.value[0]
+  if (staff.value.length > 0) selected.value = staff.value[0]
 }
 
-// FILTER
+// ── Filter ────────────────────────────────────────────────────────────────
 const filteredStaff = computed(() =>
   staff.value.filter(s =>
-    s.name.toLowerCase().includes(search.value.toLowerCase())
+    s.name.toLowerCase().includes(search.value.toLowerCase()) ||
+    s.email.toLowerCase().includes(search.value.toLowerCase())
   )
 )
 
-// VIEW
+// ── View ──────────────────────────────────────────────────────────────────
 const viewStaff = (s) => {
   viewStaffData.value = { ...s }
   showView.value = true
   selected.value = s
 }
 
-// EDIT
+// ── Edit ──────────────────────────────────────────────────────────────────
 const openEdit = (s) => {
   editForm.value = { ...s }
   showEdit.value = true
 }
 
 const saveEdit = async () => {
-  await axios.post(`http://localhost:3000/users/update/${editForm.value.id}`, editForm.value)
-  await fetchStaff()
-  showEdit.value = false
+  try {
+    // Use the correct PUT /users/:id endpoint
+    await axios.put(`${API}/users/${editForm.value.id}`, {
+      name:  editForm.value.name,
+      email: editForm.value.email,
+    })
+    await fetchStaff()
+    showEdit.value = false
+  } catch (err) {
+    alert(err.response?.data?.message || 'Failed to save')
+  }
 }
 
 onMounted(fetchStaff)

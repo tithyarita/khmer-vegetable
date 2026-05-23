@@ -13,7 +13,9 @@ import { Customer } from './customer/customer.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
+import { AddressModule } from './address/address.module';
 import { AppService } from './app.service';
+import { MailModule } from './mail/mail.module';
 import { OrdersModule } from './users/orders.module';
 
 @Module({
@@ -24,7 +26,7 @@ import { OrdersModule } from './users/orders.module';
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
       username: process.env.DB_USER || 'root',
-      password: process.env.DB_PASS || '123',
+      password: process.env.DB_PASS || 'root',
       database: process.env.DB_NAME || 'khmer_vegetable_market',
       autoLoadEntities: true,
       synchronize: true, // set to false in production
@@ -39,6 +41,8 @@ import { OrdersModule } from './users/orders.module';
     ProviderApplicationsModule,
     CartModule,
     FavoriteModule,
+    AddressModule,
+    MailModule,
     Customer,
     OrdersModule,
   ],
