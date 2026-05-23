@@ -212,13 +212,16 @@ import Card from '@/components/Customer/Card.vue';
 import Footer from '@/components/Customer/Footer.vue';
 import NavigationBar from '@/components/Customer/NavigationBar.vue';
 import { ref, reactive, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useCartStore } from '@/stores/cartStore';
 import { useProductStore } from '@/stores/productStore';
+import { useUserStore } from '@/stores/userStore';
 
 const route = useRoute();
+const router = useRouter();
 const productStore = useProductStore();
 const cartStore = useCartStore();
+const userStore = useUserStore();
 
 const placeholderImage =
   'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?auto=format&fit=crop&q=80&w=800';
@@ -306,6 +309,10 @@ const filteredReviews = computed(() => {
 
 // --- METHODS ---
 const addToCart = () => {
+  if (!userStore.isLoggedIn) {
+    router.push('/user/login')
+    return
+  }
   cartStore.addToCart({
     ...product,
     unitPrice: Number(product.price ?? 0),

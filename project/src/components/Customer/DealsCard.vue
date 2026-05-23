@@ -132,15 +132,12 @@ onUnmounted(() => {
 <style scoped>
 .deals-section {
   width: 100%;
-  max-width: 1200px;
-  margin: auto;
-  padding: 48px 24px;
 }
 
 .deals-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 16px;
 }
 
 .deal-card {

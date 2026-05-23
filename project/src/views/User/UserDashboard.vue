@@ -1,25 +1,6 @@
 <template>
   <div class="dashboard-layout">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <!-- <img src="../logo.png" alt="Khmer Veg" class="logo" /> -->
-        <h3>Khmer Veg<br /><span class="subtitle">HARVEST LEDGER</span></h3>
-      </div>
-      <nav class="sidebar-nav">
-        <ul>
-          <li :class="{active: activeMenu === 'dashboard'}"><i class="bi bi-grid"></i> Dashboard</li>
-          <li><i class="bi bi-person"></i> My Profile</li>
-          <li><i class="bi bi-bag"></i> My Orders</li>
-          <li><i class="bi bi-cart"></i> Cart</li>
-          <li><i class="bi bi-heart"></i> Wishlist</li>
-        </ul>
-      </nav>
-      <div class="sidebar-footer">
-        <button class="logout-btn"><i class="bi bi-box-arrow-right"></i> Logout</button>
-      </div>
-    </aside>
-
+    <DashboardSidebar :activeMenu="activeMenu" @navigate="handleNavigate" />
     <!-- Main Content -->
     <main class="main-content">
       <!-- Top Bar -->
@@ -34,116 +15,144 @@
         </div>
       </header>
 
-      <!-- Profile Card -->
-      <section class="profile-card">
-        <img class="profile-avatar" :src="user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'" />
-        <div class="profile-info">
-          <template v-if="!editingProfile">
-            <h2>{{ user?.name || user?.email }}</h2>
-            <div class="email">{{ user?.email }}</div>
-            <div class="phone">{{ user?.phone || '-' }}</div>
-            <div class="address">{{ user?.address || '-' }}</div>
-            <button class="edit-btn" @click="editingProfile = true">Edit Profile</button>
-          </template>
-          <template v-else>
-            <form @submit.prevent="saveProfile" class="edit-profile-form">
-              <input v-model="editForm.name" name="name" id="profile-name" placeholder="Name" autocomplete="name" />
-              <input v-model="editForm.email" name="email" id="profile-email" placeholder="Email" type="email" autocomplete="email" />
-              <input v-model="editForm.phone" name="phone" id="profile-phone" placeholder="Phone" autocomplete="tel" />
-              <input v-model="editForm.address" name="address" id="profile-address" placeholder="Address" autocomplete="street-address" />
-              <div class="edit-actions">
-                <button class="edit-btn" type="submit" :disabled="savingProfile">Save</button>
-                <button class="edit-btn cancel" type="button" @click="cancelEdit" :disabled="savingProfile">Cancel</button>
-              </div>
-            </form>
-          </template>
-        </div>
-      </section>
+      <!-- Dashboard Overview -->
+      <template v-if="activeMenu === 'dashboard'">
+        <!-- Profile Card -->
+        <section class="profile-card">
+          <img class="profile-avatar" :src="user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'" />
+          <div class="profile-info">
+            <template v-if="!editingProfile">
+              <h2>{{ user?.name || user?.email }}</h2>
+              <div class="email">{{ user?.email }}</div>
+              <div class="phone">{{ user?.phone || '-' }}</div>
+              <div class="address">{{ user?.address || '-' }}</div>
+              <button class="edit-btn" @click="editingProfile = true">Edit Profile</button>
+            </template>
+            <template v-else>
+              <form @submit.prevent="saveProfile" class="edit-profile-form">
+                <input v-model="editForm.name" name="name" id="profile-name" placeholder="Name" autocomplete="name" />
+                <input v-model="editForm.email" name="email" id="profile-email" placeholder="Email" type="email" autocomplete="email" />
+                <input v-model="editForm.phone" name="phone" id="profile-phone" placeholder="Phone" autocomplete="tel" />
+                <input v-model="editForm.address" name="address" id="profile-address" placeholder="Address" autocomplete="street-address" />
+                <div class="edit-actions">
+                  <button class="edit-btn" type="submit" :disabled="savingProfile">Save</button>
+                  <button class="edit-btn cancel" type="button" @click="cancelEdit" :disabled="savingProfile">Cancel</button>
+                </div>
+              </form>
+            </template>
+          </div>
+        </section>
 
-      <!-- Order Summary Cards -->
-      <section class="order-summary">
-        <div class="summary-card">
-          <div class="summary-title">Total Orders</div>
-          <div class="summary-value">{{ orders.length }} <span class="summary-change up">+2</span></div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-title">Pending Orders</div>
-          <div class="summary-value">{{ orders.filter(o => o.status === 'pending').length }} <span class="summary-change warn">Requires Action</span></div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-title">Completed Orders</div>
-          <div class="summary-value">{{ orders.filter(o => o.status === 'delivered').length }} <span class="summary-change ok">HEALTHY</span></div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-title">Items in Cart</div>
-          <div class="summary-value">{{ cartStore.cartCount }} <span class="summary-change">items waiting</span></div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-title">Favorites</div>
-          <div class="summary-value">{{ favoriteStore.favoriteCount }} <span class="summary-change">saved items</span></div>
-        </div>
-      </section>
+        <!-- Order Summary Cards -->
+        <section class="order-summary">
+          <div class="summary-card">
+            <div class="summary-title">Total Orders</div>
+            <div class="summary-value">{{ orders.length }} <span class="summary-change up">+2</span></div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-title">Pending Orders</div>
+            <div class="summary-value">{{ orders.filter(o => o.status === 'pending').length }} <span class="summary-change warn">Requires Action</span></div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-title">Completed Orders</div>
+            <div class="summary-value">{{ orders.filter(o => o.status === 'delivered').length }} <span class="summary-change ok">HEALTHY</span></div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-title">Items in Cart</div>
+            <div class="summary-value">{{ userStore.cart.length }} <span class="summary-change">items waiting</span></div>
+          </div>
+        </section>
 
-      <!-- Recent Orders Table -->
-      <section class="recent-orders">
-        <div class="section-header">
-          <h3>Recent Orders</h3>
-          <a href="#" class="view-all">View All History</a>
-        </div>
-        <table class="orders-table">
-          <thead>
-            <tr>
-              <th>ORDER ID</th>
-              <th>PRODUCTS</th>
-              <th>QUANTITY</th>
-              <th>TOTAL PRICE</th>
-              <th>STATUS</th>
-              <th>DATE</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="order in orders.slice(0,3)" :key="order.id">
-              <td class="order-id">#ORD-{{ order.id }}</td>
-              <td>
-                {{ order.products.map(p => p.name).join(', ') }}<br />
-                <span class="product-desc">{{ order.products[0]?.description || '' }}</span>
-              </td>
-              <td>{{ order.products.reduce((sum, p) => sum + (p.quantity || 1), 0) }} kg</td>
-              <td>${{ order.totalPrice.toFixed(2) }}</td>
-              <td>
-                <span :class="['status', order.status]">
-                  {{ order.status.charAt(0).toUpperCase() + order.status.slice(1) }}
-                </span>
-              </td>
-              <td>{{ new Date(order.createdAt).toLocaleDateString() }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+        <!-- Recent Orders Table -->
+        <section class="recent-orders">
+          <div class="section-header">
+            <h3>Recent Orders</h3>
+            <a class="view-all" @click="activeMenu = 'orders'">View All History</a>
+          </div>
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>ORDER ID</th>
+                <th>PRODUCTS</th>
+                <th>QUANTITY</th>
+                <th>TOTAL PRICE</th>
+                <th>STATUS</th>
+                <th>DATE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in orders.slice(0,3)" :key="order.id">
+                <td class="order-id">#ORD-{{ order.id }}</td>
+                <td>
+                  {{ order.products.map(p => p.name).join(', ') }}<br />
+                  <span class="product-desc">{{ order.products[0]?.description || '' }}</span>
+                </td>
+                <td>{{ order.products.reduce((sum, p) => sum + (p.quantity || 1), 0) }} kg</td>
+                <td>${{ order.totalPrice.toFixed(2) }}</td>
+                <td>
+                  <span :class="['status', order.status]">
+                    {{ order.status.charAt(0).toUpperCase() + order.status.slice(1) }}
+                  </span>
+                </td>
+                <td>{{ new Date(order.createdAt).toLocaleDateString() }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
 
-      <!-- Promo Section -->
-      <section class="promo">
-        <div class="promo-content">
-          <h4>Exclusive Seasonal Harvests</h4>
-          <p>Based on your previous orders, we've reserved fresh Battambang Lotus Roots just for you. Grab them before they sell out!</p>
-        </div>
-        <button class="promo-btn">Explore Today's Fresh Picks</button>
-      </section>
+        <!-- Promo Section -->
+        <section class="promo">
+          <div class="promo-content">
+            <h4>Exclusive Seasonal Harvests</h4>
+            <p>Based on your previous orders, we've reserved fresh Battambang Lotus Roots just for you. Grab them before they sell out!</p>
+          </div>
+          <button class="promo-btn">Explore Today's Fresh Picks</button>
+        </section>
+      </template>
+
+      <!-- Profile Section -->
+      <template v-if="activeMenu === 'profile'">
+        <section class="profile-card">
+          <img class="profile-avatar" :src="user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'" />
+          <div class="profile-info">
+            <template v-if="!editingProfile">
+              <h2>{{ user?.name || user?.email }}</h2>
+              <div class="email">{{ user?.email }}</div>
+              <div class="phone">{{ user?.phone || '-' }}</div>
+              <div class="address">{{ user?.address || '-' }}</div>
+              <button class="edit-btn" @click="editingProfile = true">Edit Profile</button>
+            </template>
+            <template v-else>
+              <form @submit.prevent="saveProfile" class="edit-profile-form">
+                <input v-model="editForm.name" name="name" id="profile-name" placeholder="Name" autocomplete="name" />
+                <input v-model="editForm.email" name="email" id="profile-email" placeholder="Email" type="email" autocomplete="email" />
+                <input v-model="editForm.phone" name="phone" id="profile-phone" placeholder="Phone" autocomplete="tel" />
+                <input v-model="editForm.address" name="address" id="profile-address" placeholder="Address" autocomplete="street-address" />
+                <div class="edit-actions">
+                  <button class="edit-btn" type="submit" :disabled="savingProfile">Save</button>
+                  <button class="edit-btn cancel" type="button" @click="cancelEdit" :disabled="savingProfile">Cancel</button>
+                </div>
+              </form>
+            </template>
+          </div>
+        </section>
+      </template>
+
+
     </main>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
-import { useCartStore } from '@/stores/cartStore'
-import { useFavoriteStore } from '@/stores/favoriteStore'
+import DashboardSidebar from '@/components/Customer/sidebarUser.vue'
 import axios from 'axios'
 
-const activeMenu = ref('dashboard')
+const router = useRouter()
 const userStore = useUserStore()
-const cartStore = useCartStore()
-const favoriteStore = useFavoriteStore()
+const activeMenu = ref('dashboard')
 const user = userStore.user
 const orders = ref([])
 const loading = ref(true)
@@ -167,6 +176,17 @@ function cancelEdit() {
   editingProfile.value = false
 }
 
+function logout() {
+  userStore.logout()
+  router.push('/user/login')
+}
+
+function handleNavigate(section) {
+  if (section === 'orders') router.push('/myorder')
+  else if (section === 'track') router.push('/myorder') 
+  else activeMenu.value = section
+}
+
 async function saveProfile() {
   savingProfile.value = true
   try {
@@ -184,12 +204,6 @@ async function saveProfile() {
 }
 
 onMounted(async () => {
-  // Fetch cart data from backend
-  await cartStore.fetchCartFromBackend()
-
-  // Fetch favorites data from backend
-  await favoriteStore.fetchFavoritesFromBackend()
-
   if (user && user.id) {
     try {
       // Replace with your actual backend endpoint
@@ -208,7 +222,9 @@ onMounted(async () => {
 <style scoped>
 .dashboard-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  width: 100%;
   background: #f7f9fa;
 }
 .sidebar {
@@ -268,7 +284,10 @@ onMounted(async () => {
 }
 .main-content {
   flex: 1;
+  overflow-y: auto;
   padding: 32px 48px;
+  max-width: 1280px;
+  width: 100%;
 }
 .topbar {
   display: flex;
@@ -437,6 +456,16 @@ onMounted(async () => {
   font-size: 15px;
   margin: 0;
 }
+.view-all {
+  color: #2d7a4f;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.view-all:hover {
+  text-decoration: underline;
+}
 .promo-btn {
   background: #7ca982;
   color: #fff;
@@ -445,5 +474,141 @@ onMounted(async () => {
   padding: 12px 24px;
   font-size: 15px;
   cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 24px;
+  }
+  .order-summary {
+    flex-wrap: wrap;
+  }
+  .summary-card {
+    flex: 1 1 calc(50% - 12px);
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 12px 16px;
+    border-right: none;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .sidebar-header {
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sidebar-header h3 {
+    font-size: 14px;
+    margin: 0;
+  }
+  .logo {
+    width: 32px;
+    margin-bottom: 0;
+  }
+  .subtitle {
+    display: none;
+  }
+  .sidebar-nav {
+    margin-left: auto;
+  }
+  .sidebar-nav ul {
+    display: flex;
+    gap: 4px;
+  }
+  .sidebar-nav li {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    gap: 6px;
+  }
+  .sidebar-nav li.active, .sidebar-nav li:hover {
+    border-left: none;
+    border-bottom: 3px solid #7ca982;
+  }
+  .sidebar-nav li.active {
+    background: #eaf5ee;
+  }
+  .sidebar-footer {
+    display: none;
+  }
+  .main-content {
+    padding: 16px;
+  }
+  .topbar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .search {
+    width: 100%;
+  }
+  .profile-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+  .profile-avatar {
+    margin-right: 0;
+    margin-bottom: 16px;
+  }
+  .order-summary {
+    flex-direction: column;
+  }
+  .summary-card {
+    flex: 1 1 auto;
+  }
+  .recent-orders {
+    padding: 16px;
+    overflow-x: auto;
+  }
+  .orders-table {
+    min-width: 600px;
+  }
+  .promo {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-nav li {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .sidebar-nav li i {
+    font-size: 14px;
+  }
+  .summary-card {
+    padding: 16px 20px;
+  }
+  .summary-value {
+    font-size: 18px;
+  }
+  .profile-avatar {
+    width: 60px;
+    height: 60px;
+  }
+  .profile-info h2 {
+    font-size: 18px;
+  }
+  .edit-btn {
+    width: 100%;
+  }
+  .edit-actions {
+    flex-direction: column;
+  }
 }
 </style>
