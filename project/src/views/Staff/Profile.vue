@@ -50,83 +50,161 @@
 </template>
 
 <script>
-import ProfileForm        from "../../components/Staff/Profileform.vue";
-import SecurityAccess     from "../../components/Staff/Securityaccess.vue";
-import NotificationsCard  from "../../components/Staff/Notificationscard.vue";
-import TwoFactorAuth      from "../../components/Staff/Twofactorauth.vue";
+import { useUserStore } from '@/stores/userStore'
+import ProfileForm       from '../../components/Staff/Profileform.vue'
+import SecurityAccess    from '../../components/Staff/Securityaccess.vue'
+import NotificationsCard from '../../components/Staff/Notificationscard.vue'
+import TwoFactorAuth     from '../../components/Staff/Twofactorauth.vue'
+
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+const COOLDOWN_DAYS = 7
 
 export default {
-  name: "ProfileSettings",
-  components: {
-    ProfileForm,
-    SecurityAccess,
-    NotificationsCard,
-    TwoFactorAuth,
+  name: 'ProfileSettings',
+  components: { ProfileForm, SecurityAccess, NotificationsCard, TwoFactorAuth },
+
+  setup() {
+    const userStore = useUserStore()
+    return { userStore }
   },
+
   data() {
+    const u = this.userStore?.user || {}
     return {
       profile: {
-        fullName:   "Alexander Thorne",
-        email:      "a.thorne@thegreenhouseuse.com",
-        department: "Inventory & Procurement",
-        role:       "VALIDATOR",
-        avatarUrl:  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=face",
+        fullName:   u.name       || '',
+        email:      u.email      || '',
+        department: u.department || '',
+        role:       (u.role || 'staff').toUpperCase(),
+        avatarUrl:  u.avatarUrl  || '',
       },
       session: {
-        lastLogin: "2 hours ago",
-        location:  "London, UK",
+        lastLogin: u.lastLogin || 'Unknown',
+        location:  u.location  || '—',
       },
       twoFaEnabled: false,
+
+      // Password cooldown ──────────────────────────────────────
+      passwordCooldownUntil: null,   // Date | null
+
       notifications: [
-        {
-          key:       "email",
-          title:     "Email Updates",
-          sub:       "Weekly digest of reports",
-          icon:      "bi bi-envelope-fill",
-          iconClass: "icon-blue",
-          enabled:   true,
-        },
-        {
-          key:       "push",
-          title:     "Push Alerts",
-          sub:       "Real-time stock alerts",
-          icon:      "bi bi-clock-fill",
-          iconClass: "icon-orange",
-          enabled:   true,
-        },
-        {
-          key:       "chat",
-          title:     "Staff Chat",
-          sub:       "Direct messages",
-          icon:      "bi bi-chat-fill",
-          iconClass: "icon-gray",
-          enabled:   false,
-        },
+        { key: 'email', title: 'Email Updates',  sub: 'Weekly digest of reports',  icon: 'bi bi-envelope-fill', iconClass: 'icon-blue',   enabled: true  },
+        { key: 'push',  title: 'Push Alerts',    sub: 'Real-time stock alerts',    icon: 'bi bi-clock-fill',    iconClass: 'icon-orange', enabled: true  },
+        { key: 'chat',  title: 'Staff Chat',      sub: 'Direct messages',          icon: 'bi bi-chat-fill',     iconClass: 'icon-gray',   enabled: false },
       ],
-    };
+    }
   },
+
+  computed: {
+    // Key is per-user so different accounts don't share the cooldown
+    cooldownKey() {
+      return `pwdChangedAt_${this.userStore?.user?.id ?? 'staff'}`
+    },
+
+    // How many full days remain on the cooldown (0 = can change now)
+    cooldownDaysLeft() {
+      if (!this.passwordCooldownUntil) return 0
+      const msLeft = this.passwordCooldownUntil - Date.now()
+      if (msLeft <= 0) return 0
+      return Math.ceil(msLeft / (1000 * 60 * 60 * 24))
+    },
+
+    passwordLocked() {
+      return this.cooldownDaysLeft > 0
+    },
+  },
+
+  mounted() {
+    this.loadCooldown()
+  },
+
   methods: {
+    // ── Cooldown helpers ──────────────────────────────────────────────────────
+    loadCooldown() {
+      const stored = localStorage.getItem(this.cooldownKey)
+      if (!stored) return
+      const until = new Date(stored)
+      if (until > new Date()) {
+        this.passwordCooldownUntil = until
+      } else {
+        localStorage.removeItem(this.cooldownKey)
+      }
+    },
+
+    saveCooldown() {
+      const until = new Date(Date.now() + COOLDOWN_DAYS * 24 * 60 * 60 * 1000)
+      this.passwordCooldownUntil = until
+      localStorage.setItem(this.cooldownKey, until.toISOString())
+    },
+
+    // ── Password change ───────────────────────────────────────────────────────
+    async onUpdatePassword({ currentPassword, newPassword }) {
+      // Guard: cooldown active
+      if (this.passwordLocked) {
+        alert(`You can only change your password once every ${COOLDOWN_DAYS} days.\n${this.cooldownDaysLeft} day(s) remaining.`)
+        return
+      }
+
+      // Guard: same password
+      if (currentPassword === newPassword) {
+        alert('New password must be different from your current password.')
+        return
+      }
+
+      const userId = this.userStore?.user?.id
+      if (!userId) {
+        alert('User ID not found. Please re-login.')
+        return
+      }
+
+      try {
+        const token = localStorage.getItem('token')
+        const res = await fetch(`${API_BASE}/users/${userId}/password`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ currentPassword, newPassword }),
+        })
+
+        if (res.status === 401) {
+          alert('Current password is incorrect.')
+          return
+        }
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          throw new Error(body.message || `Server error (${res.status})`)
+        }
+
+        // Success — lock for 7 days
+        this.saveCooldown()
+        alert('Password updated successfully! You can change it again in 7 days.')
+
+      } catch (err) {
+        alert(`Failed to update password: ${err.message}`)
+      }
+    },
+
+    // ── Other handlers ────────────────────────────────────────────────────────
     onSaveProfile() {
-      alert("Profile changes saved!");
+      alert('Profile changes saved!')
     },
     onChangeAvatar() {
-      alert("Avatar upload dialog would open here.");
-    },
-    onUpdatePassword({ currentPassword, newPassword }) {
-      console.log("Password update requested", { currentPassword, newPassword });
-      alert("Password updated successfully!");
+      alert('Avatar upload dialog would open here.')
     },
     onEnable2FA() {
-      this.twoFaEnabled = true;
-      alert("Two-Factor Authentication enabled!");
+      this.twoFaEnabled = true
+      alert('Two-Factor Authentication enabled!')
     },
     onDeactivate() {
-      if (confirm("Are you sure you want to request account deactivation?")) {
-        alert("Deactivation request submitted.");
+      if (confirm('Are you sure you want to request account deactivation?')) {
+        alert('Deactivation request submitted.')
       }
     },
   },
-};
+}
 </script>
 
 <style scoped>
