@@ -11,6 +11,8 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  Patch,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -134,5 +136,20 @@ export class UsersController {
     },
   ) {
     return this.usersService.register(body);
+  }
+
+  // =========================
+  // CHANGE PASSWORD
+  // =========================
+  @Patch(':id/password')
+  async changePassword(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('currentPassword') currentPassword: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    if (!currentPassword || !newPassword) {
+      throw new BadRequestException('Both currentPassword and newPassword are required');
+    }
+    return this.usersService.changePassword(id, currentPassword, newPassword);
   }
 }

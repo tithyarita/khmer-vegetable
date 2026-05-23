@@ -10,8 +10,8 @@ import { Admin } from '../admin/admin.entity';
 import { Staff } from '../staff/staff.entity';
 import { Customer } from '../customer/customer.entity';
 import { Provider } from '../providers/providers.entity';
-import { Cart } from '../cart/cart.entity';
-import { Favorite } from '../favorite/favorite.entity';
+import { Cart } from '../cart/cart.entity'
+import { Favorite } from '../favorite/favorite.entity'
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -36,9 +36,14 @@ export class users {
   @Column()
   phone!: string;
 
-
   @Column({ nullable: true })
   avatar?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  reset_token!: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  reset_token_expires!: Date | null;
 
   @Column({ default: UserRole.CUSTOMER })
   role!: UserRole;
@@ -56,11 +61,12 @@ export class users {
   customer!: Customer;
 
   @OneToOne(() => Provider, (provider) => provider.user)
-  provider!: Provider
+  provider!: Provider;
 
   @OneToMany(() => Cart, (cart) => cart.user)
-  carts!: Cart[]
+  carts!: Cart[];
 
   @OneToMany(() => Favorite, (favorite) => favorite.user)
-  favorites!: Favorite[]
+  favorites!: Favorite[];
+
 }

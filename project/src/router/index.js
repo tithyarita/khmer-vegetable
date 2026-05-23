@@ -141,8 +141,20 @@ router.beforeEach((to, from) => {
   const role = user?.role?.trim()?.toLowerCase()
 
   // NOT LOGGED IN
-  if ((to.path.startsWith('/admin') || to.path.startsWith('/provider')) && !token) {
+  if (
+    (to.path.startsWith('/admin') ||
+     to.path.startsWith('/provider') ||
+     to.path.startsWith('/staff')) &&
+    !token
+  ) {
     return `/user/login?redirect=${to.fullPath}`
+  }
+
+  // STAFF PROTECTION  ← new
+  if (to.path.startsWith('/staff')) {
+    if (!user || role !== 'staff') {
+      return `/user/login?redirect=${to.fullPath}`
+    }
   }
 
   // ADMIN PROTECTION
