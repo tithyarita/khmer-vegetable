@@ -9,6 +9,7 @@ import { CreateApplicationDto } from './dto/provider-application.dto';
 import { users, UserRole } from '../users/users.entity';
 import { Provider } from '../providers/providers.entity';
 import * as bcrypt from 'bcryptjs';
+import { MailService } from '../mail/mail.service';
 
 export interface UploadedFiles {
   id_document?: Express.Multer.File[];
@@ -35,6 +36,8 @@ export class ApplicationsService {
 
     @InjectRepository(Provider)
     private readonly providerRepo: Repository<Provider>,
+
+    private readonly mailService: MailService,
   ) {}
 
   async create(
@@ -114,6 +117,15 @@ export class ApplicationsService {
         email:         app.contact_email,
         password:      hashedPassword,
         status:        'active',
+      });
+
+      // Send approval email — after transaction succeeds
+      await this.mailService.sendProviderApproval({
+        to:           app.contact_email,
+        ownerName:    app.owner_name,
+        businessName: app.business_name,
+        password:     DEFAULT_PASSWORD,       // plain text for the email
+        loginUrl:     'http://localhost:5173/provider/login', // change to your real domain in production
       });
     });
   }

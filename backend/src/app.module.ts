@@ -14,6 +14,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AppService } from './app.service';
     CartModule,
     FavoriteModule,
     Customer,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
