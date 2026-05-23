@@ -141,6 +141,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Footer from '../../components/Customer/Footer.vue'
 
@@ -155,7 +156,7 @@ const address = ref({
   zip: '',
   country: '',
   phone: '',
-  email: ''
+  email: '',
 })
 
 const showSuccess = ref(false)
@@ -168,45 +169,123 @@ const isFormValid = computed(() => {
     address.value.city.trim() &&
     address.value.state.trim() &&
     address.value.zip.trim() &&
-    address.value.country &&
+    address.value.country.trim() &&
     address.value.phone.trim() &&
     address.value.email.trim()
   )
 })
 
-const saveAddress = () => {
+const saveAddress = async () => {
   if (!isFormValid.value) {
+    alert('Please fill all required fields')
     return
   }
 
-  // Simulate saving address
-  console.log('Saving address:', address.value)
-  
-  // Show success message
-  showSuccess.value = true
-  
-  // Store address (in real app, this would save to backend/localStorage)
-  localStorage.setItem('shippingAddress', JSON.stringify(address.value))
-  
-  // Redirect back to checkout after 2 seconds
-  setTimeout(() => {
-    router.push('/checkout')
-  }, 2000)
+  try {
+    const token = localStorage.getItem('token')
+
+    if (!token) {
+      alert('Please login first')
+      router.push('/login')
+      return
+    }
+
+    const response = await fetch(
+      'http://localhost:3000/address',
+      {
+        method: 'POST',
+
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+
+        body: JSON.stringify({
+          firstName: address.value.firstName,
+          lastName: address.value.lastName,
+          street: address.value.street,
+          city: address.value.city,
+          state: address.value.state,
+          zip: address.value.zip,
+          country: address.value.country,
+          phone: address.value.phone,
+          email: address.value.email,
+        }),
+      },
+    )
+
+    if (!response.ok) {
+      throw new Error('Failed to save address')
+    }
+
+    const data = await response.json()
+
+    console.log('Saved Address:', data)
+
+    localStorage.setItem(
+      'shippingAddress',
+      JSON.stringify(data),
+    )
+
+    showSuccess.value = true
+
+    setTimeout(() => {
+      router.push('/checkout')
+    }, 2000)
+  } catch (error) {
+    console.error('Error saving address:', error)
+
+    alert('Failed to save address')
+  }
 }
 
 const goBack = () => {
   router.push('/checkout')
 }
 
-// Load saved address on component mount
-const loadSavedAddress = () => {
-  const savedAddress = localStorage.getItem('shippingAddress')
-  if (savedAddress) {
-    address.value = JSON.parse(savedAddress)
+const loadSavedAddress = async () => {
+  try {
+    const token = localStorage.getItem('token')
+
+    if (!token) {
+      return
+    }
+
+    const response = await fetch(
+      'http://localhost:3000/address',
+      {
+        method: 'GET',
+
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    )
+
+    if (!response.ok) {
+      return
+    }
+
+    const data = await response.json()
+
+    if (data) {
+      address.value = {
+        firstName: data.first_name || '',
+        lastName: data.last_name || '',
+        street: data.street || '',
+        city: data.city || '',
+        state: data.state || '',
+        zip: data.zip || '',
+        country: data.country || '',
+        phone: data.phone || '',
+        email: data.email || '',
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load address:', error)
   }
 }
 
-// Load saved address when component mounts
 loadSavedAddress()
 </script>
 
