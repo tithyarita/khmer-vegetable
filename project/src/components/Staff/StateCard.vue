@@ -1,13 +1,4 @@
 <template>
-  <!--
-    Props:
-      label      – card heading text, e.g. "TOTAL FORMS"
-      value      – big number, e.g. 128
-      icon       – Bootstrap-icons class, e.g. "bi-archive"
-      badgeText  – small pill label, e.g. "12% this week"
-      badgeType  – "success" | "warning" | "danger" | "neutral"
-      valueColor – optional override, e.g. "var(--brand-dark)"
-  -->
   <div class="stats-card">
     <div class="stats-header">
       <span class="stats-label">{{ label }}</span>

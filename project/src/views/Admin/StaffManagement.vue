@@ -162,7 +162,7 @@ const fetchStaff = async () => {
     id:     u.id,
     name:   u.name,
     email:  u.email,
-    role:   u.role || 'staff',       // ← was u.roleKey (wrong)
+    role:   u.role || 'staff',       
     status: u.status || 'Active',
     avatar: `https://randomuser.me/api/portraits/men/${u.id % 100}.jpg`,
   }))

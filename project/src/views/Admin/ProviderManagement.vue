@@ -5,24 +5,15 @@
     <div class="header-row">
       <div>
         <h1 class="title">Providers Management</h1>
-        <p class="subtitle">
-          Manage and monitor all providers across the ecosystem.
-        </p>
+        <p class="subtitle">Manage and monitor all providers across the ecosystem.</p>
       </div>
     </div>
 
     <!-- FILTER -->
     <div class="filter-row">
-      <input
-        class="search-input"
-        type="text"
-        placeholder="Search by name..."
-        v-model="search"
-      />
-
+      <input class="search-input" type="text" placeholder="Search by name..." v-model="search" />
       <div class="status-filter">
         <label>Status:</label>
-
         <select v-model="status">
           <option>All Statuses</option>
           <option>provider</option>
@@ -35,7 +26,6 @@
 
       <!-- TABLE -->
       <div class="table-section">
-
         <table class="provider-table compact-table">
           <thead>
             <tr>
@@ -44,6 +34,7 @@
               <th>EMAIL</th>
               <th>PHONE</th>
               <th>ROLE</th>
+              <th>APPROVED BY</th>
               <th></th>
             </tr>
           </thead>
@@ -53,101 +44,153 @@
               :key="p.id"
               @click="selectProvider(p)"
               :class="{ selected: selectedProvider?.id === p.id }"
-              style="font-size:0.85rem; height:32px;"
+              style="font-size:0.85rem;"
             >
               <td>#PR0-{{ p.id }}</td>
               <td>
-                <div class="farm-owner" style="gap:0.3rem;">
-                  <img :src="p.avatar" class="avatar" style="width:22px;height:22px;" />
+                <div class="farm-owner">
+                  <img
+                    :src="p.profilePhotoUrl || fallbackAvatar(p.id)"
+                    class="avatar"
+                    style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid #e5e7eb;"
+                    @error="e => e.target.src = fallbackAvatar(p.id)"
+                  />
                   <div>
-                    <div class="farm-name" style="font-size:0.9em;">{{ p.name }}</div>
-                    <div class="owner-name" style="font-size:0.8em; color:#888;">{{ p.role }}</div>
+                    <div class="farm-name">{{ p.name }}</div>
+                    <div class="owner-name">{{ p.businessName }}</div>
                   </div>
                 </div>
               </td>
               <td>{{ p.email }}</td>
               <td>{{ p.phone }}</td>
               <td>{{ p.role }}</td>
+              <td>{{ p.approvedBy }}</td>
               <td>
                 <button class="edit-btn compact-edit" @click.stop="editProvider(p)">Edit</button>
               </td>
+            </tr>
+            <tr v-if="paginatedProviders.length === 0">
+              <td colspan="7" style="text-align:center;color:#888;padding:20px;">No providers found</td>
             </tr>
           </tbody>
         </table>
 
         <!-- PAGINATION -->
         <div class="pagination-row">
-          <span>
-            Showing {{ paginatedProviders.length }} of {{ filteredProviders.length }}
-          </span>
-
+          <span>Showing {{ paginatedProviders.length }} of {{ filteredProviders.length }}</span>
           <div class="pagination">
             <button :disabled="page === 1" @click="page--">&lt;</button>
-
             <button
-              v-for="n in totalPages"
-              :key="n"
+              v-for="n in totalPages" :key="n"
               :class="{ active: page === n }"
               @click="page = n"
-            >
-              {{ n }}
-            </button>
-
+            >{{ n }}</button>
             <button :disabled="page === totalPages" @click="page++">&gt;</button>
           </div>
         </div>
-
       </div>
 
-      <!-- DETAILS -->
+      <!-- DETAILS PANEL -->
       <div class="details-section" v-if="selectedProvider">
 
-        <div class="details-card compact-details">
-          <h3>Provider</h3>
-          <div class="compact-row"><b>👤</b> {{ selectedProvider.name }}</div>
+        <!-- Profile card -->
+        <div class="details-card">
+          <div class="profile-header">
+            <img
+              :src="selectedProvider.profilePhotoUrl || fallbackAvatar(selectedProvider.id)"
+              class="profile-avatar"
+              @error="e => e.target.src = fallbackAvatar(selectedProvider.id)"
+            />
+            <div>
+              <h3 style="margin:0 0 2px;color:#14532d;">{{ selectedProvider.name }}</h3>
+              <div style="font-size:12px;color:#6b7280;">{{ selectedProvider.businessName }}</div>
+            </div>
+          </div>
           <div class="compact-row"><b>✉️</b> {{ selectedProvider.email }}</div>
           <div class="compact-row"><b>📞</b> {{ selectedProvider.phone }}</div>
           <div class="compact-row"><b>🧑‍💼</b> {{ selectedProvider.role }}</div>
-          <div class="compact-row"><b>🆔</b> {{ selectedProvider.id }}</div>
+          <div class="compact-row"><b>🆔</b> User ID: {{ selectedProvider.id }}</div>
           <div class="compact-row"><b>📊</b> {{ selectedProvider.status || 'N/A' }}</div>
           <div class="compact-row"><b>🏠</b> {{ selectedProvider.address || 'N/A' }}</div>
+          <div class="compact-row"><b>✅</b> Approved by: <strong>{{ selectedProvider.approvedBy }}</strong></div>
         </div>
 
-        <!-- Edit Modal -->
-        <div v-if="showEditModal" class="modal-overlay compact-modal">
-          <div class="modal-content compact-modal-content">
-            <h4>Edit Provider</h4>
-            <form @submit.prevent="submitEdit">
-              <div class="form-row">
-                <label>Name</label>
-                <input v-model="editForm.name" required />
+        <!-- Submitted documents (ID + profile photo) -->
+        <div class="details-card" v-if="selectedProvider.appImages?.length">
+          <h4 class="section-title">Submitted Documents</h4>
+          <div class="doc-grid">
+            <div
+              v-for="img in selectedProvider.appImages"
+              :key="img.url"
+              class="doc-item"
+              @click="openImage(img.url)"
+            >
+              <img
+                v-if="img.type === 'image'"
+                :src="img.url"
+                class="doc-thumb"
+                @error="e => e.target.style.display = 'none'"
+              />
+              <div v-else class="doc-file">
+                <i class="bi bi-file-earmark-pdf" style="font-size:28px;color:#dc2626;"></i>
+                <span style="font-size:11px;">{{ img.label }}</span>
               </div>
-              <div class="form-row">
-                <label>Email</label>
-                <input v-model="editForm.email" required />
-              </div>
-              <div class="form-row">
-                <label>Phone</label>
-                <input v-model="editForm.phone" required />
-              </div>
-              <div class="form-row">
-                <label>Role</label>
-                <input v-model="editForm.role" required />
-              </div>
-              <div class="form-row">
-                <label>Address</label>
-                <input v-model="editForm.address" />
-              </div>
-              <div class="modal-actions compact-actions">
-                <button type="submit">Save</button>
-                <button type="button" @click="showEditModal = false">Cancel</button>
-              </div>
-            </form>
+              <div class="doc-label">{{ img.label }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Farm photos -->
+        <div class="details-card" v-if="selectedProvider.farmImages?.length">
+          <h4 class="section-title">Farm Photos</h4>
+          <div class="doc-grid">
+            <div
+              v-for="img in selectedProvider.farmImages"
+              :key="img.url"
+              class="doc-item"
+              @click="openImage(img.url)"
+            >
+              <img
+                :src="img.url"
+                class="doc-thumb"
+                @error="e => e.target.style.display = 'none'"
+              />
+              <div class="doc-label">{{ img.label }}</div>
+            </div>
           </div>
         </div>
 
       </div>
 
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div v-if="showEditModal" class="modal-overlay compact-modal">
+      <div class="modal-content compact-modal-content">
+        <h4>Edit Provider</h4>
+        <form @submit.prevent="submitEdit">
+          <div class="form-row">
+            <label>Name</label>
+            <input v-model="editForm.name" required />
+          </div>
+          <div class="form-row">
+            <label>Email</label>
+            <input v-model="editForm.email" required />
+          </div>
+          <div class="form-row">
+            <label>Phone</label>
+            <input v-model="editForm.phone" />
+          </div>
+          <div class="form-row">
+            <label>Address</label>
+            <input v-model="editForm.address" />
+          </div>
+          <div class="modal-actions compact-actions">
+            <button type="submit">Save</button>
+            <button type="button" @click="showEditModal = false">Cancel</button>
+          </div>
+        </form>
+      </div>
     </div>
 
   </div>
@@ -157,50 +200,129 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
-// ================= STATE =================
-const providers = ref([])
+const API      = 'http://localhost:3000'
+const IMG_BASE = `${API}/images`
+
+const providers        = ref([])
 const selectedProvider = ref(null)
+const search           = ref('')
+const status           = ref('All Statuses')
+const page             = ref(1)
+const pageSize         = 5
+const showEditModal    = ref(false)
+const editForm         = ref({})
 
-const search = ref('')
-const status = ref('All Statuses')
-const page = ref(1)
-const pageSize = 5
+// ── Helpers ───────────────────────────────────────────────────────────────
+const fallbackAvatar = (id) =>
+  `https://randomuser.me/api/portraits/men/${(id ?? 0) % 100}.jpg`
 
-// ================= FETCH PROVIDERS =================
+function buildImageUrl(path) {
+  if (!path) return null
+  const clean = path.replace(/\\/g, '/').replace('uploads/', '')
+  return `${IMG_BASE}/${clean}`
+}
+
+function guessType(path) {
+  if (!path) return 'other'
+  const ext = path.split('.').pop().toLowerCase()
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? 'image' : 'pdf'
+}
+
+const openImage = (url) => { if (url) window.open(url, '_blank') }
+
+// ── Fetch ─────────────────────────────────────────────────────────────────
 const fetchProviders = async () => {
   try {
-    const res = await axios.get('http://localhost:3000/users', {
-      params: { role: 'provider' }
+    const [usersRes, appsRes] = await Promise.all([
+      axios.get(`${API}/users`, { params: { role: 'provider' } }),
+      axios.get(`${API}/api/applications`),
+    ])
+
+    const approvedApps = appsRes.data.filter(
+      a => a.application_status === 'approved'
+    )
+
+        // Build a map: email → latest approved application
+    // (sort desc by submitted_at so the most recent wins)
+    const latestAppByEmail = new Map()
+    approvedApps
+      .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
+      .forEach(a => {
+        if (!latestAppByEmail.has(a.contact_email)) {
+          latestAppByEmail.set(a.contact_email, a)
+        }
+      })
+
+    providers.value = usersRes.data.map(u => {
+      const app = latestAppByEmail.get(u.email)
+      const staff = app?.staff_reviewed_by
+
+      // Real profile photo from application
+      const profilePhotoUrl = app?.profile_photo_path
+        ? buildImageUrl(app.profile_photo_path)
+        : null
+
+      // Submitted documents: ID card + profile photo
+      const appImages = []
+      if (app?.id_document_path) {
+        appImages.push({
+          label: 'ID Document',
+          url:   buildImageUrl(app.id_document_path),
+          type:  guessType(app.id_document_path),
+        })
+      }
+      if (app?.profile_photo_path) {
+        appImages.push({
+          label: 'Profile Photo',
+          url:   buildImageUrl(app.profile_photo_path),
+          type:  'image',
+        })
+      }
+
+      // Farm photos
+      const farmImages = [
+        { path: app?.farm_angle1_path, label: 'Farm Overview'    },
+        { path: app?.farm_angle2_path, label: 'Produce Close-up' },
+        { path: app?.farm_angle3_path, label: 'Infrastructure'   },
+      ]
+        .filter(f => f.path)
+        .map(f => ({
+          label: f.label,
+          url:   buildImageUrl(f.path),
+          type:  'image',
+        }))
+
+      return {
+        ...u,
+        profilePhotoUrl,
+        appImages,
+        farmImages,
+        businessName: app?.business_name ?? u.name,
+        approvedBy:   staff
+          ? `${staff.name} (ID: ${staff.user_id})`
+          : '—',
+      }
     })
 
-    providers.value = res.data.map(u => ({
-      ...u,
-      avatar: `https://randomuser.me/api/portraits/men/${u.id % 100}.jpg`
-    }))
-
     selectedProvider.value = providers.value[0] || null
-
+    
   } catch (err) {
     console.error('Error loading providers:', err)
   }
 }
 
-// ================= FILTER =================
+// ── Filter ────────────────────────────────────────────────────────────────
 const filteredProviders = computed(() => {
-  let data = providers.value
-
-  if (search.value) {
-    data = data.filter(p =>
-      p.name?.toLowerCase().includes(search.value.toLowerCase())
-    )
-  }
-
-  return data
+  if (!search.value) return providers.value
+  return providers.value.filter(p =>
+    p.name?.toLowerCase().includes(search.value.toLowerCase()) ||
+    p.email?.toLowerCase().includes(search.value.toLowerCase())
+  )
 })
 
-// ================= PAGINATION =================
+// ── Pagination ────────────────────────────────────────────────────────────
 const totalPages = computed(() =>
-  Math.ceil(filteredProviders.value.length / pageSize)
+  Math.max(1, Math.ceil(filteredProviders.value.length / pageSize))
 )
 
 const paginatedProviders = computed(() => {
@@ -208,359 +330,219 @@ const paginatedProviders = computed(() => {
   return filteredProviders.value.slice(start, start + pageSize)
 })
 
-// ================= SELECT =================
+// ── Select / Edit ─────────────────────────────────────────────────────────
+const selectProvider = (p) => { selectedProvider.value = p }
 
-const showEditModal = ref(false)
-const editForm = ref({})
-
-const selectProvider = (p) => {
-  selectedProvider.value = p
-}
-
-// ================= EDIT =================
 const editProvider = (p) => {
-  editForm.value = { ...p }
+  editForm.value      = { ...p }
   showEditModal.value = true
 }
 
 const submitEdit = async () => {
   try {
-    const id = editForm.value.id
-    const res = await axios.post(`http://localhost:3000/users/update/${id}`, editForm.value)
-    // Update local provider list
-    const idx = providers.value.findIndex(pr => pr.id === id)
-    if (idx !== -1) {
-      providers.value[idx] = { ...editForm.value }
-    }
-    if (selectedProvider.value && selectedProvider.value.id === id) {
-      selectedProvider.value = { ...editForm.value }
-    }
+    await axios.put(`${API}/users/${editForm.value.id}`, {
+      name:    editForm.value.name,
+      email:   editForm.value.email,
+      phone:   editForm.value.phone,
+      address: editForm.value.address,
+    })
+    await fetchProviders()
     showEditModal.value = false
     alert('Provider updated!')
-  } catch (err) {
+  } catch {
     alert('Failed to update provider!')
   }
 }
 
-// ================= INIT =================
 onMounted(fetchProviders)
 </script>
+
 <style scoped>
 .provider-management-page {
-    padding: 2rem 2rem 2rem 2rem;
-    background: #f8fafc;
-    min-height: 100vh;
+  padding: 2rem;
+  background: #f8fafc;
+  min-height: 100vh;
 }
-.header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1.5rem;
+
+/* HEADER */
+.header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
+.title      { color: #14532d; font-size: 2rem; font-weight: 700; margin-bottom: 0.2rem; }
+.subtitle   { color: #64748b; font-size: 1rem; }
+
+/* FILTER */
+.filter-row    { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.2rem; }
+.search-input  { padding: 0.45rem 0.8rem; border: 1px solid #ddd; border-radius: 8px; width: 240px; font-size: 13px; }
+.status-filter { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.status-filter select { padding: 0.4rem 0.6rem; border: 1px solid #ddd; border-radius: 8px; }
+
+/* LAYOUT */
+.main-content { display: flex; gap: 1.5rem; align-items: flex-start; }
+
+/* TABLE */
+.table-section {
+  flex: 2;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 1.2rem;
 }
-.title {
-    color: #14532d;
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 0.2rem;
-}
-.subtitle {
-    color: #64748b;
-    font-size: 1rem;
-}
-/* Compact Table Styles */
-/* Extra Compact Table Styles */
 .provider-table.compact-table {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
-  border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-  margin-bottom: 0.5rem;
   font-size: 0.87rem;
 }
-.provider-table.compact-table th, .provider-table.compact-table td {
-  padding: 0.18rem 0.3rem;
-  text-align: left;
-}
 .provider-table.compact-table th {
-  color: #333;
+  color: #374151;
   font-weight: 600;
   background: #f6f6f6;
-  font-size: 0.92em;
+  padding: 0.5rem 0.6rem;
+  text-align: left;
 }
 .provider-table.compact-table td {
+  padding: 0.5rem 0.6rem;
   vertical-align: middle;
+  border-bottom: 1px solid #f3f4f6;
 }
+.provider-table.compact-table tr:hover { background: #f9fafb; cursor: pointer; }
+.provider-table.compact-table tr.selected { background: #f0fdf4; }
+
+.farm-owner  { display: flex; align-items: center; gap: 0.5rem; }
+.farm-name   { font-weight: 600; font-size: 0.88rem; color: #111827; }
+.owner-name  { font-size: 0.78rem; color: #888; }
+
 .edit-btn.compact-edit {
   background: #f59e42;
   color: #fff;
   border: none;
   border-radius: 4px;
-  padding: 0.12rem 0.55rem;
-  font-size: 0.85rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.82rem;
   cursor: pointer;
   transition: background 0.2s;
 }
-.edit-btn.compact-edit:hover {
-  background: #e07b1a;
-}
-.apply-filter-btn {
-    background: #e5e7eb;
-    border: none;
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-    cursor: pointer;
-}
-.main-content {
-    display: flex;
-    gap: 2rem;
-}
-.table-section {
-    flex: 2;
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px #0001;
-    padding: 1.5rem;
-}
-.provider-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 1rem;
-}
-.provider-table th {
-    color: #64748b;
-    font-weight: 600;
-    padding: 0.7rem 0.5rem;
-    text-align: left;
-    font-size: 0.95rem;
-}
-.provider-table td {
-    padding: 0.7rem 0.5rem;
+.edit-btn.compact-edit:hover { background: #e07b1a; }
 
-.view-btn, .edit-btn {
-  margin: 0 0.25rem;
-  padding: 0.3rem 0.8rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  cursor: pointer;
-}
-.view-btn {
-  background: #38bdf8;
-  color: #fff;
-}
-.edit-btn {
-  background: #f59e42;
-  color: #fff;
-}
-    vertical-align: middle;
-    font-size: 1rem;
-}
-.provider-table tr.selected {
-    background: #f1f5f9;
-}
-.farm-owner {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-}
-.status-badge.approved {
-    background: #22c55e;
-}
-.status-badge.pending {
-    background: #a3a3a3;
-    color: #333;
-}
-.status-badge.suspended {
-    background: #ef4444;
-}
-.action-icon {
-    margin-right: 0.5rem;
-    cursor: pointer;
-    vertical-align: middle;
-}
+/* PAGINATION */
 .pagination-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  font-size: 13px;
+  color: #6b7280;
 }
 .pagination button {
-    background: #fff;
-    border: 1px solid #14532d;
-    color: #14532d;
-    border-radius: 6px;
-    margin: 0 0.2rem;
-    padding: 0.2rem 0.8rem;
-    cursor: pointer;
-}
-.pagination button.active {
-    background: #14532d;
-    color: #fff;
-}
-.details-section {
-    flex: 1.1;
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-}
-/* Compact Details Card */
-/* Extra Compact Details Card */
-.details-card.compact-details {
   background: #fff;
+  border: 1px solid #14532d;
+  color: #14532d;
   border-radius: 6px;
-  box-shadow: 0 1px 2px #0001;
-  padding: 0.7rem 0.8rem;
-  margin-bottom: 0.4rem;
-  font-size: 0.87rem;
+  margin: 0 2px;
+  padding: 0.2rem 0.7rem;
+  cursor: pointer;
+  font-size: 13px;
+}
+.pagination button.active   { background: #14532d; color: #fff; }
+.pagination button:disabled { opacity: 0.4; cursor: default; }
+
+/* DETAILS */
+.details-section {
+  flex: 1.1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+.details-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 1rem 1.1rem;
+}
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+  flex-shrink: 0;
 }
 .compact-row {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  margin-bottom: 0.18rem;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #374151;
 }
-.details-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
+.section-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #14532d;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
-.details-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 12px;
-    object-fit: cover;
-    margin: 0 auto 1rem auto;
-    display: block;
-}
-.details-title-row {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    margin-bottom: 0.5rem;
-    justify-content: center;
-}
-.details-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #14532d;
-}
-.elite-badge {
-    background: #e0f2fe;
-    color: #0284c7;
-    font-size: 0.85rem;
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 0.2rem 0.7rem;
-}
-.details-owner-info {
-    margin: 1rem 0 0.7rem 0;
-}
-.owner-label {
-    color: #64748b;
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 0.3rem;
-}
-.owner-info-row {
-    color: #222;
-    font-size: 1rem;
-    margin-bottom: 0.2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.about-label {
-    color: #64748b;
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-top: 0.7rem;
-}
-.about-text {
-    color: #222;
-    font-size: 1rem;
-    margin-bottom: 0.7rem;
-}
-.inventory-label {
-    color: #64748b;
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 0.3rem;
-}
-.inventory-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-.inventory-tag {
-    background: #f1f5f9;
-    color: #222;
-    border-radius: 8px;
-    padding: 0.2rem 0.7rem;
-    font-size: 0.95rem;
-    font-weight: 500;
-}
-.modify-status-btn {
-    background: #14532d;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 0.6rem 1.2rem;
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.7rem;
-    width: 100%;
-    cursor: pointer;
-}
-.full-history-btn {
-    background: #f1f5f9;
-    color: #222;
-    border: none;
-    border-radius: 8px;
-    padding: 0.6rem 1.2rem;
-    font-size: 1rem;
-    font-weight: 600;
-    width: 100%;
-    cursor: pointer;
-}
-.vitality-card {
-    background: #7c2d12;
-    color: #fff;
-    border-radius: 12px;
-    padding: 1rem 1.2rem;
-    font-size: 0.98rem;
-    margin-top: 0.5rem;
-}
-.vitality-header {
-    font-weight: 700;
-    font-size: 1rem;
-    margin-bottom: 0.3rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.vitality-icon {
-    font-size: 1.1rem;
-}
-.vitality-desc {
-    font-size: 0.95rem;
-    color: #f3f3f3;
-}
-.edit-icon {
-    cursor: pointer;
-}
-</style>
 
-/* Modal styles */
-/* Compact Modal Styles */
-/* Extra Compact Modal Styles */
+/* DOCUMENT GRID */
+.doc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.doc-item {
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.doc-item:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  transform: translateY(-1px);
+}
+.doc-thumb {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  display: block;
+  background: #f9fafb;
+}
+.doc-file {
+  width: 100%;
+  height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fef2f2;
+  gap: 4px;
+  color: #6b7280;
+}
+.doc-label {
+  font-size: 11px;
+  color: #6b7280;
+  padding: 4px 6px;
+  background: #f9fafb;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* MODAL */
 .modal-overlay.compact-modal {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.12);
+  inset: 0;
+  background: rgba(0,0,0,0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -568,48 +550,39 @@ onMounted(fetchProviders)
 }
 .modal-content.compact-modal-content {
   background: #fff;
-  padding: 0.7rem 0.9rem;
-  border-radius: 5px;
-  min-width: 180px;
-  box-shadow: 0 1px 4px #0002;
-  font-size: 0.87rem;
+  padding: 1.2rem 1.4rem;
+  border-radius: 10px;
+  width: 280px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
 }
 .compact-modal-content h4 {
-  margin: 0 0 0.4rem 0;
+  margin: 0 0 0.8rem;
+  color: #14532d;
   font-size: 1rem;
 }
-.form-row {
-  margin-bottom: 0.3rem;
-}
-.form-row label {
-  display: block;
-  font-weight: 500;
-  margin-bottom: 0.1rem;
-  font-size: 0.89em;
-}
-.form-row input {
-  width: 100%;
-  padding: 0.18rem 0.35rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 0.87rem;
-}
+.form-row              { margin-bottom: 0.6rem; }
+.form-row label        { display: block; font-size: 12px; font-weight: 600; margin-bottom: 3px; color: #555; }
+.form-row input        { width: 100%; padding: 0.4rem 0.6rem; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; box-sizing: border-box; outline: none; }
+.form-row input:focus  { border-color: #14532d; }
 .modal-actions.compact-actions {
-  margin-top: 0.3rem;
   display: flex;
-  gap: 0.4rem;
+  gap: 8px;
   justify-content: flex-end;
+  margin-top: 0.8rem;
 }
 .modal-actions.compact-actions button {
-  padding: 0.13rem 0.6rem;
-  font-size: 0.87rem;
-  border-radius: 4px;
+  padding: 0.35rem 1rem;
+  border-radius: 6px;
   border: none;
-  background: #f59e42;
+  background: #14532d;
   color: #fff;
   cursor: pointer;
-  transition: background 0.2s;
+  font-size: 13px;
+  font-weight: 600;
 }
-.modal-actions.compact-actions button:hover {
-  background: #e07b1a;
+.modal-actions.compact-actions button:last-child {
+  background: #e5e7eb;
+  color: #374151;
 }
+.modal-actions.compact-actions button:hover { opacity: 0.88; }
+</style>
