@@ -1,18 +1,20 @@
-
 <template>
   <header class="navbar">
     <div class="navbar-top">
       <div class="container">
         <div class="logo">
-          <span class="logo-text"><img src="@/assets/images/Logo.png" alt="Logo" /></span>
+          <span class="logo-text"><img src="../../assets/images/Logo.png" alt="Logo" /></span>
         </div>
-        <div class="search" @click="toSearch">
-          <svg class="search-icon" width="16" height="16" viewBox="0 0 20 20" fill="none">
+
+        <div class="search" ref="searchRef">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 20 20" fill="none" @click="openDropdown">
             <circle cx="9" cy="9" r="6" stroke="#9CA3AF" stroke-width="1.6"/>
             <path d="M13.5 13.5L17 17" stroke="#9CA3AF" stroke-width="1.6" stroke-linecap="round"/>
           </svg>
-          <input v-model="query" type="text" :placeholder="t('searchPlaceholder')" @click.stop @keyup.enter="toSearch" />
+          <input v-model="query" type="text" placeholder="Search produce..." @focus="openDropdown" @keyup.enter="toSearch" />
+          <SreachDropdown v-if="showDropdown" :query="query" @close="showDropdown = false" />
         </div>
+
         <div class="nav-right">
           <div class="location">
             <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
@@ -21,17 +23,24 @@
             </svg>
             <span>{{ location }}</span>
           </div>
+
+          <!-- Guest: show Login / Register -->
           <template v-if="!isLoggedIn">
-            <button class="btn-login" @click="goToLogin">{{ t('login') }}</button>
-            <button class="btn-register" @click="goToRegister">{{ t('register') }}</button>
+            <button class="btn-login" @click="goToLogin">Login</button>
+            <button class="btn-register" @click="goToRegister">Register</button>
           </template>
+
+          <!-- Logged-in: show profile avatar with dropdown -->
           <div v-else class="profile-wrapper" ref="profileRef">
             <button class="profile-avatar" @click="toggleProfileMenu" :aria-expanded="profileMenuOpen">
               <img v-if="user.avatar" :src="user.avatar" :alt="user.name" class="avatar-img" />
               <span v-else class="avatar-initials">{{ userInitials }}</span>
             </button>
+
+            <!-- Dropdown Menu -->
             <transition name="dropdown">
               <div v-if="profileMenuOpen" class="profile-dropdown">
+                <!-- User info header -->
                 <div class="dropdown-header">
                   <div class="dropdown-avatar">
                     <img v-if="user.avatar" :src="user.avatar" :alt="user.name" class="avatar-img" />
@@ -42,24 +51,29 @@
                     <p class="dropdown-email">{{ user.email }}</p>
                   </div>
                 </div>
+
                 <div class="dropdown-divider"></div>
+
+                <!-- Menu items -->
                 <ul class="dropdown-menu-list">
                   <li @click="goToProfile">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="8" r="4" stroke="#2D7A3A" stroke-width="1.8"/>
                       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#2D7A3A" stroke-width="1.8" stroke-linecap="round"/>
                     </svg>
-                    {{ t('myProfile') }}
+                    My Profile
                   </li>
                   <li @click="goToSettings">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="3" stroke="#2D7A3A" stroke-width="1.8"/>
                       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="#2D7A3A" stroke-width="1.8"/>
                     </svg>
-                    {{ t('settingsMenu') }}
+                    Settings
                   </li>
                 </ul>
+
                 <div class="dropdown-divider"></div>
+
                 <ul class="dropdown-menu-list">
                   <li class="logout-item" @click="handleLogout">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -67,7 +81,7 @@
                       <polyline points="16 17 21 12 16 7" stroke="#e53e3e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                       <line x1="21" y1="12" x2="9" y2="12" stroke="#e53e3e" stroke-width="1.8" stroke-linecap="round"/>
                     </svg>
-                    {{ t('logout') }}
+                    Logout
                   </li>
                 </ul>
               </div>
@@ -76,20 +90,23 @@
         </div>
       </div>
     </div>
+
     <div class="divider"></div>
+
     <div class="navbar-bottom">
       <hr>
       <div class="container">
         <ul class="categories">
           <li
             v-for="(cat, index) in categories"
-            :key="cat + index"
-            :class="{ active: active === cat }"
+            :key="cat.label + index"
+            :class="{ active: active === cat.label }"
             @click="setCategory(cat)"
           >
-            {{ t(cat) }}
+            {{ cat.label }}
           </li>
         </ul>
+
         <div class="nav-actions">
           <div class="favorite" @click="toggleFavorite">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -117,99 +134,178 @@
   </header>
 </template>
 
-<script setup>
+<script>
+import SreachDropdown from './Searchdropdown.vue'
 import { useCartStore } from '../../stores/cartStore'
 import { useSearchStore } from '../../stores/searchStore'
-import { useFavoriteStore } from '../../stores/favoriteStore'
-import { useLanguageStore } from '@/stores/languageStore.js'
-import { messages } from '@/lang/index.js'
-import { ref, computed, onMounted } from 'vue'
+import { useUserStore } from '../../stores/userStore'
 
-const cartStore = useCartStore()
-const searchStore = useSearchStore()
-const favoriteStore = useFavoriteStore()
-const languageStore = useLanguageStore()
-const t = (key) => messages[languageStore.language][key] || key
+export default {
+  name: 'NavigationBar',
+  components: {
+    SreachDropdown,
+    CategoryIcon: {
+      props: ['icon'],
+      template: `
+        <svg v-if="icon === 'vegetables'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a4 4 0 0 0-4 4c0 2 4 6 4 6s4-4 4-6a4 4 0 0 0-4-4z"/>
+          <path d="M8 8c-2 1-4 3-4 6 0 4 4 8 8 8s8-4 8-8c0-3-2-5-4-6"/>
+        </svg>
+        <svg v-else-if="icon === 'greens'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22c4 0 8-4 8-8 0-3-2-5.5-4-7"/>
+          <path d="M12 22c-4 0-8-4-8-8 0-3 2-5.5 4-7"/>
+          <path d="M12 2v20"/>
+          <path d="M8 8c2 1 4 1 4 1s2 0 4-1"/>
+        </svg>
+        <svg v-else-if="icon === 'tubers'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="14" rx="8" ry="6"/>
+          <path d="M12 8V2"/>
+          <path d="M8 14c0 2 1.8 4 4 4s4-1.8 4-4"/>
+          <circle cx="10" cy="5" r="1.5" fill="currentColor"/>
+          <circle cx="14" cy="4" r="1" fill="currentColor"/>
+        </svg>
+        <svg v-else-if="icon === 'rootveg'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v12"/>
+          <path d="M8 6c0 4 4 10 4 10s4-6 4-10"/>
+          <path d="M4 8c2 2 8 2 8 2s6 0 8-2"/>
+          <path d="M3 16c3-1 9-1 9-1s6 0 9 1"/>
+        </svg>
+        <svg v-else-if="icon === 'cruciferous'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C8 2 5 5 5 9c0 3 1.5 5.5 3 7"/>
+          <path d="M12 2c4 0 7 3 7 7 0 3-1.5 5.5-3 7"/>
+          <path d="M12 2v12"/>
+          <path d="M8 14c0 3 1.8 6 4 6s4-3 4-6"/>
+          <path d="M7 10c1 .5 5 .5 5 .5s4 0 5-.5"/>
+        </svg>
+        <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v8"/>
+          <path d="M8 12h8"/>
+        </svg>
+      `
+    }
+  },
+  setup() {
+    const cartStore = useCartStore()
+    const searchStore = useSearchStore()
+    const userStore = useUserStore()
+    return { cartStore, searchStore, userStore }
+  },
+  data() {
+    return {
+      query: '',
+      showDropdown: false,
+      location: 'Phnom Penh, Cambodia',
+      active: 'Home',
+      isFavorited: false,
+      profileMenuOpen: false,
+      categories: [
+        { label: 'Home', icon: '', route: '/' },
+        { label: 'Vegetables', icon: '', route: '/category/vegetables' },
+        { label: 'Greens', icon: '', route: '/category/greens' },
+        { label: 'Tubers', icon: '', route: '/category/tubers' },
+        { label: 'Root Veg', icon: '', route: '/category/root%20veg' },
+        { label: 'Cruciferous', icon: '', route: '/category/cruciferous' },
+      ],
+    }
+  },
+  computed: {
+    isLoggedIn() {
+      return this.userStore.isLoggedIn
+    },
+    user() {
+      return this.userStore.user || { name: '', email: '', avatar: '' }
+    },
+    count() {
+      return this.cartStore.cartCount
+    },
+    favoriteCount() {
+      return 0
+    },
+    userInitials() {
+      if (!this.user.name) return '?'
+      return this.user.name
+        .split(' ')
+        .map(n => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    },
+  },
+  methods: {
+    setCategory(cat) {
+      this.active = cat.label
+      this.$router.push(cat.route)
+    },
+    openDropdown() {
+      this.showDropdown = true
+    },
+    toSearch() {
+      this.searchStore.open(this.query)
+      this.$router.push('/search')
+    },
+    goToCart() {
+      this.$router.push('/cart')
+    },
+    toggleFavorite() {
+      this.$router.push('/favorites')
+    },
+    goToLogin() {
+      this.$router.push('/user/login')
+    },
+    goToRegister() {
+      this.$router.push('/user/register')
+    },
+    toggleProfileMenu() {
+      this.profileMenuOpen = !this.profileMenuOpen
+    },
+    closeProfileMenu() {
+      this.profileMenuOpen = false
+    },
+    goToProfile() {
+      this.closeProfileMenu()
+      this.$router.push('/profile')
+    },
+    goToSettings() {
+      this.closeProfileMenu()
+      this.$router.push('/settings')
+    },
+    handleLogout() {
+      this.closeProfileMenu()
+      this.userStore.logout()
+      this.$router.push('/')
+    },
 
-const query = ref('')
-const location = ref('Phnom Penh, Cambodia')
-const active = ref('home')
-const isFavorited = ref(false)
-const profileMenuOpen = ref(false)
-const categories = ['home', 'trackerOrders', 'myOrders']
-const isLoggedIn = ref(false)
-const user = ref({ name: '', email: '', avatar: '' })
+    syncActiveCategory() {
+      const path = this.$route.path
+      if (path === '/') this.active = 'Home'
+      const cat = this.categories.find(c => c.route === path)
+      if (cat) this.active = cat.label
+    },
 
-const count = computed(() => cartStore.cartCount)
-const favoriteCount = computed(() => favoriteStore.favoriteCount)
-const userInitials = computed(() => {
-  if (!user.value.name) return '?'
-  return user.value.name
-    .split(' ')
-    .map(n => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-})
-
-function setCategory(cat) {
-  active.value = cat
-  if (cat === 'home') window.location.href = '/'
-  else if (cat === 'trackerOrders') window.location.href = '/order-tracker'
-  else if (cat === 'myOrders') window.location.href = '/MyOrder'
+    // Close dropdown when clicking outside
+    handleOutsideClick(event) {
+      if (this.$refs.profileRef && !this.$refs.profileRef.contains(event.target)) {
+        this.closeProfileMenu()
+      }
+      if (this.$refs.searchRef && !this.$refs.searchRef.contains(event.target)) {
+        this.showDropdown = false
+      }
+    },
+  },
+  watch: {
+    '$route'() {
+      this.syncActiveCategory()
+    },
+  },
+  mounted() {
+    document.addEventListener('click', this.handleOutsideClick)
+    this.syncActiveCategory()
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleOutsideClick)
+  },
 }
-function toSearch() {
-  searchStore.open(query.value)
-  window.location.href = '/search'
-}
-function goToCart() {
-  window.location.href = '/cart'
-}
-function toggleFavorite() {
-  window.location.href = '/favorites'
-}
-function goToLogin() {
-  isLoggedIn.value = true
-  user.value = { name: 'Sopheak Chan', email: 'sopheak@example.com', avatar: '' }
-}
-function goToRegister() {
-  window.location.href = '/user/register'
-}
-function toggleProfileMenu() {
-  profileMenuOpen.value = !profileMenuOpen.value
-}
-function closeProfileMenu() {
-  profileMenuOpen.value = false
-}
-function goToProfile() {
-  closeProfileMenu()
-  window.location.href = '/profile'
-}
-function goToSettings() {
-  closeProfileMenu()
-  window.location.href = '/settings'
-}
-function handleLogout() {
-  closeProfileMenu()
-  isLoggedIn.value = false
-  window.location.href = '/'
-}
-function syncActiveCategory() {
-  const path = window.location.pathname
-  if (path === '/') active.value = 'home'
-  else if (path.startsWith('/order-tracker')) active.value = 'trackerOrders'
-  else if (path.startsWith('/MyOrder')) active.value = 'myOrders'
-}
-function handleOutsideClick(event) {
-  const profileRef = document.querySelector('.profile-wrapper')
-  if (profileRef && !profileRef.contains(event.target)) {
-    closeProfileMenu()
-  }
-}
-onMounted(() => {
-  document.addEventListener('click', handleOutsideClick)
-  syncActiveCategory()
-})
 </script>
 
 <style scoped>
@@ -225,6 +321,9 @@ onMounted(() => {
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .container {
@@ -259,27 +358,37 @@ onMounted(() => {
 }
 
 .search {
+  position: relative;
   flex: 1;
-  max-width: 400px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 999px;
-  padding: 5px 5px;
-  background: #f9fafb;
-  margin: 0 25px;
+  max-width: 480px;
 }
 
 .search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   cursor: pointer;
+  pointer-events: auto;
+  z-index: 1;
 }
 
 .search input {
-  border: none;
-  outline: none;
-  background: transparent;
   width: 100%;
+  height: 42px;
+  border: 1px solid #ddd;
+  border-radius: 24px;
+  padding: 0 1rem 0 2.2rem;
+  font-size: 14px;
+  background: #fafaf8;
+  outline: none;
+  font-family: 'DM Sans', sans-serif;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search input:focus {
+  border-color: #1e4d2b;
+  box-shadow: 0 0 0 3px rgba(30, 77, 43, 0.08);
 }
 
 .nav-right {
@@ -542,6 +651,14 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.cat-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 @media (max-width: 768px) {

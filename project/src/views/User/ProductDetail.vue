@@ -519,6 +519,10 @@ const filteredReviews = computed(() => {
 
 // --- METHODS ---
 const addToCart = () => {
+  if (!userStore.isLoggedIn) {
+    router.push('/user/login')
+    return
+  }
   cartStore.addToCart({
     ...product,
     unitPrice: Number(product.price ?? 0),
