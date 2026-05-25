@@ -3,15 +3,15 @@
   <div class="app">
     <main class="page">
       <nav class="breadcrumb">
-        <a href="/">Home</a><span class="sep">›</span>
-        <a href="/customer/my-orders">My Orders</a><span class="sep">›</span>
+        <a href="/">{{ t('home') }}</a><span class="sep">›</span>
+        <a href="/customer/my-orders">{{ t('myOrders') }}</a><span class="sep">›</span>
         <span class="cur">#{{ orderTrackerStore.currentOrder?.id }}</span>
       </nav>
       <header class="page-header" v-if="orderTrackerStore.currentOrder">
         <div>
-          <h1 class="page-title">Track Your Freshness</h1>
+          <h1 class="page-title">{{ t('trackYourFreshness') }}</h1>
           <p class="page-subtitle">
-            Order <strong>#{{ orderTrackerStore.currentOrder.id }}</strong> is on its way to your kitchen.
+            <span v-html="t('orderOnWay').replace('{id}', orderTrackerStore.currentOrder.id)"></span>
           </p>
         </div>
         <div class="arrival-badge">
@@ -60,7 +60,7 @@
             <!-- Chat button -->
             <button class="chat-btn">
               <IconSend />
-              Chat with Rider
+              {{ t('chatWithRider') }}
             </button>
           </div>
         </div>
@@ -70,7 +70,7 @@
 
           <!-- Delivery details -->
           <div class="card detail-card">
-            <h2 class="section-title">Delivery Details</h2>
+            <h2 class="section-title">{{ t('deliveryDetails') }}</h2>
             <div class="detail-list">
               <div class="detail-row" v-for="d in orderTrackerStore.currentOrder?.details || []" :key="d.label">
                 <div class="detail-row__icon">
@@ -88,8 +88,8 @@
           <!-- Basket -->
           <div class="card basket-card">
             <div class="basket-header">
-              <h2 class="section-title">Your Basket</h2>
-              <span class="basket-count">{{ (orderTrackerStore.currentOrder?.items || []).length }} Items</span>
+              <h2 class="section-title">{{ t('yourBasket') }}</h2>
+              <span class="basket-count">{{ (orderTrackerStore.currentOrder?.items || []).length }} {{ t('basketItems') }}</span>
             </div>
 
             <div
@@ -110,13 +110,13 @@
 
             <div class="totals">
               <div class="totals__row">
-                <span>Subtotal</span><span>${{ orderTrackerStore.subtotal.toFixed(2) }}</span>
+                <span>{{ t('subtotal') }}</span><span>${{ orderTrackerStore.subtotal.toFixed(2) }}</span>
               </div>
               <div class="totals__row">
-                <span>Delivery Fee</span><span>${{ (orderTrackerStore.currentOrder?.deliveryFee || 0).toFixed(2) }}</span>
+                <span>{{ t('deliveryFee') }}</span><span>${{ (orderTrackerStore.currentOrder?.deliveryFee || 0).toFixed(2) }}</span>
               </div>
               <div class="totals__row totals__row--grand">
-                <span>Total</span>
+                <span>{{ t('total') }}</span>
                 <span class="totals__grand-price">${{ orderTrackerStore.total.toFixed(2) }}</span>
               </div>
             </div>
@@ -129,13 +129,13 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="15 18 9 12 15 6"/>
               </svg>
-              Back to My Orders
+              {{ t('backToMyOrders') || t('myOrders') }}
             </button>
             <button class="action-btn action-btn--secondary" @click="contactSupport">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.362 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.338 1.85.574 2.81.7A2 2 0 0122 16.92z"/>
               </svg>
-              Contact Support
+              {{ t('contactSupport') || 'Contact Support' }}
             </button>
           </div>
 
@@ -150,6 +150,11 @@ import NavigationBar from '@/components/Customer/NavigationBar.vue'
 import { ref, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
 import { useRoute } from 'vue-router'
 import { useOrderTrackerStore } from '@/stores/orderTrackerStore'
+import { useLanguageStore } from '@/stores/languageStore.js'
+import { messages } from '@/lang/index.js'
+
+const languageStore = useLanguageStore()
+const t = (key) => messages[languageStore.language][key] || key
 
 // ── Inline SVG icons ──────────────────────────────────────────────────────────
 const IconCheck = defineComponent({

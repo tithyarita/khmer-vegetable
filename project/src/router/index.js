@@ -44,6 +44,7 @@ import ProductDetailUser from '../views/User/ProductDetail.vue'
 import Search from '../components/Customer/Search.vue'
 import ProductList from '../components/Customer/Productlist.vue'
 import fashDeals from '../views/User/fashDeals.vue'
+import setting from '../views/User/settingView.vue'
 
 // ==================== Routes ====================
 const routes = [
@@ -67,6 +68,7 @@ const routes = [
       { path: 'order-tracker', component: OrderTracker },
       { path: 'product/:id', component: ProductDetailUser, props: true },
       { path: 'products', component: ProductList },
+      { path: 'setting', component: setting },
     ],
   },
 

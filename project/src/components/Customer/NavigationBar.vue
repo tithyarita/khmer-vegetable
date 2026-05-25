@@ -1,3 +1,4 @@
+
 <template>
   <header class="navbar">
     <div class="navbar-top">
@@ -5,15 +6,13 @@
         <div class="logo">
           <span class="logo-text"><img src="@/assets/images/Logo.png" alt="Logo" /></span>
         </div>
-
         <div class="search" @click="toSearch">
           <svg class="search-icon" width="16" height="16" viewBox="0 0 20 20" fill="none">
             <circle cx="9" cy="9" r="6" stroke="#9CA3AF" stroke-width="1.6"/>
             <path d="M13.5 13.5L17 17" stroke="#9CA3AF" stroke-width="1.6" stroke-linecap="round"/>
           </svg>
-          <input v-model="query" type="text" placeholder="Search for fresh vegetables..." @click.stop @keyup.enter="toSearch" />
+          <input v-model="query" type="text" :placeholder="t('searchPlaceholder')" @click.stop @keyup.enter="toSearch" />
         </div>
-
         <div class="nav-right">
           <div class="location">
             <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
@@ -22,24 +21,17 @@
             </svg>
             <span>{{ location }}</span>
           </div>
-
-          <!-- Guest: show Login / Register -->
           <template v-if="!isLoggedIn">
-            <button class="btn-login" @click="goToLogin">Login</button>
-            <button class="btn-register" @click="goToRegister">Register</button>
+            <button class="btn-login" @click="goToLogin">{{ t('login') }}</button>
+            <button class="btn-register" @click="goToRegister">{{ t('register') }}</button>
           </template>
-
-          <!-- Logged-in: show profile avatar with dropdown -->
           <div v-else class="profile-wrapper" ref="profileRef">
             <button class="profile-avatar" @click="toggleProfileMenu" :aria-expanded="profileMenuOpen">
               <img v-if="user.avatar" :src="user.avatar" :alt="user.name" class="avatar-img" />
               <span v-else class="avatar-initials">{{ userInitials }}</span>
             </button>
-
-            <!-- Dropdown Menu -->
             <transition name="dropdown">
               <div v-if="profileMenuOpen" class="profile-dropdown">
-                <!-- User info header -->
                 <div class="dropdown-header">
                   <div class="dropdown-avatar">
                     <img v-if="user.avatar" :src="user.avatar" :alt="user.name" class="avatar-img" />
@@ -50,29 +42,24 @@
                     <p class="dropdown-email">{{ user.email }}</p>
                   </div>
                 </div>
-
                 <div class="dropdown-divider"></div>
-
-                <!-- Menu items -->
                 <ul class="dropdown-menu-list">
                   <li @click="goToProfile">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="8" r="4" stroke="#2D7A3A" stroke-width="1.8"/>
                       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#2D7A3A" stroke-width="1.8" stroke-linecap="round"/>
                     </svg>
-                    My Profile
+                    {{ t('myProfile') }}
                   </li>
                   <li @click="goToSettings">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="3" stroke="#2D7A3A" stroke-width="1.8"/>
                       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="#2D7A3A" stroke-width="1.8"/>
                     </svg>
-                    Settings
+                    {{ t('settingsMenu') }}
                   </li>
                 </ul>
-
                 <div class="dropdown-divider"></div>
-
                 <ul class="dropdown-menu-list">
                   <li class="logout-item" @click="handleLogout">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -80,7 +67,7 @@
                       <polyline points="16 17 21 12 16 7" stroke="#e53e3e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                       <line x1="21" y1="12" x2="9" y2="12" stroke="#e53e3e" stroke-width="1.8" stroke-linecap="round"/>
                     </svg>
-                    Logout
+                    {{ t('logout') }}
                   </li>
                 </ul>
               </div>
@@ -89,9 +76,7 @@
         </div>
       </div>
     </div>
-
     <div class="divider"></div>
-
     <div class="navbar-bottom">
       <hr>
       <div class="container">
@@ -102,10 +87,9 @@
             :class="{ active: active === cat }"
             @click="setCategory(cat)"
           >
-            {{ cat }}
+            {{ t(cat) }}
           </li>
         </ul>
-
         <div class="nav-actions">
           <div class="favorite" @click="toggleFavorite">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -133,133 +117,99 @@
   </header>
 </template>
 
-<script>
+<script setup>
 import { useCartStore } from '../../stores/cartStore'
 import { useSearchStore } from '../../stores/searchStore'
 import { useFavoriteStore } from '../../stores/favoriteStore'
+import { useLanguageStore } from '@/stores/languageStore.js'
+import { messages } from '@/lang/index.js'
+import { ref, computed, onMounted } from 'vue'
 
-export default {
-  name: 'NavigationBar',
-  setup() {
-    const cartStore = useCartStore()
-    const searchStore = useSearchStore()
-    const favoriteStore = useFavoriteStore()
-    return { cartStore, searchStore, favoriteStore }
-  },
-  data() {
-    return {
-      query: '',
-      location: 'Phnom Penh, Cambodia',
-      active: 'Home',
-      isFavorited: false,
-      profileMenuOpen: false,
-      categories: ['Home', 'Tracker Orders', 'My Orders'],
+const cartStore = useCartStore()
+const searchStore = useSearchStore()
+const favoriteStore = useFavoriteStore()
+const languageStore = useLanguageStore()
+const t = (key) => messages[languageStore.language][key] || key
 
-      // --- Auth state ---
-      isLoggedIn: false,
-      user: {
-        name: '',
-        email: '',
-        avatar: '',
-      },
-    }
-  },
-  computed: {
-    count() {
-      return this.cartStore.cartCount
-    },
-    favoriteCount() {
-      return this.favoriteStore.favoriteCount
-    },
-    userInitials() {
-      if (!this.user.name) return '?'
-      return this.user.name
-        .split(' ')
-        .map(n => n[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    },
-  },
-  methods: {
-    setCategory(cat) {
-      this.active = cat
-      if (cat === 'Home') this.$router.push('/')
-      else if (cat === 'Tracker Orders') this.$router.push('/order-tracker')
-      else if (cat === 'My Orders') this.$router.push('/MyOrder')
-    },
-    toSearch() {
-      this.searchStore.open(this.query)
-      this.$router.push('/search')
-    },
-    goToCart() {
-      this.$router.push('/cart')
-    },
-    toggleFavorite() {
-      this.$router.push('/favorites')
-    },
-    goToLogin() {
-      this.isLoggedIn = true
-      this.user = {
-        name: 'Sopheak Chan',
-        email: 'sopheak@example.com',
-        avatar: '',
-      }
-    },
-    goToRegister() {
-      this.$router.push('/user/register')
-    },
+const query = ref('')
+const location = ref('Phnom Penh, Cambodia')
+const active = ref('home')
+const isFavorited = ref(false)
+const profileMenuOpen = ref(false)
+const categories = ['home', 'trackerOrders', 'myOrders']
+const isLoggedIn = ref(false)
+const user = ref({ name: '', email: '', avatar: '' })
 
-    // --- Profile dropdown ---
-    toggleProfileMenu() {
-      this.profileMenuOpen = !this.profileMenuOpen
-    },
-    closeProfileMenu() {
-      this.profileMenuOpen = false
-    },
-    goToProfile() {
-      this.closeProfileMenu()
-      this.$router.push('/profile')
-    },
-    goToSettings() {
-      this.closeProfileMenu()
-      this.$router.push('/settings')
-    },
-    handleLogout() {
-      this.closeProfileMenu()
-      // TODO: call your auth store logout action here
-      // e.g. useAuthStore().logout()
-      this.isLoggedIn = false
-      this.$router.push('/')
-    },
+const count = computed(() => cartStore.cartCount)
+const favoriteCount = computed(() => favoriteStore.favoriteCount)
+const userInitials = computed(() => {
+  if (!user.value.name) return '?'
+  return user.value.name
+    .split(' ')
+    .map(n => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+})
 
-    syncActiveCategory() {
-      const path = this.$route.path
-      if (path === '/') this.active = 'Home'
-      else if (path.startsWith('/order-tracker')) this.active = 'Tracker Orders'
-      else if (path.startsWith('/MyOrder')) this.active = 'My Orders'
-    },
-
-    // Close dropdown when clicking outside
-    handleOutsideClick(event) {
-      if (this.$refs.profileRef && !this.$refs.profileRef.contains(event.target)) {
-        this.closeProfileMenu()
-      }
-    },
-  },
-  watch: {
-    '$route'() {
-      this.syncActiveCategory()
-    },
-  },
-  mounted() {
-    document.addEventListener('click', this.handleOutsideClick)
-    this.syncActiveCategory()
-  },
-  beforeUnmount() {
-    document.removeEventListener('click', this.handleOutsideClick)
-  },
+function setCategory(cat) {
+  active.value = cat
+  if (cat === 'home') window.location.href = '/'
+  else if (cat === 'trackerOrders') window.location.href = '/order-tracker'
+  else if (cat === 'myOrders') window.location.href = '/MyOrder'
 }
+function toSearch() {
+  searchStore.open(query.value)
+  window.location.href = '/search'
+}
+function goToCart() {
+  window.location.href = '/cart'
+}
+function toggleFavorite() {
+  window.location.href = '/favorites'
+}
+function goToLogin() {
+  isLoggedIn.value = true
+  user.value = { name: 'Sopheak Chan', email: 'sopheak@example.com', avatar: '' }
+}
+function goToRegister() {
+  window.location.href = '/user/register'
+}
+function toggleProfileMenu() {
+  profileMenuOpen.value = !profileMenuOpen.value
+}
+function closeProfileMenu() {
+  profileMenuOpen.value = false
+}
+function goToProfile() {
+  closeProfileMenu()
+  window.location.href = '/profile'
+}
+function goToSettings() {
+  closeProfileMenu()
+  window.location.href = '/settings'
+}
+function handleLogout() {
+  closeProfileMenu()
+  isLoggedIn.value = false
+  window.location.href = '/'
+}
+function syncActiveCategory() {
+  const path = window.location.pathname
+  if (path === '/') active.value = 'home'
+  else if (path.startsWith('/order-tracker')) active.value = 'trackerOrders'
+  else if (path.startsWith('/MyOrder')) active.value = 'myOrders'
+}
+function handleOutsideClick(event) {
+  const profileRef = document.querySelector('.profile-wrapper')
+  if (profileRef && !profileRef.contains(event.target)) {
+    closeProfileMenu()
+  }
+}
+onMounted(() => {
+  document.addEventListener('click', handleOutsideClick)
+  syncActiveCategory()
+})
 </script>
 
 <style scoped>

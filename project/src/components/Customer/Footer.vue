@@ -1,11 +1,11 @@
+
 <template>
   <footer class="footer">
     <div class="footer-main">
       <div class="container">
-
         <div class="footer-col brand-col">
-          <h2 class="brand-name">Nest Mart</h2>
-          <p class="brand-desc">Cultivating freshness daily. Direct from local sustainable farms to your kitchen.</p>
+          <h2 class="brand-name">{{ t('brandName') }}</h2>
+          <p class="brand-desc">{{ t('brandDesc') }}</p>
           <div class="social-icons">
             <a href="#" class="social-icon" aria-label="Medal">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -22,37 +22,35 @@
             </a>
           </div>
         </div>
-
         <div class="footer-col">
-          <h3 class="col-title">Quick Links</h3>
+          <h3 class="col-title">{{ t('quickLinks') }}</h3>
           <ul class="col-links">
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Delivery Info</a></li>
-            <li><a href="#">Support</a></li>
-            <li><a href="#">Contact</a></li>
+            <li><a href="#">{{ t('aboutUs') }}</a></li>
+            <li><a href="#">{{ t('deliveryInfo') }}</a></li>
+            <li><a href="#">{{ t('support') }}</a></li>
+            <li><a href="#">{{ t('contact') }}</a></li>
           </ul>
         </div>
-
       </div>
     </div>
-
     <div class="footer-bottom">
       <div class="container bottom-inner">
-        <p class="copyright">© 2024 Nest Mart. All rights reserved. Cultivating freshness daily.</p>
+        <p class="copyright">{{ t('copyright') }}</p>
         <div class="bottom-links">
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Service</a>
-          <a href="#">Cookies Settings</a>
+          <a href="#">{{ t('privacyPolicy') }}</a>
+          <a href="#">{{ t('termsOfService') }}</a>
+          <a href="#">{{ t('cookiesSettings') }}</a>
         </div>
       </div>
     </div>
   </footer>
 </template>
 
-<script>
-export default {
-  name: 'FooterSection'
-}
+<script setup>
+import { useLanguageStore } from '@/stores/languageStore.js'
+import { messages } from '@/lang/index.js'
+const languageStore = useLanguageStore()
+const t = (key) => messages[languageStore.language][key] || key
 </script>
 
 <style scoped>

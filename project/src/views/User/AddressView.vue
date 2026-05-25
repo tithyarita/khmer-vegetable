@@ -2,89 +2,82 @@
   <div class="address">
     <NavigationBar />
     <br>
-
     <section class="section address-section">
       <div class="section-inner">
         <div class="address-container">
           <div class="address-header">
-            <h2>Manage Shipping Address</h2>
-            <button @click="goBack" class="back-btn">← Back to Checkout</button>
+            <h2>{{ t('manageShippingAddress') }}</h2>
+            <button @click="goBack" class="back-btn">← {{ t('backToCheckout') }}</button>
           </div>
-
           <!-- Address Form -->
           <div class="address-form">
             <div class="form-grid">
               <!-- First Name -->
               <div class="form-group">
-                <label>First Name *</label>
+                <label>{{ t('firstName') }} {{ t('required') }}</label>
                 <input 
                   v-model="address.firstName" 
                   type="text" 
-                  placeholder="Enter your first name"
+                  :placeholder="t('enterFirstName')"
                   required
                 />
               </div>
-
               <!-- Last Name -->
               <div class="form-group">
-                <label>Last Name *</label>
+                <label>{{ t('lastName') }} {{ t('required') }}</label>
                 <input 
                   v-model="address.lastName" 
                   type="text" 
-                  placeholder="Enter your last name"
+                  :placeholder="t('enterLastName')"
                   required
                 />
               </div>
-
               <!-- Address Line -->
               <div class="form-group full-width">
-                <label>Street Address *</label>
+                <label>{{ t('streetAddress') }} {{ t('required') }}</label>
                 <input 
                   v-model="address.street" 
                   type="text" 
-                  placeholder="Enter your street address"
+                  :placeholder="t('enterStreet')"
                   required
                 />
               </div>
-
               <!-- City -->
               <div class="form-group">
-                <label>City *</label>
+                <label>{{ t('city') }} {{ t('required') }}</label>
                 <input 
                   v-model="address.city" 
                   type="text" 
-                  placeholder="Enter your city"
+                  :placeholder="t('enterCity')"
                   required
                 />
               </div>
 
               <!-- State/Province -->
               <div class="form-group">
-                <label>State/Province *</label>
+                <label>{{ t('stateProvince') }} {{ t('required') }}</label>
                 <input 
                   v-model="address.state" 
                   type="text" 
-                  placeholder="Enter your state or province"
+                  :placeholder="t('enterState')"
                   required
                 />
               </div>
-
               <!-- ZIP Code -->
               <div class="form-group">
-                <label>ZIP/Postal Code *</label>
+                <label>{{ t('zipPostal') }} {{ t('required') }}</label>
                 <input 
                   v-model="address.zip" 
                   type="text" 
-                  placeholder="Enter your ZIP code"
+                  :placeholder="t('enterZip')"
                   required
                 />
               </div>
-
               <!-- Country -->
               <div class="form-group">
-                <label>Country *</label>
+                <label>{{ t('country') }} {{ t('required') }}</label>
                 <select v-model="address.country" class="form-select">
-                  <option value="">Select Country</option>
+                  <option value="">{{ t('selectCountry') }}</option>
                   <option value="Cambodia">Cambodia</option>
                   <option value="Thailand">Thailand</option>
                   <option value="Vietnam">Vietnam</option>
@@ -92,10 +85,9 @@
                   <option value="Myanmar">Myanmar</option>
                 </select>
               </div>
-
               <!-- Phone -->
               <div class="form-group">
-                <label>Phone Number *</label>
+                <label>{{ t('phoneNumber') }} {{ t('required') }}</label>
                 <input 
                   v-model="address.phone" 
                   type="tel" 
@@ -103,17 +95,17 @@
                   required
                 />
               </div>
-
               <!-- Email -->
               <div class="form-group full-width">
-                <label>Email Address *</label>
+                <label>{{ t('emailAddress') }} {{ t('required') }}</label>
                 <input 
                   v-model="address.email" 
                   type="email" 
-                  placeholder="Enter your email address"
+                  :placeholder="t('enterEmail')"
                   required
                 />
               </div>
+
             </div>
           </div>
 
@@ -141,6 +133,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useLanguageStore } from '@/stores/languageStore.js'
+import { messages } from '@/lang/index.js'
+const languageStore = useLanguageStore()
+const t = (key) => messages[languageStore.language][key] || key
 
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Footer from '../../components/Customer/Footer.vue'

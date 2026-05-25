@@ -1,73 +1,68 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { watch } from 'vue'
+import { RouterView } from 'vue-router'
+import { useLanguageStore } from '@/stores/languageStore'
+
+const languageStore = useLanguageStore()
+
+// Auto switch font based on language
+watch(
+  () => languageStore.language,
+  (lang) => {
+    if (lang === 'km') {
+      document.body.classList.add('khmer-font')
+    } else {
+      document.body.classList.remove('khmer-font')
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
   <RouterView />
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
+<style>
+
+/* =========================
+   RESET
+========================= */
+
+* {
+  margin: 0;
   padding: 0;
-  max-height: 100vh;
+  box-sizing: border-box;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+/* =========================
+   DEFAULT (ENGLISH)
+========================= */
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #f9f9f6;
+  color: #1a2e1a;
 }
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+/* =========================
+   KHMER FONT MODE
+========================= */
+
+body.khmer-font {
+  font-family: 'Kantumruy Pro', sans-serif;
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
+/* =========================
+   SMOOTH FONT SWITCH
+========================= */
+
+body,
+button,
+input,
+select,
+textarea {
+  transition: font-family 0.2s ease;
 }
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-</style> 
+</style>
