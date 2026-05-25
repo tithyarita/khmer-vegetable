@@ -47,10 +47,10 @@
       </div>
 
       <div class="card-body">
-        <p class="category">{{ product.category || 'Product' }}</p>
+        <p class="category">{{ product.category || t('product') }}</p>
         <h3 class="product-name">{{ product.name }}</h3>
         <p class="provider-owner">
-          Provider: {{ product.providerName }}
+          {{ t('provider') }}: {{ product.providerName }}
           <span v-if="product.providerId">(#{{ product.providerId }})</span>
         </p>
 
@@ -68,7 +68,7 @@
           </div>
 
           <button class="btn-add" @click.stop="addToCart(product)">
-            <span class="plus">+</span> Add
+            <span class="plus">+</span> {{ t('Add') }}
           </button>
         </div>
       </div>
@@ -77,6 +77,10 @@
 </template>
 
 <script setup>
+import { useLanguageStore } from '@/stores/languageStore.js'
+import { messages } from '@/lang/index.js'
+const languageStore = useLanguageStore()
+const t = (key) => messages[languageStore.language][key] || key
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cartStore'

@@ -1,29 +1,40 @@
 <template>
   <div class="shop-wrapper">
-   <NavigationBar />
+    <NavigationBar />
 
     <main class="page">
       <!-- BREADCRUMB -->
       <nav class="breadcrumb">
-        <a href="/">Home</a><span class="sep">›</span>
-        <router-link to="/products">Vegetables</router-link><span class="sep">›</span>
+        <a href="/">{{ t('home') }}</a>
+        <span class="sep">›</span>
+
+        <router-link to="/products">
+          {{ t('vegetables') }}
+        </router-link>
+
+        <span class="sep">›</span>
+
         <span class="cur">{{ product.name }}</span>
       </nav>
 
       <!-- PRODUCT CARD -->
       <div class="pd-card">
         <div class="pd-top">
-          <!-- Gallery Section -->
+          <!-- Gallery -->
           <div class="pd-gallery">
             <div class="pd-main">
               <img :src="product.images[activeIdx]" :alt="product.name" />
-              <span class="pd-seasonal">Seasonal Pick</span>
+
+              <span class="pd-seasonal">
+                {{ t('seasonalPick') }}
+              </span>
             </div>
+
             <div class="pd-thumbs">
-              <div 
-                v-for="(img, i) in product.images" 
+              <div
+                v-for="(img, i) in product.images"
                 :key="i"
-                class="pd-thumb" 
+                class="pd-thumb"
                 :class="{ active: activeIdx === i }"
                 @click="activeIdx = i"
               >
@@ -32,157 +43,344 @@
             </div>
           </div>
 
-          <!-- Info Section -->
+          <!-- INFO -->
           <div class="pd-info">
-            <p class="pd-farm">Farm to Table · Organic</p>
-            <h1 class="pd-name">{{ product.name }}</h1>
+            <p class="pd-farm">
+              {{ t('farmToTable') }} · {{ t('organic') }}
+            </p>
+
+            <h1 class="pd-name">
+              {{ product.name }}
+            </h1>
 
             <div class="pd-rating-row">
               <span class="stars">
-                <svg v-for="i in 5" :key="i" class="st" :class="i <= Math.round(avgRating) ? 'f' : 'e'" viewBox="0 0 12 12">
-                  <path d="M6 1l1.39 2.82L10.5 4.27l-2.25 2.19.53 3.09L6 8l-2.78 1.55.53-3.09L1.5 4.27l3.11-.45L6 1z"/>
+                <svg
+                  v-for="i in 5"
+                  :key="i"
+                  class="st"
+                  :class="i <= Math.round(avgRating) ? 'f' : 'e'"
+                  viewBox="0 0 12 12"
+                >
+                  <path
+                    d="M6 1l1.39 2.82L10.5 4.27l-2.25 2.19.53 3.09L6 8l-2.78 1.55.53-3.09L1.5 4.27l3.11-.45L6 1z"
+                  />
                 </svg>
               </span>
-              <span class="rt">({{ avgRating }} Stars · {{ reviews.length }} Reviews)</span>
+
+              <span class="rt">
+                ({{ avgRating }}
+                {{ t('stars') }} ·
+                {{ reviews.length }}
+                {{ t('reviews') }})
+              </span>
             </div>
 
             <div class="pd-price-row">
-              <span class="pd-price">${{ product.price.toFixed(2) }}</span>
-              <span class="pd-orig">${{ product.originalPrice.toFixed(2) }}</span>
-              <span class="pd-off" v-if="product.discount > 0">{{ product.discount }}% OFF</span>
+              <span class="pd-price">
+                ${{ product.price.toFixed(2) }}
+              </span>
+
+              <span class="pd-orig">
+                ${{ product.originalPrice.toFixed(2) }}
+              </span>
+
+              <span class="pd-off" v-if="product.discount > 0">
+                {{ product.discount }}% OFF
+              </span>
             </div>
 
             <div class="pd-weight">
-              <span>Weight:</span>
+              <span>{{ t('weight') }}:</span>
               <strong>{{ product.weight }}</strong>
             </div>
 
             <div class="pd-provider">
-              <span>Provider Owner:</span>
+              <span>{{ t('providerOwner') }}:</span>
+
               <strong>
                 {{ product.providerName }}
-                <span v-if="product.providerId">(#{{ product.providerId }})</span>
+
+                <span v-if="product.providerId">
+                  (#{{ product.providerId }})
+                </span>
               </strong>
             </div>
 
-            <p class="pd-desc">{{ product.description }}</p>
+            <p class="pd-desc">
+              {{ product.description }}
+            </p>
 
+            <!-- ACTIONS -->
             <div class="pd-actions">
               <div class="qty">
                 <button @click="qty = Math.max(1, qty - 1)">−</button>
+
                 <span>{{ qty }}</span>
+
                 <button @click="qty++">+</button>
               </div>
+
               <button class="add-btn" @click="addToCart">
-                Add to Cart
+                {{ t('addToCart') }}
               </button>
-              <button class="wish-btn" :class="{ liked: wished }" @click="wished = !wished">
-                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+
+              <button
+                class="wish-btn"
+                :class="{ liked: wished }"
+                @click="wished = !wished"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                  />
+                </svg>
               </button>
             </div>
 
+            <!-- CERTS -->
             <div class="pd-certs">
               <div class="cert">
-                <div class="cert-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                Soil Association
+                <div class="cert-ico">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path
+                      d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+                    />
+                  </svg>
+                </div>
+
+                {{ t('soilAssociation') }}
               </div>
+
               <div class="cert">
-                <div class="cert-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
-                Same Day Delivery
+                <div class="cert-ico">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="1" y="3" width="15" height="13" />
+                    <path d="M16 8h4l3 3v5h-7V8z" />
+                    <circle cx="5.5" cy="18.5" r="2.5" />
+                    <circle cx="18.5" cy="18.5" r="2.5" />
+                  </svg>
+                </div>
+
+                {{ t('sameDayDelivery') }}
               </div>
             </div>
           </div>
         </div>
 
-        <!-- TABS SECTION -->
+        <!-- TABS -->
         <div class="pd-tabs">
           <div class="tab-nav">
-            <button class="tab-btn" :class="{ active: activeTab === 'culinary' }" @click="activeTab = 'culinary'">Culinary Profile</button>
-            <button class="tab-btn" :class="{ active: activeTab === 'reviews' }" @click="activeTab = 'reviews'">
-              Reviews ({{ reviews.length }})
+            <button
+              class="tab-btn"
+              :class="{ active: activeTab === 'culinary' }"
+              @click="activeTab = 'culinary'"
+            >
+              {{ t('culinaryProfile') }}
+            </button>
+
+            <button
+              class="tab-btn"
+              :class="{ active: activeTab === 'reviews' }"
+              @click="activeTab = 'reviews'"
+            >
+              {{ t('reviews') }}
+              ({{ reviews.length }})
             </button>
           </div>
 
-          <!-- Culinary Tab -->
-          <div class="tab-pane" :class="{ active: activeTab === 'culinary' }">
+          <!-- Culinary -->
+          <div
+            class="tab-pane"
+            :class="{ active: activeTab === 'culinary' }"
+          >
             <div class="cul-grid">
               <div>
-                <h2 class="cul-title">The Golden Ratio of Vegetables</h2>
-                <p class="cul-body">{{ product.culinaryBody }}</p>
+                <h2 class="cul-title">
+                  {{ t('goldenRatio') }}
+                </h2>
+
+                <p class="cul-body">
+                  {{ product.culinaryBody }}
+                </p>
+
                 <div class="benefits">
-                  <div class="benefit" v-for="b in product.benefits" :key="b">
-                    <div class="ben-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                  <div
+                    class="benefit"
+                    v-for="b in product.benefits"
+                    :key="b"
+                  >
+                    <div class="ben-ico">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="3"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </div>
+
                     <span>{{ b }}</span>
                   </div>
                 </div>
               </div>
+
               <div class="nutrition">
-                <h4>Nutritional Facts</h4>
-                <div class="nrow" v-for="n in product.nutrition" :key="n.label">
-                  <span>{{ n.label }}</span><strong>{{ n.value }}</strong>
+                <h4>{{ t('nutritionalFacts') }}</h4>
+
+                <div
+                  class="nrow"
+                  v-for="n in product.nutrition"
+                  :key="n.label"
+                >
+                  <span>{{ n.label }}</span>
+
+                  <strong>{{ n.value }}</strong>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Reviews Tab -->
-          <div class="tab-pane" :class="{ active: activeTab === 'reviews' }">
+          <!-- REVIEWS -->
+          <div
+            class="tab-pane"
+            :class="{ active: activeTab === 'reviews' }"
+          >
             <div class="rev-wrap">
-              <!-- Review Summary Statistics -->
+              <!-- SUMMARY -->
               <div class="rev-summary">
                 <div class="rev-score">
-                  <div class="rev-num">{{ avgRating }}</div>
+                  <div class="rev-num">
+                    {{ avgRating }}
+                  </div>
+
                   <div class="rev-stars-big">
-                    <svg v-for="i in 5" :key="i" class="rsb" :class="i <= Math.round(avgRating) ? 'f' : 'e'" viewBox="0 0 12 12">
-                      <path d="M6 1l1.39 2.82L10.5 4.27l-2.25 2.19.53 3.09L6 8l-2.78 1.55.53-3.09L1.5 4.27l3.11-.45L6 1z"/>
+                    <svg
+                      v-for="i in 5"
+                      :key="i"
+                      class="rsb"
+                      :class="i <= Math.round(avgRating) ? 'f' : 'e'"
+                      viewBox="0 0 12 12"
+                    >
+                      <path
+                        d="M6 1l1.39 2.82L10.5 4.27l-2.25 2.19.53 3.09L6 8l-2.78 1.55.53-3.09L1.5 4.27l3.11-.45L6 1z"
+                      />
                     </svg>
                   </div>
-                  <div class="rev-ct">{{ reviews.length }} reviews</div>
+
+                  <div class="rev-ct">
+                    {{ reviews.length }}
+                    {{ t('reviews') }}
+                  </div>
                 </div>
+
                 <div class="bars">
-                  <div class="bar-row" v-for="s in [5,4,3,2,1]" :key="s" @click="filterStar = (filterStar === s ? null : s)">
+                  <div
+                    class="bar-row"
+                    v-for="s in [5,4,3,2,1]"
+                    :key="s"
+                    @click="filterStar = (filterStar === s ? null : s)"
+                  >
                     <span class="bar-lbl">{{ s }}★</span>
+
                     <div class="bar-track">
-                      <div class="bar-fill" :style="{ width: getStarPercentage(s) + '%' }"></div>
+                      <div
+                        class="bar-fill"
+                        :style="{ width: getStarPercentage(s) + '%' }"
+                      ></div>
                     </div>
-                    <span class="bar-n">{{ getStarCount(s) }}</span>
+
+                    <span class="bar-n">
+                      {{ getStarCount(s) }}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <!-- Reviews List -->
+              <!-- REVIEW LIST -->
               <div class="rev-list">
-                <div class="rev-card" v-for="rv in filteredReviews" :key="rv.id">
+                <div
+                  class="rev-card"
+                  v-for="rv in filteredReviews"
+                  :key="rv.id"
+                >
                   <div class="rev-head">
-                    <div class="avatar" :style="{ background: rv.color }">{{ rv.initials }}</div>
-                    <div class="rev-meta">
-                      <div class="rev-author">{{ rv.author }} <span v-if="rv.verified" class="vbadge">Verified</span></div>
-                      <div class="rev-date">{{ rv.date }} · {{ rv.location }}</div>
+                    <div
+                      class="avatar"
+                      :style="{ background: rv.color }"
+                    >
+                      {{ rv.initials }}
                     </div>
-                    <div class="rev-card-stars">
-                      <svg v-for="i in 5" :key="i" class="rcs" :class="i <= rv.rating ? 'f' : 'e'" viewBox="0 0 12 12">
-                        <path d="M6 1l1.39 2.82L10.5 4.27l-2.25 2.19.53 3.09L6 8l-2.78 1.55.53-3.09L1.5 4.27l3.11-.45L6 1z"/>
-                      </svg>
+
+                    <div class="rev-meta">
+                      <div class="rev-author">
+                        {{ rv.author }}
+
+                        <span
+                          v-if="rv.verified"
+                          class="vbadge"
+                        >
+                          {{ t('verified') }}
+                        </span>
+                      </div>
+
+                      <div class="rev-date">
+                        {{ rv.date }} · {{ rv.location }}
+                      </div>
                     </div>
                   </div>
-                  <div class="rev-title">{{ rv.title }}</div>
-                  <div class="rev-body">{{ rv.body }}</div>
+
+                  <div class="rev-title">
+                    {{ rv.title }}
+                  </div>
+
+                  <div class="rev-body">
+                    {{ rv.body }}
+                  </div>
                 </div>
               </div>
 
-              <!-- Write a Review -->
+              <!-- REVIEW FORM -->
               <div class="review-form">
-                <h3 class="rf-title">Write a Review</h3>
+                <h3 class="rf-title">
+                  {{ t('writeReview') }}
+                </h3>
+
                 <div class="rf-stars">
-                  <span class="rf-label">Your Rating:</span>
+                  <span class="rf-label">
+                    {{ t('yourRating') }}:
+                  </span>
+
                   <span class="rf-star-row">
-                    <svg v-for="i in 5" :key="i" class="rf-star" :class="i <= newReview.rating ? 'f' : 'e'" viewBox="0 0 12 12" @click="newReview.rating = i">
-                      <path d="M6 1l1.39 2.82L10.5 4.27l-2.25 2.19.53 3.09L6 8l-2.78 1.55.53-3.09L1.5 4.27l3.11-.45L6 1z"/>
+                    <svg
+                      v-for="i in 5"
+                      :key="i"
+                      class="rf-star"
+                      :class="i <= newReview.rating ? 'f' : 'e'"
+                      viewBox="0 0 12 12"
+                      @click="newReview.rating = i"
+                    >
+                      <path
+                        d="M6 1l1.39 2.82L10.5 4.27l-2.25 2.19.53 3.09L6 8l-2.78 1.55.53-3.09L1.5 4.27l3.11-.45L6 1z"
+                      />
                     </svg>
                   </span>
                 </div>
-                <textarea v-model="newReview.body" class="rf-textarea" placeholder="Write your review..." rows="4"></textarea>
-                <button class="rf-submit" @click="submitReview">Submit Review</button>
+
+                <textarea
+                  v-model="newReview.body"
+                  class="rf-textarea"
+                  :placeholder="t('writeYourReview')"
+                  rows="4"
+                ></textarea>
+
+                <button
+                  class="rf-submit"
+                  @click="submitReview"
+                >
+                  {{ t('submitReview') }}
+                </button>
               </div>
             </div>
           </div>
@@ -190,35 +388,50 @@
       </div>
     </main>
 
-    <!-- Global Toast Notifications -->
+    <!-- TOAST -->
     <div class="toast" :class="{ hide: !toast.show }">
       {{ toast.msg }}
     </div>
+
+    <!-- RELATED -->
     <div class="card-container">
       <div class="section-header">
-          <h2 class="section-title">Fresh form The Field</h2>
-          <a href="#" class="see-all">View Vegetables →</a>
-        </div>
-    
-        <Card />
+        <h2 class="section-title">
+          {{ t('freshFromField') }}
+        </h2>
+
+        <a href="#" class="see-all">
+          {{ t('viewVegetables') }} →
+        </a>
+      </div>
+
+      <Card />
     </div>
-    
+
     <Footer />
   </div>
 </template>
 
 <script setup>
-import Card from '@/components/Customer/Card.vue';
-import Footer from '@/components/Customer/Footer.vue';
-import NavigationBar from '@/components/Customer/NavigationBar.vue';
-import { ref, reactive, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { useCartStore } from '@/stores/cartStore';
-import { useProductStore } from '@/stores/productStore';
+import Card from '@/components/Customer/Card.vue'
+import Footer from '@/components/Customer/Footer.vue'
+import NavigationBar from '@/components/Customer/NavigationBar.vue'
 
-const route = useRoute();
-const productStore = useProductStore();
-const cartStore = useCartStore();
+import { ref, reactive, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+
+import { useCartStore } from '@/stores/cartStore'
+import { useProductStore } from '@/stores/productStore'
+
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
+
+const route = useRoute()
+const productStore = useProductStore()
+const cartStore = useCartStore()
+
+// YOUR OLD SCRIPT CONTINUES HERE...
 
 const placeholderImage =
   'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?auto=format&fit=crop&q=80&w=800';
