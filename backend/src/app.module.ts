@@ -25,11 +25,7 @@ import { MailModule } from './mail/mail.module';
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
       username: process.env.DB_USER || 'root',
-<<<<<<< HEAD
       password: process.env.DB_PASS || 'root',
-=======
-      password: process.env.DB_PASS || '1qa2ws.M',
->>>>>>> 028f7450ccfa5edd5960b79b37246f2401359581
       database: process.env.DB_NAME || 'khmer_vegetable_market',
       autoLoadEntities: true,
       synchronize: true, // set to false in production
@@ -44,12 +40,9 @@ import { MailModule } from './mail/mail.module';
     ProviderApplicationsModule,
     CartModule,
     FavoriteModule,
-<<<<<<< HEAD
     AddressModule,
-=======
-    Customer,
     MailModule,
->>>>>>> 028f7450ccfa5edd5960b79b37246f2401359581
+    Customer,
   ],
   controllers: [AppController],
   providers: [AppService],

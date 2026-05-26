@@ -1,12 +1,12 @@
 <template>
   <div class="outer">
     <div class="wrap">
-      <!-- Header -->
       <div class="header">
         <div class="title-block">
           <h2><span class="bolt">⚡</span> Weekly Flash Deals</h2>
           <p>Unbeatable prices on fresh harvest. Hurry, stock is limited!</p>
         </div>
+
         <div class="timer">
           <span class="timer-label">ENDS IN:</span>
           <div class="timer-seg">
@@ -26,8 +26,11 @@
         </div>
       </div>
 
-      <!-- Products Grid -->
-      <ProductCard :products="products" />
+      <div v-if="loading" class="loading-state">Loading discounted products...</div>
+      <div v-else-if="discountedProducts.length === 0" class="empty-state">
+        No discounted products available right now.
+      </div>
+      <ProductCard v-else :products="discountedProducts" />
     </div>
   </div>
 </template>
@@ -35,80 +38,54 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import ProductCard from '../../components/Customer/Card.vue'
+import { useProductStore } from '@/stores/productStore'
 
+const productStore = useProductStore()
 
-
-// Countdown timer — 8h 42m 15s
 const totalSeconds = ref(8 * 3600 + 42 * 60 + 15)
+const loading = ref(false)
 let interval = null
 
 const formatted = computed(() => {
-  const t = totalSeconds.value
+  const time = totalSeconds.value
   return {
-    hrs:  String(Math.floor(t / 3600)).padStart(2, '0'),
-    mins: String(Math.floor((t % 3600) / 60)).padStart(2, '0'),
-    secs: String(t % 60).padStart(2, '0'),
+    hrs: String(Math.floor(time / 3600)).padStart(2, '0'),
+    mins: String(Math.floor((time % 3600) / 60)).padStart(2, '0'),
+    secs: String(time % 60).padStart(2, '0'),
   }
 })
+
+const discountedProducts = computed(() => {
+  return productStore.products
+    .filter(product => Number(product.discount ?? 0) > 0)
+    .sort((a, b) => Number(b.discount ?? 0) - Number(a.discount ?? 0))
+})
+
+const loadDiscountedProducts = async () => {
+  if (productStore.products.length > 0) return
+
+  loading.value = true
+  try {
+    await productStore.fetchAllProducts()
+  } finally {
+    loading.value = false
+  }
+}
 
 onMounted(() => {
   interval = setInterval(() => {
     if (totalSeconds.value > 0) totalSeconds.value--
   }, 1000)
+
+  loadDiscountedProducts()
 })
 
-onUnmounted(() => clearInterval(interval))
-
-function addToCart(product) {
-  alert(`Added "${product.name}" to cart!`)
-}
-
-// Sample products array
-defineExpose(); // for <script setup> context
-const products = ref([
-  {
-    id: 1,
-    name: 'Organic Tomato',
-    image: 'https://via.placeholder.com/120x120?text=Tomato',
-    category: 'Vegetable',
-    rating: 4.7,
-    price: 2.5,
-    discount: 10,
-    badge: 'Hot',
-    label: 'Best Seller',
-  },
-  {
-    id: 2,
-    name: 'Fresh Cucumber',
-    image: 'https://via.placeholder.com/120x120?text=Cucumber',
-    category: 'Vegetable',
-    rating: 4.5,
-    price: 1.8,
-    discount: 5,
-    badge: 'Deal',
-    label: '',
-  },
-  {
-    id: 3,
-    name: 'Sweet Carrot',
-    image: 'https://via.placeholder.com/120x120?text=Carrot',
-    category: 'Vegetable',
-    rating: 4.9,
-    price: 2.0,
-    discount: 15,
-    badge: '',
-    label: '',
-  },
-])
+onUnmounted(() => {
+  if (interval) clearInterval(interval)
+})
 </script>
 
 <style scoped>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 .outer {
   background: #dde5ea;
   border-radius: 20px;
@@ -191,86 +168,16 @@ const products = ref([
   padding-bottom: 6px;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.card {
+.loading-state,
+.empty-state {
+  padding: 20px;
+  text-align: center;
+  color: #556;
   background: #fff;
   border-radius: 12px;
-  overflow: hidden;
-  border: 0.5px solid #e0e0e0;
+  border: 1px solid #dfe7e2;
 }
 
-.img-wrap {
-  position: relative;
-  background: #1a1a1a;
-  height: 150px;
-}
-
-.img-wrap img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-}
-
-.badge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 9px;
-  border-radius: 20px;
-  letter-spacing: 0.4px;
-}
-
-.badge.hot {
-  background: #1db877;
-  color: #fff;
-}
-
-.badge.sale {
-  background: #f59e0b;
-  color: #fff;
-}
-
-.card-body {
-  padding: 10px 12px 12px;
-}
-
-.cat {
-  font-size: 10px;
-  color: #aaa;
-  margin-bottom: 3px;
-}
-
-.name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #111;
-  margin-bottom: 7px;
-  line-height: 1.3;
-}
-
-.stars {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  margin-bottom: 9px;
-}
-
-.star {
-  color: #ca8a04;
-  font-size: 13px;
-}
-
-.rating {
-  font-size: 11px;
-  color: #999;
-}
 
 .price-row {
   display: flex;

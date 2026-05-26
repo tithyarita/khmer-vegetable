@@ -53,7 +53,7 @@
         <span class="notif-dot"></span>
       </button>
 
-      <div class="user-chip">
+      <router-link to="/staff/profile" class="user-chip">
         <div class="user-info">
           <span class="user-name">{{ displayName }}</span>
           <span class="user-role">{{ displayRole }}</span>
@@ -61,7 +61,7 @@
         <div class="user-avatar">
           <i class="bi bi-person-fill"></i>
         </div>
-      </div>
+      </router-link>
     </div>
 
   </header>
@@ -113,12 +113,11 @@ async function fetchResults(q) {
     const res  = await fetch(`${API_BASE}/api/applications?search=${encodeURIComponent(q)}`)
     if (!res.ok) throw new Error('Search failed')
     const data = await res.json()
-    // accept both { data: [...] } and plain array
     results.value     = Array.isArray(data) ? data : (data.data ?? [])
     showResults.value = true
   } catch {
     results.value     = []
-    showResults.value = true   // show "no results" state
+    showResults.value = true   
   } finally {
     searching.value = false
   }
@@ -131,7 +130,6 @@ function goToApp(app) {
   router.push(`/staff/details/${app.id}`)
 }
 
-// Close panel when clicking outside
 function onClickOutside(e) {
   if (searchWrap.value && !searchWrap.value.contains(e.target)) {
     showResults.value = false
@@ -152,7 +150,7 @@ onBeforeUnmount(()  => document.removeEventListener('mousedown', onClickOutside)
   padding: 0 20px;
   gap: 12px;
   flex-shrink: 0;
-  position: relative;   /* needed so panel positions relative to topbar */
+  position: relative;   
   z-index: 100;
 }
 

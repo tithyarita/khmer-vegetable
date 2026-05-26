@@ -18,7 +18,15 @@ api.interceptors.request.use((config) => {
 
 export const useCartStore = defineStore('cart', () => {
   // ================= STATE =================
-  const cartItems = ref(JSON.parse(localStorage.getItem('cart') || '[]'))
+  const normalizeCartItem = (item) => ({
+    ...item,
+    providerId: Number(item?.providerId ?? item?.provider_id ?? item?.provider?.user_id ?? 0) || null,
+    provider_id: Number(item?.provider_id ?? item?.providerId ?? item?.provider?.user_id ?? 0) || null,
+  })
+
+  const cartItems = ref(
+    JSON.parse(localStorage.getItem('cart') || '[]').map(normalizeCartItem),
+  )
 
   const persistCart = () => {
     localStorage.setItem('cart', JSON.stringify(cartItems.value))
@@ -132,6 +140,7 @@ export const useCartStore = defineStore('cart', () => {
         category: product.category,
         unit: product.unit || 'item',
         providerId,
+        provider_id: providerId,
         providerName,
         quantity: quantityToAdd
       })

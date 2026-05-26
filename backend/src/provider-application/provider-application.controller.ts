@@ -104,7 +104,7 @@ export class ApplicationsController {
       message: 'Application submitted successfully',
       id: saved.id,
       // Fix error 4053: reference the string value, not the enum type
-      status: saved.application_status as string,
+      status: saved.application_status,
       submitted_at: saved.submitted_at,
     };
   }
@@ -112,8 +112,14 @@ export class ApplicationsController {
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body('status') status: string,
+    @Body('staffId') staffId?: number,
   ): Promise<ProviderApplication> {
-    return this.service.updateStatus(id, status);
+    // staffId from body is a string, coerce to number
+    return this.service.updateStatus(
+      id,
+      status,
+      staffId ? +staffId : undefined,
+    );
   }
   /** GET /api/applications?search= */
   @Get()

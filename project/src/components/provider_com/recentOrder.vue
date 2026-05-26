@@ -9,6 +9,14 @@
       </div>
     </div>
     <div class="card-body p-0">
+      <div v-if="error" class="px-4 py-3 text-warning small">
+        {{ error }}
+      </div>
+
+      <div v-if="loading" class="px-4 py-3 text-muted small">
+        Loading recent orders...
+      </div>
+
       <div class="table-responsive">
         <table class="table table-hover mb-0">
           <thead>
@@ -42,42 +50,71 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import axios from 'axios'
+import { useUserStore } from '@/stores/userStore'
 
-const orders = ref([
-  {
-    id: '#001',
-    product: 'Tomato',
-    quantity: '1kg',
-    date: '18 Apr 2021',
-    status: 'Completed',
-    statusColor: 'success'
-  },
-  {
-    id: '#002',
-    product: 'Cabbage',
-    quantity: '5kg',
-    date: '18 Apr 2021',
-    status: 'Completed',
-    statusColor: 'success'
-  },
-  {
-    id: '#003',
-    product: 'Carrot',
-    quantity: '2kg',
-    date: '20 May 2021',
-    status: 'Completed',
-    statusColor: 'success'
-  },
-  {
-    id: '#004',
-    product: 'Potato',
-    quantity: '3kg',
-    date: '12 Jul 2021',
-    status: 'Completed',
-    statusColor: 'success'
+const API_BASE_URL = 'http://localhost:3000'
+const userStore = useUserStore()
+
+const orders = ref([])
+const loading = ref(false)
+const error = ref('')
+
+const getProviderId = () => {
+  const user = userStore.user || JSON.parse(localStorage.getItem('user') || 'null')
+  return Number(user?.id ?? user?.providerId ?? user?.provider_id ?? 0) || null
+}
+
+const formatDate = (value) => {
+  if (!value) return 'Unknown'
+  return new Date(value).toLocaleDateString('en-US', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+const getStatusColor = (status) => {
+  if (status === 'delivering') return 'primary'
+  if (status === 'pending') return 'warning'
+  return 'success'
+}
+
+const loadRecentOrders = async () => {
+  loading.value = true
+  error.value = ''
+
+  const providerId = getProviderId()
+  if (!providerId) {
+    error.value = 'Provider account not found. Please log in again.'
+    loading.value = false
+    return
   }
-])
+
+  try {
+    const response = await axios.get(`${API_BASE_URL}/orders/provider/${providerId}/revenue`)
+    const recentOrders = Array.isArray(response.data?.recentOrders) ? response.data.recentOrders : []
+
+    orders.value = recentOrders.map((order) => ({
+      id: order.id,
+      product: order.product,
+      quantity: order.quantity,
+      date: formatDate(order.date),
+      status: order.status,
+      statusColor: getStatusColor(order.status),
+    }))
+  } catch (err) {
+    error.value = err.response?.data?.message || err.message || 'Failed to load recent orders.'
+    orders.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadRecentOrders()
+})
 </script>
 
 <style scoped>

@@ -207,6 +207,89 @@ export class OrdersService {
     });
   }
 
+  // Provider revenue summary
+  async getProviderRevenue(providerId: number) {
+    const providerOrders = await this.ordersRepository.find({
+      where: { provider_id: providerId },
+      relations: ['provider', 'customer', 'order_items', 'order_items.product'],
+      order: { created_at: 'DESC' },
+    });
+
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const monthlyRevenue = Array.from({ length: 12 }, (_, monthIndex) => {
+      const monthTotal = providerOrders
+        .filter((order) => {
+          const referenceDate = new Date(order.created_at);
+          return (
+            referenceDate.getFullYear() === currentYear &&
+            referenceDate.getMonth() === monthIndex
+          );
+        })
+        .reduce((sum, order) => sum + Number(order.total || 0), 0);
+
+      return {
+        month: monthLabels[monthIndex],
+        value: Number(monthTotal.toFixed(2)),
+      };
+    });
+
+    const monthOrders = providerOrders.filter((order) => {
+      const referenceDate = new Date(order.created_at);
+      return (
+        referenceDate.getMonth() === currentMonth &&
+        referenceDate.getFullYear() === currentYear
+      );
+    });
+
+    const totalRevenue = providerOrders.reduce(
+      (sum, order) => sum + Number(order.total || 0),
+      0,
+    );
+
+    const monthRevenue = monthOrders.reduce(
+      (sum, order) => sum + Number(order.total || 0),
+      0,
+    );
+
+    const recentOrders = providerOrders.slice(0, 5).map((order) => {
+      const items = order.order_items || [];
+      const firstItem = items[0]?.product?.name || 'Product';
+      const itemLabel =
+        items.length > 1
+          ? `${firstItem} + ${items.length - 1} more`
+          : firstItem;
+
+      return {
+        id: order.order_code || `#O${order.id}`,
+        orderId: order.id,
+        product: itemLabel,
+        quantity: `${order.item || items.length || 1} item${Number(order.item || items.length || 1) === 1 ? '' : 's'}`,
+        date: order.created_at,
+        status: order.status,
+        total: Number(order.total || 0),
+        customerName: order.customer?.name || `Customer ${order.customer_id}`,
+      };
+    });
+
+    return {
+      providerId,
+      totalRevenue: Number(totalRevenue.toFixed(2)),
+      monthRevenue: Number(monthRevenue.toFixed(2)),
+      totalOrders: providerOrders.length,
+      revenueOrders: providerOrders.length,
+      monthOrders: monthOrders.length,
+      pendingOrders: providerOrders.filter(
+        (order) => order.status === OrderStatus.PENDING,
+      ).length,
+      monthlyRevenue,
+      recentOrders,
+    };
+  }
+
   // Get orders by customer ID
   async findByCustomer(customerId: number) {
     return this.ordersRepository.find({

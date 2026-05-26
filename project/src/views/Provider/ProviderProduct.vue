@@ -130,8 +130,7 @@
                   @click="openAddModal"
                 >
                   <i class="bi bi-plus-circle"></i>
-
-                  Add Product
+                  បន្ថែមផលិតផល
                 </button>
               </div>
 
@@ -232,7 +231,7 @@ import SideBar
 from '../../components/provider_com/sideBar.vue'
 
 import PageHeader
-from '../../components/provider_com/pageHeader.vue'
+from '../../components/provider_com/PageHeader.vue'
 
 import ProductTable
 from '../../components/provider_com/productTable.vue'

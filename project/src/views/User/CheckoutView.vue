@@ -2,224 +2,182 @@
   <div class="checkout-page">
     <NavigationBar />
 
-    <!-- PROGRESS STEPS -->
-    <div class="progress-bar">
-      <div class="progress-track">
-        <div 
-          class="progress-fill"
-          :style="{ width: progressPercentage + '%' }"
-        ></div>
-      </div>
-      <div class="steps">
-        <div 
-          v-for="(step, index) in steps" 
-          :key="index"
-          class="step"
-          :class="{ 
-            active: currentStep === index,
-            completed: currentStep > index
-          }"
-        >
-          <div class="step-number">{{ index + 1 }}</div>
-          <div class="step-label">{{ step }}</div>
-        </div>
-      </div>
-    </div>
+    <!-- Background -->
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
 
-    <!-- LOADING OVERLAY -->
+    <!-- Loading -->
     <transition name="fade">
       <div
         v-if="loading"
-        class="loading-overlay"
+        class="fullscreen-state"
       >
-        <div class="loading-card">
-          <div class="loading-spinner"></div>
-          <h2>Processing Your Order</h2>
-          <p>{{ loadingMessage }}</p>
-          <div class="loading-progress">
-            <div class="progress-bar-fill"></div>
-          </div>
+        <div class="state-card glass-card">
+          <div class="loader"></div>
+
+          <h1>Processing Order</h1>
+
+          <p>
+            Please wait while we confirm your payment.
+          </p>
         </div>
       </div>
     </transition>
 
-    <!-- SUCCESS MODAL -->
+    <!-- Result -->
     <transition name="fade">
       <div
-        v-if="orderResult === 'success'"
-        class="modal-overlay"
+        v-if="orderResult"
+        class="fullscreen-state"
       >
-        <div class="success-modal">
-          <div class="success-icon">
-            <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-              <circle cx="40" cy="40" r="38" stroke="#22c55e" stroke-width="4"/>
-              <path d="M25 40L35 50L55 30" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+        <div
+          class="state-card glass-card"
+          :class="orderResult"
+        >
+          <div class="result-icon">
+            {{ orderResult === 'success' ? '✓' : '✕' }}
           </div>
-          <h1>Order Confirmed!</h1>
-          <p class="order-number">Order #{{ orderNumber }}</p>
+
+          <h1>
+            {{
+              orderResult === 'success'
+                ? 'Order Confirmed'
+                : 'Checkout Failed'
+            }}
+          </h1>
+
           <p>{{ orderMessage }}</p>
-          <div class="success-actions">
-            <button class="btn-primary" @click="goToReceipt">
-              View Receipt
-            </button>
-            <button class="btn-secondary" @click="router.push('/')">
-              Continue Shopping
-            </button>
-          </div>
+
+          <button
+            v-if="orderResult === 'success'"
+            class="primary-btn"
+            @click="goToReceipt"
+          >
+            View Receipt
+          </button>
+
+          <button
+            v-else
+            class="secondary-btn"
+            @click="resetOrder"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     </transition>
 
-    <!-- ERROR MODAL -->
-    <transition name="fade">
-      <div
-        v-if="orderResult === 'error'"
-        class="modal-overlay"
-      >
-        <div class="error-modal">
-          <div class="error-icon">
-            <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-              <circle cx="40" cy="40" r="38" stroke="#ef4444" stroke-width="4"/>
-              <path d="M30 30L50 50M50 30L30 50" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <h1>Checkout Failed</h1>
-          <p>{{ orderMessage }}</p>
-          <div class="error-actions">
-            <button class="btn-primary" @click="resetOrder">
-              Try Again
-            </button>
-            <button class="btn-secondary" @click="router.push('/cart')">
-              Back to Cart
-            </button>
-          </div>
-        </div>
-      </div>
-    </transition>
-
-    <!-- EMPTY CART -->
+    <!-- Empty -->
     <main
       v-if="!loading && !orderResult && !orderItems.length"
-      class="empty-state"
+      class="empty-wrapper"
     >
-      <div class="empty-card">
-        <div class="empty-illustration">
-          <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-            <circle cx="60" cy="60" r="50" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
-            <path d="M40 50L55 65L80 40" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+      <div class="glass-card empty-card">
+        <div class="empty-icon">
+          🛒
         </div>
+
         <h1>Your Cart Is Empty</h1>
-        <p>Add some fresh vegetables to get started</p>
-        <button class="btn-primary" @click="router.push('/')">
-          Browse Products
+
+        <p>
+          Add items to continue shopping.
+        </p>
+
+        <button
+          class="primary-btn"
+          @click="router.push('/')"
+        >
+          Continue Shopping
         </button>
       </div>
     </main>
 
-    <!-- CHECKOUT FORM -->
+    <!-- Checkout -->
     <main
       v-if="!loading && !orderResult && orderItems.length"
       class="checkout-container"
     >
       <div class="checkout-grid">
 
-        <!-- LEFT COLUMN -->
-        <section class="checkout-main">
+        <!-- Left -->
+        <section class="checkout-left">
 
-          <!-- SHIPPING ADDRESS -->
-          <div class="form-section" :class="{ completed: isAddressValid }">
-            <div class="section-header">
-              <div class="section-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                  <polyline points="9,22 9,12 15,12 15,22"/>
-                </svg>
+          <!-- Shipping -->
+          <div class="glass-card collapse-card">
+
+            <button
+              class="collapse-header"
+              @click="toggleSection('address')"
+            >
+              <div class="collapse-left">
+                <div class="collapse-icon green">
+                  📦
+                </div>
+
+                <div>
+                  <h3>Shipping Address</h3>
+
+                  <p>
+                    Delivery information
+                  </p>
+                </div>
               </div>
-              <div class="section-info">
-                <h2>Shipping Address</h2>
-                <p>Where should we deliver your order?</p>
-              </div>
-              <button 
-                class="section-toggle"
-                @click="toggleSection('address')"
-              >
+
+              <span class="arrow">
                 {{ activeSection === 'address' ? '−' : '+' }}
-              </button>
-            </div>
+              </span>
+            </button>
 
-            <transition name="slide">
-              <div v-show="activeSection === 'address'" class="section-content">
+            <transition name="expand">
+              <div
+                v-if="activeSection === 'address'"
+                class="collapse-body"
+              >
                 <div class="form-grid">
-                  <div class="form-field">
-                    <label>First Name *</label>
+
+                  <div class="input-group full-width">
+                    <label>Name</label>
+
                     <input
-                      v-model="shipping.firstName"
+                      v-model="shipping.name"
                       type="text"
-                      placeholder="John"
-                      :class="{ error: errors.firstName }"
+                      readonly
                     />
-                    <span v-if="errors.firstName" class="error-text">{{ errors.firstName }}</span>
                   </div>
 
-                  <div class="form-field">
-                    <label>Last Name *</label>
-                    <input
-                      v-model="shipping.lastName"
-                      type="text"
-                      placeholder="Doe"
-                      :class="{ error: errors.lastName }"
-                    />
-                    <span v-if="errors.lastName" class="error-text">{{ errors.lastName }}</span>
-                  </div>
+                  <div class="input-group full-width">
+                    <label>Street Address</label>
 
-                  <div class="form-field full-width">
-                    <label>Street Address *</label>
                     <input
                       v-model="shipping.address"
                       type="text"
-                      placeholder="123 Street Name"
-                      :class="{ error: errors.address }"
+                      placeholder="Street address"
                     />
-                    <span v-if="errors.address" class="error-text">{{ errors.address }}</span>
                   </div>
 
-                  <div class="form-field">
-                    <label>City *</label>
+                  <div class="input-group">
+                    <label>City</label>
+
                     <input
                       v-model="shipping.city"
                       type="text"
-                      placeholder="Phnom Penh"
-                      :class="{ error: errors.city }"
+                      placeholder="City"
                     />
-                    <span v-if="errors.city" class="error-text">{{ errors.city }}</span>
                   </div>
 
-                  <div class="form-field">
-                    <label>Province *</label>
+                  <div class="input-group">
+                    <label>State</label>
+
                     <input
                       v-model="shipping.state"
                       type="text"
-                      placeholder="Phnom Penh"
-                      :class="{ error: errors.state }"
+                      placeholder="Province"
                     />
-                    <span v-if="errors.state" class="error-text">{{ errors.state }}</span>
                   </div>
 
-                  <div class="form-field">
-                    <label>ZIP Code *</label>
-                    <input
-                      v-model="shipping.zip"
-                      type="text"
-                      placeholder="12000"
-                      :class="{ error: errors.zip }"
-                    />
-                    <span v-if="errors.zip" class="error-text">{{ errors.zip }}</span>
-                  </div>
-
-                  <div class="form-field">
+                  <div class="input-group">
                     <label>Country</label>
+
                     <input
                       v-model="shipping.country"
                       type="text"
@@ -227,336 +185,354 @@
                     />
                   </div>
 
-                  <div class="form-field">
-                    <label>Phone Number *</label>
+                  <div class="input-group">
+                    <label>Phone Number</label>
+
                     <input
                       v-model="shipping.phone"
-                      type="tel"
-                      placeholder="+855 12 345 678"
-                      :class="{ error: errors.phone }"
+                      type="text"
+                      readonly
                     />
-                    <span v-if="errors.phone" class="error-text">{{ errors.phone }}</span>
                   </div>
 
-                  <div class="form-field full-width">
-                    <label>Email Address *</label>
+                  <div class="input-group full-width">
+                    <label>Email Address</label>
+
                     <input
                       v-model="shipping.email"
                       type="email"
-                      placeholder="you@example.com"
-                      :class="{ error: errors.email }"
+                      readonly
                     />
-                    <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
                   </div>
+
                 </div>
 
-                <button class="btn-continue" @click="validateAndNext('address')">
-                  Continue to Payment
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 8h10M9 4l4 4-4 4"/>
-                  </svg>
-                </button>
+                <div
+                  v-if="Object.keys(errors).length"
+                  class="error-box"
+                >
+                  <p
+                    v-for="(error, key) in errors"
+                    :key="key"
+                  >
+                    • {{ error }}
+                  </p>
+                </div>
+
               </div>
             </transition>
+
           </div>
 
-          <!-- PAYMENT METHOD -->
-          <div class="form-section" :class="{ completed: isPaymentValid }">
-            <div class="section-header">
-              <div class="section-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                  <line x1="1" y1="10" x2="23" y2="10"/>
-                </svg>
-              </div>
-              <div class="section-info">
-                <h2>Payment Method</h2>
-                <p>Choose your preferred payment option</p>
-              </div>
-              <button 
-                class="section-toggle"
-                @click="toggleSection('payment')"
-              >
-                {{ activeSection === 'payment' ? '−' : '+' }}
-              </button>
-            </div>
+          <!-- Payment -->
+          <div class="glass-card collapse-card">
 
-            <transition name="slide">
-              <div v-show="activeSection === 'payment'" class="section-content">
-                <div class="payment-methods">
-                  <label 
-                    class="payment-option"
-                    :class="{ active: paymentMethod === 'bank' }"
-                  >
-                    <input type="radio" v-model="paymentMethod" value="bank" />
-                    <div class="payment-card">
-                      <div class="payment-icon">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                          <rect width="32" height="32" rx="6" fill="#3b82f6"/>
-                          <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">ABA</text>
-                        </svg>
-                      </div>
-                      <div class="payment-details">
-                        <h4>ABA Bank</h4>
-                        <p>Mobile banking transfer</p>
-                      </div>
-                      <div class="payment-check">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                          <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/>
-                          <path d="M6 10l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                      </div>
-                    </div>
-                  </label>
+            <button
+              class="collapse-header"
+              @click="toggleSection('payment')"
+            >
+              <div class="collapse-left">
 
-                  <label 
-                    class="payment-option"
-                    :class="{ active: paymentMethod === 'cash' }"
-                  >
-                    <input type="radio" v-model="paymentMethod" value="cash" />
-                    <div class="payment-card">
-                      <div class="payment-icon">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                          <rect width="32" height="32" rx="6" fill="#22c55e"/>
-                          <path d="M8 16h16M8 12h16M8 20h12" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                      </div>
-                      <div class="payment-details">
-                        <h4>Cash on Delivery</h4>
-                        <p>Pay when you receive</p>
-                      </div>
-                      <div class="payment-check">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                          <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/>
-                          <path d="M6 10l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label 
-                    class="payment-option"
-                    :class="{ active: paymentMethod === 'card' }"
-                  >
-                    <input type="radio" v-model="paymentMethod" value="card" />
-                    <div class="payment-card">
-                      <div class="payment-icon">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                          <rect width="32" height="32" rx="6" fill="#8b5cf6"/>
-                          <rect x="4" y="8" width="24" height="16" rx="2" stroke="white" stroke-width="2" fill="none"/>
-                          <circle cx="10" cy="16" r="3" fill="white"/>
-                          <circle cx="22" cy="16" r="3" fill="white"/>
-                        </svg>
-                      </div>
-                      <div class="payment-details">
-                        <h4>Credit / Debit Card</h4>
-                        <p>Visa, Mastercard, JCB</p>
-                      </div>
-                      <div class="payment-check">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                          <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/>
-                          <path d="M6 10l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                      </div>
-                    </div>
-                  </label>
+                <div class="collapse-icon blue">
+                  💳
                 </div>
 
-                <!-- CARD DETAILS -->
-                <transition name="slide">
-                  <div v-if="paymentMethod === 'card'" class="card-details">
-                    <div class="form-grid">
-                      <div class="form-field full-width">
-                        <label>Card Number *</label>
-                        <div class="input-with-icon">
+                <div>
+                  <h3>Payment Method</h3>
+
+                  <p>
+                    Secure payment options
+                  </p>
+                </div>
+
+              </div>
+
+              <span class="arrow">
+                {{ activeSection === 'payment' ? '−' : '+' }}
+              </span>
+            </button>
+
+            <transition name="expand">
+              <div
+                v-if="activeSection === 'payment'"
+                class="collapse-body"
+              >
+
+                <div class="payment-list">
+
+                  <!-- ABA -->
+                  <label
+                    class="payment-card"
+                    :class="{ active: paymentMethod === 'bank' }"
+                  >
+                    <input
+                      v-model="paymentMethod"
+                      type="radio"
+                      value="bank"
+                    />
+
+                    <div class="payment-content">
+                      <h4>🏦 ABA Bank Transfer</h4>
+
+                      <p>
+                        Pay using mobile banking.
+                      </p>
+                    </div>
+                  </label>
+
+                  <!-- COD -->
+                  <label
+                    class="payment-card"
+                    :class="{ active: paymentMethod === 'cash' }"
+                  >
+                    <input
+                      v-model="paymentMethod"
+                      type="radio"
+                      value="cash"
+                    />
+
+                    <div class="payment-content">
+                      <h4>🚚 Cash On Delivery</h4>
+
+                      <p>
+                        Pay after delivery.
+                      </p>
+                    </div>
+                  </label>
+
+                  <!-- CARD -->
+                  <label
+                    class="payment-card"
+                    :class="{ active: paymentMethod === 'card' }"
+                  >
+                    <input
+                      v-model="paymentMethod"
+                      type="radio"
+                      value="card"
+                    />
+
+                    <div class="payment-content">
+                      <h4>💳 Credit / Debit Card</h4>
+
+                      <p>
+                        Visa & Mastercard accepted.
+                      </p>
+                    </div>
+                  </label>
+
+                  <!-- Card Form -->
+                  <transition name="expand">
+
+                    <div
+                      v-if="paymentMethod === 'card'"
+                      class="card-form"
+                    >
+
+                      <div class="form-grid">
+
+                        <div class="input-group full-width">
+                          <label>Card Number</label>
+
                           <input
                             :value="card.number"
                             @input="handleCardNumber"
                             type="text"
                             placeholder="1234 5678 9012 3456"
-                            maxlength="19"
-                            :class="{ error: errors.card }"
                           />
-                          <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="1" y="4" width="18" height="12" rx="2"/>
-                            <line x1="1" y1="8" x2="19" y2="8"/>
-                          </svg>
                         </div>
-                        <span v-if="errors.card" class="error-text">{{ errors.card }}</span>
+
+                        <div class="input-group">
+                          <label>Expiry Date</label>
+
+                          <input
+                            :value="card.expiry"
+                            @input="handleExpiry"
+                            type="text"
+                            placeholder="MM/YY"
+                          />
+                        </div>
+
+                        <div class="input-group">
+                          <label>CVV</label>
+
+                          <input
+                            v-model="card.cvv"
+                            type="text"
+                            maxlength="4"
+                            placeholder="123"
+                          />
+                        </div>
+
+                        <div class="input-group full-width">
+                          <label>Cardholder Name</label>
+
+                          <input
+                            v-model="card.name"
+                            type="text"
+                            placeholder="John Doe"
+                          />
+                        </div>
+
                       </div>
 
-                      <div class="form-field">
-                        <label>Expiry Date *</label>
-                        <input
-                          :value="card.expiry"
-                          @input="handleExpiry"
-                          type="text"
-                          placeholder="MM/YY"
-                          maxlength="5"
-                        />
-                      </div>
-
-                      <div class="form-field">
-                        <label>CVV *</label>
-                        <input
-                          v-model="card.cvv"
-                          type="password"
-                          placeholder="•••"
-                          maxlength="4"
-                        />
-                      </div>
-
-                      <div class="form-field full-width">
-                        <label>Cardholder Name *</label>
-                        <input
-                          v-model="card.name"
-                          type="text"
-                          placeholder="John Doe"
-                        />
-                      </div>
                     </div>
-                  </div>
-                </transition>
 
-                <button class="btn-continue" @click="validateAndNext('payment')">
-                  Review Order
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 8h10M9 4l4 4-4 4"/>
-                  </svg>
-                </button>
+                  </transition>
+
+                </div>
+
               </div>
             </transition>
+
           </div>
 
-          <!-- ORDER REVIEW -->
-          <div class="form-section">
-            <div class="section-header">
-              <div class="section-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                  <rect x="9" y="3" width="6" height="4" rx="2"/>
-                  <path d="M9 14l2 2 4-4"/>
-                </svg>
+          <!-- Review -->
+          <div class="glass-card checkout-card">
+
+            <div class="section-top">
+
+              <div>
+                <span class="section-badge">
+                  Review Order
+                </span>
+
+                <h2>Your Items</h2>
               </div>
-              <div class="section-info">
-                <h2>Order Review</h2>
-                <p>Review your items before placing order</p>
-              </div>
-              <button 
-                class="section-toggle"
-                @click="toggleSection('review')"
-              >
-                {{ activeSection === 'review' ? '−' : '+' }}
-              </button>
+
+              <span class="item-count">
+                {{ orderItems.length }} items
+              </span>
+
             </div>
 
-            <transition name="slide">
-              <div v-show="activeSection === 'review'" class="section-content">
-                <div class="order-items">
-                  <div 
-                    v-for="item in orderItems" 
-                    :key="item.id"
-                    class="order-item"
-                  >
-                    <img :src="item.image" :alt="item.name" class="item-image" />
-                    <div class="item-details">
-                      <h4>{{ item.name }}</h4>
-                      <p class="item-provider">{{ item.providerName || 'Marketplace' }}</p>
-                      <div class="item-quantity">
-                        <span class="quantity-badge">×{{ item.quantity }}</span>
-                        <span class="item-price">${{ itemTotal(item).toFixed(2) }}</span>
-                      </div>
-                    </div>
+            <div class="review-list">
+
+              <div
+                v-for="item in orderItems"
+                :key="item.id"
+                class="review-item"
+              >
+
+                <img
+                  :src="item.image"
+                  :alt="item.name"
+                  class="review-image"
+                />
+
+                <div class="review-info">
+
+                  <h4>{{ item.name }}</h4>
+
+                  <div class="review-meta">
+
+                    <span class="qty-pill">
+                      ×{{ item.quantity }}
+                    </span>
+
+                    <span>
+                      {{
+                        item.providerName ||
+                        'Marketplace Seller'
+                      }}
+                    </span>
+
                   </div>
+
                 </div>
+
+                <div class="review-price">
+                  ${{ itemTotal(item).toFixed(2) }}
+                </div>
+
               </div>
-            </transition>
+
+            </div>
+
           </div>
+
         </section>
 
-        <!-- RIGHT COLUMN - ORDER SUMMARY -->
-        <aside class="checkout-sidebar">
-          <div class="summary-card">
-            <h2>Order Summary</h2>
-            
-            <div class="summary-items">
+        <!-- Right -->
+        <aside class="checkout-right">
+
+          <div class="glass-card summary-card">
+
+            <div class="summary-top">
+
+              <span class="section-badge">
+                Payment Summary
+              </span>
+
+              <h2>Order Summary</h2>
+
+            </div>
+
+            <div class="summary-list">
+
               <div class="summary-row">
-                <span>Subtotal ({{ orderItems.length }} items)</span>
-                <strong>${{ subtotal.toFixed(2) }}</strong>
+                <span>Subtotal</span>
+
+                <strong>
+                  ${{ subtotal.toFixed(2) }}
+                </strong>
               </div>
-              
+
               <div class="summary-row">
                 <span>Delivery Fee</span>
-                <strong>${{ shippingFee.toFixed(2) }}</strong>
+
+                <strong>
+                  ${{ shippingFee.toFixed(2) }}
+                </strong>
               </div>
-              
+
               <div class="summary-row">
                 <span>Service Fee</span>
-                <strong>${{ serviceFee.toFixed(2) }}</strong>
+
+                <strong>
+                  ${{ serviceFee.toFixed(2) }}
+                </strong>
               </div>
-              
+
               <div class="summary-divider"></div>
-              
-              <div class="summary-row total">
+
+              <div class="summary-row total-row">
                 <span>Total</span>
-                <strong class="total-amount">${{ total.toFixed(2) }}</strong>
+
+                <strong>
+                  ${{ total.toFixed(2) }}
+                </strong>
               </div>
+
             </div>
 
-            <div class="promo-section">
-              <div class="input-with-icon">
-                <input 
-                  v-model="couponCode" 
-                  type="text" 
-                  placeholder="Promo code" 
-                />
-                <button class="btn-apply" @click="applyCoupon">Apply</button>
-              </div>
-            </div>
-
-            <button 
-              class="btn-checkout"
-              :disabled="!canCheckout"
+            <button
+              class="checkout-btn"
+              :disabled="loading"
               @click="confirmOrder"
             >
-              <span v-if="loading">
-                <svg class="spinner" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-dasharray="12" stroke-dashoffset="6">
-                    <animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="1s" repeatCount="indefinite"/>
-                  </circle>
-                </svg>
-                Processing...
-              </span>
-              <span v-else>
-                Place Order - ${{ total.toFixed(2) }}
-              </span>
+              {{
+                loading
+                  ? 'Processing...'
+                  : 'Confirm Order'
+              }}
             </button>
 
-            <div class="security-badges">
-              <div class="badge">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M8 1l1 5h5l-4 3 1 5-3-3-3 3 1-5-4-3h5l1-5z"/>
-                </svg>
-                <span>SSL Secured</span>
+            <div class="security-box">
+
+              <div class="security-item">
+                🔒 SSL Encrypted
               </div>
-              <div class="badge">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M8 1L3 6v9h10V6L8 1z"/>
-                  <path d="M8 11v2"/>
-                  <circle cx="8" cy="8" r="1"/>
-                </svg>
-                <span>Safe Checkout</span>
+
+              <div class="security-item">
+                ✅ Secure Checkout
               </div>
-              <div class="badge">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M4 4l4 4 4-4"/>
-                  <path d="M4 8l4 4 4-4"/>
-                </svg>
-                <span>Easy Returns</span>
-              </div>
+
             </div>
+
           </div>
+
         </aside>
+
       </div>
     </main>
 
@@ -588,15 +564,14 @@ const router = useRouter()
 const cartStore = useCartStore()
 const userStore = useUserStore()
 
+/* --------------------------
+   STATE
+-------------------------- */
+
 const loading = ref(false)
-const loadingMessage = ref('Validating your information...')
+
 const orderResult = ref('')
 const orderMessage = ref('')
-const orderNumber = ref('')
-const couponCode = ref('')
-
-const steps = ['Address', 'Payment', 'Review']
-const currentStep = ref(0)
 
 const activeSection = ref('address')
 
@@ -615,16 +590,18 @@ const card = reactive({
 })
 
 const shipping = reactive({
-  firstName: '',
-  lastName: '',
+  name: '',
   address: '',
   city: '',
   state: '',
-  zip: '',
   country: '',
   phone: '',
   email: '',
 })
+
+/* --------------------------
+   COMPUTED
+-------------------------- */
 
 const orderItems = computed(() => {
   return cartStore.cartItems || []
@@ -644,87 +621,87 @@ const total = computed(() => {
   )
 })
 
-const progressPercentage = computed(() => {
-  return ((currentStep.value + 1) / steps.length) * 100
-})
-
-const isAddressValid = computed(() => {
-  return shipping.firstName && shipping.lastName && 
-         shipping.address && shipping.city && shipping.state && 
-         shipping.zip && shipping.phone && shipping.email.includes('@')
-})
-
-const isPaymentValid = computed(() => {
-  if (paymentMethod.value === 'card') {
-    return card.number.replace(/\s/g, '').length >= 16
-  }
-  return paymentMethod.value !== ''
-})
-
-const canCheckout = computed(() => {
-  return isAddressValid.value && isPaymentValid.value && orderItems.value.length > 0
-})
+/* --------------------------
+   MOUNT
+-------------------------- */
 
 onMounted(() => {
   loadUserData()
 })
 
+/* --------------------------
+   UI
+-------------------------- */
+
 const toggleSection = section => {
-  activeSection.value = activeSection.value === section ? '' : section
+  activeSection.value =
+    activeSection.value === section
+      ? ''
+      : section
 }
 
-const validateAndNext = (section) => {
-  clearErrors()
-  
-  if (section === 'address') {
-    if (!shipping.firstName) errors.firstName = 'First name is required'
-    if (!shipping.lastName) errors.lastName = 'Last name is required'
-    if (!shipping.address) errors.address = 'Address is required'
-    if (!shipping.city) errors.city = 'City is required'
-    if (!shipping.state) errors.state = 'Province is required'
-    if (!shipping.zip) errors.zip = 'ZIP code is required'
-    if (!shipping.phone) errors.phone = 'Phone number is required'
-    if (!shipping.email.includes('@')) errors.email = 'Valid email is required'
-    
-    if (Object.keys(errors).length === 0) {
-      currentStep.value = 1
-      activeSection.value = 'payment'
+/* --------------------------
+   LOAD USER DATA
+-------------------------- */
+
+const loadUserData = async () => {
+  try {
+    const user = userStore.user
+
+    if (!user || !user.id) {
+      router.push('/user/login?redirect=/checkout')
+      return
     }
-  }
-  
-  if (section === 'payment') {
-    if (paymentMethod.value === 'card') {
-      if (card.number.replace(/\s/g, '').length < 16) {
-        errors.card = 'Invalid card number'
+
+    shipping.name = user.name || ''
+    shipping.phone = user.phone || ''
+    shipping.email = user.email || ''
+
+    const token = localStorage.getItem('token')
+
+    if (!token) return
+
+    const response = await fetch(
+      `${API_BASE_URL}/address`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
+    )
+
+    if (!response.ok) return
+
+    const data = await response.json()
+
+    if (data) {
+      shipping.address = data.street || ''
+      shipping.city = data.city || ''
+      shipping.state = data.state || ''
+      shipping.country =
+        data.country || 'Cambodia'
     }
-    
-    if (Object.keys(errors).length === 0) {
-      currentStep.value = 2
-      activeSection.value = 'review'
-    }
+  } catch (error) {
+    console.error(
+      'Failed loading user data:',
+      error
+    )
   }
 }
 
-const loadUserData = () => {
-  const localUser = JSON.parse(localStorage.getItem('user') || 'null')
-  const user = userStore.user || localUser || {}
-
-  const names = String(user.name || '').split(' ')
-
-  shipping.firstName = user.firstName || names[0] || ''
-  shipping.lastName = user.lastName || names.slice(1).join('') || ''
-  shipping.address = user.address || ''
-  shipping.city = user.city || ''
-  shipping.state = user.state || ''
-  shipping.zip = user.zip || ''
-  shipping.country = user.country || 'Cambodia'
-  shipping.phone = user.phone || ''
-  shipping.email = user.email || ''
-}
+/* --------------------------
+   HELPERS
+-------------------------- */
 
 const itemTotal = item => {
-  return Number(item.unitPrice ?? item.price ?? 0) * item.quantity
+  return (
+    Number(
+      item.unitPrice ||
+      item.price ||
+      0
+    ) * Number(item.quantity || 1)
+  )
 }
 
 const clearErrors = () => {
@@ -732,6 +709,70 @@ const clearErrors = () => {
     delete errors[key]
   })
 }
+
+const validateForm = () => {
+  clearErrors()
+
+  if (!shipping.name) {
+    errors.name = 'Name is required'
+  }
+
+  if (!shipping.address) {
+    errors.address =
+      'Street address is required'
+  }
+
+  if (!shipping.city) {
+    errors.city = 'City is required'
+  }
+
+  if (!shipping.phone) {
+    errors.phone =
+      'Phone number is required'
+  }
+
+  if (!shipping.email) {
+    errors.email = 'Email is required'
+  }
+
+  if (
+    shipping.email &&
+    !shipping.email.includes('@')
+  ) {
+    errors.email =
+      'Please enter a valid email'
+  }
+
+  if (paymentMethod.value === 'card') {
+    if (
+      card.number.replace(/\s/g, '')
+        .length < 16
+    ) {
+      errors.card =
+        'Invalid card number'
+    }
+
+    if (!card.expiry) {
+      errors.expiry =
+        'Expiry date required'
+    }
+
+    if (!card.cvv) {
+      errors.cvv = 'CVV required'
+    }
+
+    if (!card.name) {
+      errors.cardName =
+        'Cardholder name required'
+    }
+  }
+
+  return Object.keys(errors).length === 0
+}
+
+/* --------------------------
+   CARD FORMATTERS
+-------------------------- */
 
 const handleCardNumber = event => {
   card.number = event.target.value
@@ -748,864 +789,716 @@ const handleExpiry = event => {
     .slice(0, 5)
 }
 
-const applyCoupon = () => {
-  console.log('Applying coupon:', couponCode.value)
+/* --------------------------
+   ORDER HELPERS
+-------------------------- */
+
+const generateOrderCode = () => {
+  return (
+    'ORD-' +
+    Date.now() +
+    '-' +
+    Math.floor(Math.random() * 9999)
+  )
 }
 
+const groupItemsByProvider = items => {
+  const groups = {}
+
+  items.forEach(item => {
+    const providerId =
+      item.provider_id ||
+      item.providerId
+
+    if (!providerId) {
+      console.error(
+        'Missing provider_id:',
+        item
+      )
+      return
+    }
+
+    if (!groups[providerId]) {
+      groups[providerId] = {
+        providerId,
+        items: [],
+        total: 0,
+      }
+    }
+
+    groups[providerId].items.push(item)
+
+    groups[providerId].total +=
+      itemTotal(item)
+  })
+
+  return Object.values(groups)
+}
+
+/* --------------------------
+   SAVE ADDRESS
+-------------------------- */
+
+const saveAddress = async token => {
+  return await axios.post(
+    `${API_BASE_URL}/address`,
+    {
+      name: shipping.name,
+      street: shipping.address,
+      city: shipping.city,
+      state: shipping.state,
+      country: shipping.country,
+      phone: shipping.phone,
+      email: shipping.email,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  )
+}
+
+/* --------------------------
+   CONFIRM ORDER
+-------------------------- */
+
 const confirmOrder = async () => {
-  if (!canCheckout.value) {
+  if (!validateForm()) {
     return
   }
 
   loading.value = true
-  loadingMessage.value = 'Validating your information...'
-  
-  setTimeout(() => {
-    loadingMessage.value = 'Processing payment...'
-  }, 1000)
-  
-  setTimeout(() => {
-    loadingMessage.value = 'Confirming your order...'
-  }, 2000)
 
   try {
-    const customer = JSON.parse(localStorage.getItem('user') || 'null')
+    const token = localStorage.getItem('token')
 
-    if (!customer?.id) {
-      throw new Error('Please login before checkout.')
+    if (!token) {
+      throw new Error(
+        'Please login first.'
+      )
     }
 
-    const groupedOrders = groupItemsByProvider(orderItems.value)
-
-    const responses = await Promise.all(
-      groupedOrders.map(group => {
-        return axios.post(`${API_BASE_URL}/orders`, {
-          order_code: generateOrderCode(),
-          customer_id: customer.id,
-          provider_id: group.providerId,
-          status: 'pending',
-          total: group.total,
-          item: group.items.length,
-          items: group.items.map(item => ({
-            product_id: item.id,
-            quantity: item.quantity,
-          })),
-        })
-      })
+    const customer = JSON.parse(
+      localStorage.getItem('user') || 'null'
     )
+
+    if (!customer?.id) {
+      throw new Error(
+        'Customer not found.'
+      )
+    }
+
+    /* --------------------------
+       SAVE ADDRESS
+    -------------------------- */
+
+    await saveAddress(token)
+
+    /* --------------------------
+       GROUP ORDERS
+    -------------------------- */
+
+    const groupedOrders =
+      groupItemsByProvider(
+        orderItems.value
+      )
+
+    if (!groupedOrders.length) {
+      throw new Error(
+        'No valid products found.'
+      )
+    }
+
+    /* --------------------------
+       CREATE ORDERS
+    -------------------------- */
+
+    for (const group of groupedOrders) {
+      const payload = {
+        order_code: generateOrderCode(),
+
+        customer_id: Number(customer.id),
+
+        provider_id: Number(
+          group.providerId
+        ),
+
+        status: 'pending',
+
+        total: Number(group.total),
+
+        item: Number(
+          group.items.length
+        ),
+
+        payment_method:
+          paymentMethod.value,
+
+        items: group.items.map(item => ({
+          product_id: Number(item.id),
+          quantity: Number(
+            item.quantity
+          ),
+        })),
+      }
+
+      console.log(
+        'ORDER PAYLOAD:',
+        payload
+      )
+
+      await axios.post(
+        `${API_BASE_URL}/orders`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+    }
+
+    /* --------------------------
+       SAVE RECEIPT
+    -------------------------- */
 
     const receipt = {
       orderNumber: generateOrderCode(),
-      customer: { ...shipping },
+
       items: orderItems.value,
+
+      subtotal: subtotal.value,
+
+      shippingFee: shippingFee.value,
+
+      serviceFee: serviceFee.value,
+
       total: total.value,
-      paymentMethod: paymentMethod.value,
-      backendOrders: responses.map(r => r.data),
+
+      paymentMethod:
+        paymentMethod.value,
+
+      shipping: {
+        ...shipping,
+      },
+
+      createdAt:
+        new Date().toISOString(),
     }
 
-    localStorage.setItem('lastOrder', JSON.stringify(receipt))
-    orderNumber.value = receipt.orderNumber
+    localStorage.setItem(
+      'latestReceipt',
+      JSON.stringify(receipt)
+    )
+
+    /* --------------------------
+       CLEAR CART
+    -------------------------- */
+
     cartStore.clearCart()
 
+    /* --------------------------
+       SUCCESS
+    -------------------------- */
+
     orderResult.value = 'success'
-    orderMessage.value = 'Your order has been placed successfully. You will receive a confirmation email shortly.'
-  }
-  catch (error) {
+
+    orderMessage.value =
+      'Your order has been placed successfully.'
+  } catch (error) {
+    console.error(
+      'CHECKOUT ERROR:',
+      error
+    )
+
     orderResult.value = 'error'
-    orderMessage.value = error.response?.data?.message || error.message || 'Checkout failed. Please try again.'
-  }
-  finally {
+
+    if (error.response) {
+      console.log(
+        'SERVER ERROR:',
+        error.response.data
+      )
+
+      orderMessage.value =
+        error.response.data.message ||
+        error.response.data.error ||
+        'Failed to process order.'
+    } else {
+      orderMessage.value =
+        error.message ||
+        'Checkout failed.'
+    }
+  } finally {
     loading.value = false
   }
 }
 
-const groupItemsByProvider = items => {
-  const map = new Map()
-
-  items.forEach(item => {
-    const providerId = item.providerId || item.provider_id || null
-
-    if (!map.has(providerId)) {
-      map.set(providerId, {
-        providerId,
-        items: [],
-        total: 0,
-      })
-    }
-
-    const group = map.get(providerId)
-    group.items.push(item)
-    group.total += itemTotal(item)
-  })
-
-  return Array.from(map.values())
-}
-
-const generateOrderCode = () => {
-  return `ORD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
-}
+/* --------------------------
+   RECEIPT
+-------------------------- */
 
 const goToReceipt = () => {
   router.push('/receipt')
 }
 
+/* --------------------------
+   RESET
+-------------------------- */
+
 const resetOrder = () => {
   orderResult.value = ''
   orderMessage.value = ''
-  currentStep.value = 0
-  activeSection.value = 'address'
 }
 </script>
-
 <style scoped>
 .checkout-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 100%);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(34,197,94,0.08),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(59,130,246,0.08),
+      transparent 30%
+    ),
+    #f8fafc;
+
+  overflow-x: hidden;
+  position: relative;
 }
 
-/* Progress Bar */
-.progress-bar {
-  background: white;
-  padding: 20px 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+.bg-blur {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(90px);
+  opacity: 0.4;
 }
 
-.progress-track {
-  max-width: 800px;
-  margin: 0 auto 16px;
-  height: 4px;
-  background: #e5e7eb;
-  border-radius: 2px;
-  overflow: hidden;
+.blur-1 {
+  width: 220px;
+  height: 220px;
+  background: #86efac;
+  top: -100px;
+  left: -100px;
 }
 
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #22c55e, #16a34a);
-  transition: width 0.5s ease;
+.blur-2 {
+  width: 220px;
+  height: 220px;
+  background: #93c5fd;
+  bottom: -100px;
+  right: -100px;
 }
 
-.steps {
-  max-width: 800px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 20px;
-}
-
-.step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-
-.step-number {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #e5e7eb;
-  color: #6b7280;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.step.active .step-number {
-  background: #22c55e;
-  color: white;
-  box-shadow: 0 0 0 4px rgba(34,197,94,0.2);
-}
-
-.step.completed .step-number {
-  background: #16a34a;
-  color: white;
-}
-
-.step-label {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.step.active .step-label {
-  color: #22c55e;
-  font-weight: 600;
-}
-
-/* Loading Overlay */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-}
-
-.loading-card {
-  background: white;
-  padding: 40px;
-  border-radius: 20px;
-  text-align: center;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #e5e7eb;
-  border-top-color: #22c55e;
-  border-radius: 50%;
-  margin: 0 auto 20px;
-  animation: spin 1s linear infinite;
-}
-
-.loading-progress {
-  height: 4px;
-  background: #e5e7eb;
-  border-radius: 2px;
-  margin-top: 20px;
-  overflow: hidden;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background: #22c55e;
-  width: 0%;
-  animation: progress 3s ease-in-out;
-}
-
-@keyframes progress {
-  0% { width: 0%; }
-  50% { width: 50%; }
-  100% { width: 100%; }
-}
-
-.loading-card h2 {
-  margin: 0 0 8px;
-  font-size: 20px;
-  color: #1f2937;
-}
-
-.loading-card p {
-  margin: 0;
-  color: #6b7280;
-  font-size: 14px;
-}
-
-/* Modal Overlay */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-}
-
-.success-modal,
-.error-modal {
-  background: white;
-  padding: 48px;
-  border-radius: 24px;
-  text-align: center;
-  max-width: 480px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  animation: modalIn 0.3s ease;
-}
-
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.success-icon,
-.error-icon {
-  margin: 0 auto 24px;
-}
-
-.success-modal h1,
-.error-modal h1 {
-  margin: 0 0 8px;
-  font-size: 28px;
-  color: #1f2937;
-}
-
-.success-modal .order-number {
-  margin: 0 0 16px;
-  font-size: 16px;
-  color: #22c55e;
-  font-weight: 600;
-}
-
-.success-modal p,
-.error-modal p {
-  margin: 0 0 32px;
-  color: #6b7280;
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.success-actions,
-.error-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
-
-.btn-primary,
-.btn-secondary {
-  padding: 14px 28px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: white;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(34,197,94,0.3);
-}
-
-.btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.btn-secondary:hover {
-  background: #e5e7eb;
-}
-
-/* Empty State */
-.empty-state {
-  min-height: 80vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-}
-
-.empty-card {
-  background: white;
-  padding: 48px;
-  border-radius: 24px;
-  text-align: center;
-  max-width: 480px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-}
-
-.empty-illustration {
-  margin: 0 auto 24px;
-}
-
-.empty-card h1 {
-  margin: 0 0 12px;
-  font-size: 24px;
-  color: #1f2937;
-}
-
-.empty-card p {
-  margin: 0 0 32px;
-  color: #6b7280;
-  font-size: 16px;
-}
-
-/* Checkout Container */
 .checkout-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 32px 20px 100px;
+  max-width: 1320px;
+  margin: auto;
+  padding: 26px 16px 100px;
+  position: relative;
+  z-index: 2;
 }
 
 .checkout-grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 32px;
-}
-
-.checkout-main {
-  display: flex;
-  flex-direction: column;
+  grid-template-columns: 1fr 340px;
   gap: 20px;
 }
 
-/* Form Sections */
-.form-section {
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.form-section.completed {
-  border: 2px solid #22c55e;
-}
-
-.section-header {
+.checkout-left {
   display: flex;
-  align-items: center;
-  padding: 20px 24px;
+  flex-direction: column;
   gap: 16px;
-  background: #fafafa;
-  border-bottom: 1px solid #e5e7eb;
 }
 
-.section-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: #f0fdf4;
-  color: #22c55e;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.glass-card {
+  background: rgba(255,255,255,0.7);
+
+  backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255,255,255,0.5);
+
+  box-shadow:
+    0 10px 30px rgba(15,23,42,0.05);
+
+  border-radius: 20px;
 }
 
-.section-info h2 {
-  margin: 0 0 4px;
-  font-size: 18px;
-  color: #1f2937;
-  font-weight: 600;
+.checkout-card,
+.summary-card,
+.collapse-card {
+  padding: 18px;
 }
 
-.section-info p {
-  margin: 0;
-  font-size: 13px;
-  color: #6b7280;
+.summary-card {
+  position: sticky;
+  top: 100px;
 }
 
-.section-toggle {
-  margin-left: auto;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+.collapse-header {
+  width: 100%;
   border: none;
-  background: white;
-  color: #6b7280;
-  font-size: 20px;
+  background: transparent;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
   cursor: pointer;
+  padding: 0;
+}
+
+.collapse-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.collapse-icon {
+  width: 42px;
+  height: 42px;
+
+  border-radius: 14px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+
+  font-size: 18px;
 }
 
-.section-toggle:hover {
-  background: #f3f4f6;
+.collapse-icon.green {
+  background: #dcfce7;
 }
 
-.section-content {
-  padding: 24px;
+.collapse-icon.blue {
+  background: #dbeafe;
 }
 
-/* Form Grid */
+.collapse-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.collapse-header p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.arrow {
+  font-size: 22px;
+  color: #64748b;
+}
+
+.collapse-body {
+  margin-top: 18px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 14px;
 }
 
 .full-width {
   grid-column: 1 / -1;
 }
 
-.form-field {
+.input-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-.form-field label {
-  font-size: 13px;
+.input-group label {
+  font-size: 11px;
   font-weight: 600;
-  color: #374151;
+  color: #475569;
 }
 
-.form-field input {
-  padding: 12px 16px;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  background: white;
-}
+.input-group input {
+  border: 1px solid #dbe4ee;
 
-.form-field input:focus {
-  outline: none;
-  border-color: #22c55e;
-  box-shadow: 0 0 0 4px rgba(34,197,94,0.1);
-}
+  background: rgba(255,255,255,0.9);
 
-.form-field input.error {
-  border-color: #ef4444;
-}
+  border-radius: 14px;
 
-.error-text {
+  padding: 11px 13px;
+
   font-size: 12px;
-  color: #ef4444;
+
+  transition: 0.2s ease;
 }
 
-.input-with-icon {
-  position: relative;
+.input-group input:focus {
+  outline: none;
+
+  border-color: #22c55e;
+
+  box-shadow:
+    0 0 0 4px rgba(34,197,94,0.1);
 }
 
-.input-with-icon input {
-  padding-right: 48px;
-}
-
-.input-icon {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-}
-
-.btn-continue {
-  margin-top: 24px;
-  width: 100%;
-  padding: 14px 24px;
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-}
-
-.btn-continue:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(34,197,94,0.3);
-}
-
-/* Payment Methods */
-.payment-methods {
+.payment-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.payment-option {
-  cursor: pointer;
-}
-
-.payment-option input {
-  display: none;
-}
-
 .payment-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border: 2px solid #e5e7eb;
+  gap: 12px;
+
+  border: 1px solid #e2e8f0;
+
   border-radius: 16px;
-  transition: all 0.2s ease;
-  background: white;
+
+  padding: 14px;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
 }
 
 .payment-card:hover {
   border-color: #22c55e;
 }
 
-.payment-option.active .payment-card {
-  border-color: #22c55e;
-  background: #f0fdf4;
+.payment-card.active {
+  border-color: #16a34a;
+
+  background: rgba(240,253,244,0.7);
 }
 
-.payment-icon {
-  flex-shrink: 0;
-}
+.card-form {
+  background: rgba(248,250,252,0.9);
 
-.payment-details h4 {
-  margin: 0 0 4px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.payment-details p {
-  margin: 0;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.payment-check {
-  margin-left: auto;
-  color: #22c55e;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: all 0.2s ease;
-}
-
-.payment-option.active .payment-check {
-  opacity: 1;
-  transform: scale(1);
-}
-
-/* Card Details */
-.card-details {
-  margin-top: 20px;
-  padding: 20px;
-  background: #f9fafb;
   border-radius: 16px;
+
+  padding: 16px;
 }
 
-/* Order Items */
-.order-items {
+.review-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
-.order-item {
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  background: #f9fafb;
-  border-radius: 16px;
+.review-item {
+  display: grid;
+
+  grid-template-columns: 65px 1fr auto;
+
+  gap: 14px;
+
   align-items: center;
+
+  padding: 14px 0;
+
+  border-bottom: 1px solid #eef2f7;
 }
 
-.item-image {
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
+.review-item:last-child {
+  border-bottom: none;
+}
+
+.review-image {
+  width: 65px;
+  height: 65px;
+
   object-fit: cover;
+
+  border-radius: 16px;
 }
 
-.item-details {
-  flex: 1;
-}
-
-.item-details h4 {
-  margin: 0 0 4px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.item-provider {
-  margin: 0 0 8px;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.item-quantity {
+.review-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+
+  margin-top: 6px;
+
+  font-size: 11px;
+
+  color: #64748b;
 }
 
-.quantity-badge {
+.qty-pill {
   background: #dcfce7;
+
   color: #166534;
-  padding: 4px 12px;
+
+  padding: 3px 10px;
+
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-}
 
-.item-price {
-  font-size: 16px;
+  font-size: 10px;
   font-weight: 700;
-  color: #1f2937;
 }
 
-/* Sidebar */
-.checkout-sidebar {
-  position: sticky;
-  top: 100px;
+.review-price {
+  font-size: 14px;
+  font-weight: 700;
 }
 
-.summary-card {
-  background: white;
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-}
-
-.summary-card h2 {
-  margin: 0 0 20px;
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.summary-items {
-  margin-bottom: 20px;
+.summary-list {
+  margin-top: 18px;
 }
 
 .summary-row {
   display: flex;
   justify-content: space-between;
-  padding: 12px 0;
-  font-size: 14px;
-  color: #6b7280;
-}
 
-.summary-row strong {
-  color: #1f2937;
-  font-weight: 600;
+  padding: 10px 0;
+
+  font-size: 13px;
 }
 
 .summary-divider {
   height: 1px;
-  background: #e5e7eb;
-  margin: 12px 0;
+  background: #e2e8f0;
+  margin: 10px 0;
 }
 
-.summary-row.total {
-  padding-top: 16px;
+.total-row {
   font-size: 18px;
+  font-weight: 800;
 }
 
-.total-amount {
-  color: #22c55e;
-  font-size: 24px;
+.checkout-btn,
+.primary-btn,
+.secondary-btn {
+  width: 100%;
+
+  border: none;
+
+  border-radius: 16px;
+
+  padding: 13px;
+
+  font-size: 13px;
   font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
 }
 
-/* Promo Section */
-.promo-section {
-  margin-bottom: 20px;
+.checkout-btn,
+.primary-btn {
+  background:
+    linear-gradient(
+      135deg,
+      #22c55e,
+      #16a34a
+    );
+
+  color: white;
 }
 
-.promo-section .input-with-icon {
+.checkout-btn:hover,
+.primary-btn:hover {
+  transform: translateY(-1px);
+}
+
+.secondary-btn {
+  background: #e2e8f0;
+}
+
+.security-box {
+  margin-top: 16px;
+
   display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.promo-section input {
-  flex: 1;
-  padding: 12px 16px;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  font-size: 14px;
-}
+.security-item {
+  font-size: 11px;
 
-.btn-apply {
-  padding: 12px 20px;
-  background: #f3f4f6;
-  color: #374151;
-  border: none;
-  border-radius: 12px;
+  color: #16a34a;
+
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.btn-apply:hover {
-  background: #e5e7eb;
-}
+.error-box {
+  margin-top: 16px;
 
-/* Checkout Button */
-.btn-checkout {
-  width: 100%;
-  padding: 16px 24px;
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: white;
-  border: none;
+  background: rgba(254,242,242,0.9);
+
+  border: 1px solid #fecaca;
+
   border-radius: 14px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
+
+  padding: 12px;
+}
+
+.error-box p {
+  margin: 4px 0;
+  color: #dc2626;
+}
+
+.fullscreen-state,
+.empty-wrapper {
+  min-height: 80vh;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+
+  padding: 20px;
 }
 
-.btn-checkout:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(34,197,94,0.4);
+.state-card,
+.empty-card {
+  max-width: 460px;
+  width: 100%;
+  padding: 36px;
+  text-align: center;
 }
 
-.btn-checkout:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.result-icon,
+.empty-icon {
+  width: 85px;
+  height: 85px;
 
-.spinner {
-  animation: spin 1s linear infinite;
-}
+  border-radius: 999px;
 
-/* Security Badges */
-.security-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.badge {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 500;
+  justify-content: center;
+
+  background: rgba(255,255,255,0.8);
+
+  margin: 0 auto 20px;
+
+  font-size: 34px;
 }
 
-.badge svg {
-  color: #22c55e;
-}
+.loader {
+  width: 55px;
+  height: 55px;
 
-/* Animations */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  margin: 0 auto 20px;
+
+  border-radius: 999px;
+
+  border: 5px solid #e2e8f0;
+
+  border-top-color: #16a34a;
+
+  animation: spin 1s linear infinite;
 }
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
 }
 
 .fade-enter-from,
@@ -1613,59 +1506,69 @@ const resetOrder = () => {
   opacity: 0;
 }
 
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.3s ease;
-  max-height: 1000px;
-  overflow: hidden;
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.25s ease;
 }
 
-.slide-enter-from,
-.slide-leave-to {
-  max-height: 0;
+.expand-enter-from,
+.expand-leave-to {
   opacity: 0;
+  transform: translateY(-6px);
 }
 
-/* Responsive */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 1024px) {
   .checkout-grid {
     grid-template-columns: 1fr;
   }
 
-  .checkout-sidebar {
+  .summary-card {
     position: static;
   }
 }
 
 @media (max-width: 768px) {
   .checkout-container {
-    padding: 20px 16px 120px;
+    padding: 16px 12px 120px;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
   }
 
-  .step-label {
-    font-size: 11px;
+  .review-item {
+    grid-template-columns: 60px 1fr;
+  }
+
+  .review-price {
+    grid-column: 2;
+    justify-self: end;
   }
 
   .summary-card {
     position: fixed;
+
     bottom: 0;
     left: 0;
     right: 0;
+
     z-index: 50;
+
     border-radius: 24px 24px 0 0;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
   }
 
-  .summary-card h2 {
-    display: none;
+  h1 {
+    font-size: 24px;
   }
 
-  .security-badges {
-    display: none;
+  h2 {
+    font-size: 18px;
   }
 }
 </style>

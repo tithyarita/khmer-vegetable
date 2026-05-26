@@ -8,22 +8,21 @@
     <section class="section popular-vegetables">
       <div class="section-inner">
         <div class="section-header">
-          <h2 class="section-title">Popular Vegetables</h2>
-          <router-link to="/products" class="see-all">All Vegetables →</router-link>
+          <h2 class="section-title">{{ t('popularVegetables') }}</h2>
+          <router-link to="/products" class="see-all">{{ t('allVegetables') }} →</router-link>
         </div>
         <Card />
         <br>
         <FashDeal />
         <br>
-          <div class="section-header">
-          <h2 class="section-title">Meet Our Farmers</h2>
-          <a href="#" class="see-all">All Farmers →</a>
+        <div class="section-header">
+          <h2 class="section-title">{{ t('meetFarmers') }}</h2>
+          <a href="#" class="see-all">{{ t('allFarmers') }} →</a>
         </div>
-  
         <Farm />
         <div class="section-header">
-          <h2 class="section-title">Special Deals</h2>
-          <a href="#" class="see-all">All Deals →</a>
+          <h2 class="section-title">{{ t('specialDeals') }}</h2>
+          <a href="#" class="see-all">{{ t('allDeals') }} →</a>
         </div>
         <Deals />
       </div>
@@ -40,6 +39,12 @@ import Card from '../../components/Customer/Card.vue'
 import Deals from '../../components/Customer/DealsCard.vue'
 import Footer from '../../components/Customer/Footer.vue'
 import FashDeal from './fashDeals.vue'
+import { useLanguageStore } from '@/stores/languageStore.js'
+import { messages } from '@/lang/index.js'
+import { computed } from 'vue'
+
+const languageStore = useLanguageStore()
+const t = (key) => messages[languageStore.language][key] || key
 </script>
 
 <style scoped>
@@ -56,6 +61,10 @@ import FashDeal from './fashDeals.vue'
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+}
+.admin{
+  width: 100%;
+  min-height: 100vh;
 }
 
 /* ── SECTION ── */

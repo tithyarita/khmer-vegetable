@@ -4,10 +4,10 @@
       <div
         class="farmer-card"
         v-for="(farmer, index) in farmers"
-        :key="index"
+        :key="farmer.id"
         :style="{ animationDelay: `${0.1 + index * 0.1}s` }"
+        @click="goToFarmer(farmer.id)"
       >
-        <!-- Avatar Image -->
         <div class="avatar">
           <img :src="farmer.image" :alt="farmer.name" />
         </div>
@@ -24,35 +24,14 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import Profile from "../../assets/images/profile.png";
+import { useRouter } from 'vue-router'
+import { farmers } from '../../data/farmers'
 
-const farmers = ref([
-  {
-    image: Profile,
-    name: "G Davit",
-    farm: "Green Valley Farms",
-    desc: "Specializes in organic leafy greens and crisp heirloom lettuces harvested daily.",
-  },
-  {
-    image: Profile,
-    name: "G Davit",
-    farm: "Green Valley Farms",
-    desc: "Specializes in organic leafy greens and crisp heirloom lettuces harvested daily.",
-  },
-  {
-    image: Profile,
-    name: "G Davit",
-    farm: "Green Valley Farms",
-    desc: "Specializes in organic leafy greens and crisp heirloom lettuces harvested daily.",
-  },
-  {
-    image: Profile,
-    name: "G Davit",
-    farm: "Green Valley Farms",
-    desc: "Specializes in organic leafy greens and crisp heirloom lettuces harvested daily.",
-  },
-]);
+const router = useRouter()
+
+function goToFarmer(id) {
+  router.push(`/farmer/${id}`)
+}
 </script>
 
 <style scoped>
@@ -66,9 +45,7 @@ const farmers = ref([
 /* SECTION */
 .farmers-section {
   width: 100%;
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 24px 16px;
+  padding: 24px 0;
   font-family: 'Manrope', sans-serif;
   color: #1c1c1e;
 }
@@ -76,7 +53,7 @@ const farmers = ref([
 /* GRID */
 .farmers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
 }
 
@@ -92,6 +69,7 @@ const farmers = ref([
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
   transition: transform 0.25s ease;
   animation: fadeUp 0.6s both;
+  cursor: pointer;
 }
 
 .farmer-card:hover {
