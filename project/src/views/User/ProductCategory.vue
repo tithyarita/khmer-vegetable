@@ -97,6 +97,10 @@
               <div class="card-body">
                 <p class="category-label">{{ product.category }}</p>
                 <h3 class="product-name">{{ product.name }}</h3>
+                <p class="provider-owner">
+                  Provider: {{ product.providerName || 'Unknown' }}
+                  <span v-if="product.providerId">(#{{ product.providerId }})</span>
+                </p>
                 <div class="price-row">
                   <div class="prices">
                     <span class="price">${{ product.price }}</span>
@@ -475,6 +479,12 @@ h1 {
 
 .product-card h3 { font-size: 15px; margin: 6px 0; color: var(--t1); }
 .category-label { font-size: 12px; color: var(--t3); margin: 0; }
+
+.provider-owner {
+  margin: 2px 0 10px;
+  font-size: 12px;
+  color: var(--t2);
+}
 
 .price-row { display: flex; justify-content: space-between; align-items: center; }
 .prices { display: flex; align-items: center; gap: 6px; }

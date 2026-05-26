@@ -32,6 +32,18 @@ export const useProductStore = defineStore('product', () => {
     if (!product) return product
 
     const img = product.imageUrl || ''
+    const providerId = Number(
+      product.providerId ??
+      product.provider_id ??
+      product.provider?.user_id ??
+      0
+    ) || null
+
+    const providerName =
+      product.providerName ||
+      product.provider?.provider_name ||
+      product.provider?.name ||
+      'Unknown'
 
     console.log('RAW imageUrl:', img)
 
@@ -47,6 +59,8 @@ export const useProductStore = defineStore('product', () => {
     }
 
     product.image = finalImage
+    product.providerId = providerId
+    product.providerName = providerName
 
     console.log('FINAL image URL:', product.image)
 
