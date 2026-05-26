@@ -41,9 +41,9 @@ import Checkout from '../views/User/CheckoutView.vue'
 import Profile from '../views/User/UserDashboard.vue'
 import OrderTracker from '../views/User/OrderTracker.vue'
 import ProductDetailUser from '../views/User/ProductDetail.vue'
-import Search from '../components/Customer/Search.vue'
-import ProductList from '../components/Customer/Productlist.vue'
+import ProductCategory from '@/views/User/ProductCategory.vue'
 import fashDeals from '../views/User/fashDeals.vue'
+
 
 // ==================== Routes ====================
 const routes = [
@@ -63,10 +63,11 @@ const routes = [
       { path: 'fashDeals', component: fashDeals },
       { path: 'checkout', component: Checkout },
       { path: 'profile', component: Profile },
-      { path: 'search', component: Search },
-      { path: 'order-tracker', component: OrderTracker },
+      { path: 'order-tracker', alias: 'track-order', component: OrderTracker },
       { path: 'product/:id', component: ProductDetailUser, props: true },
-      { path: 'products', component: ProductList },
+      { path: 'products', component: ProductCategory },
+      { path: 'category/:type', component: ProductCategory, props: true },
+      { path: 'farmer/:id', component: () => import('../views/User/FarmerProfile.vue'), props: true },
     ],
   },
 
@@ -121,11 +122,17 @@ const routes = [
   // AUTH
   { path: '/user/login', component: () => import('../views/User/login.vue') },
   { path: '/user/register', component: () => import('../views/User/resgister.vue') },
+  { path: '/user/forgot-password', component: () => import('../views/User/Fogotpassword.vue') },
+  { path: '/user/verify-otp', component: () => import('../views/User/VertifyOtp.vue') },
+  { path: '/user/reset-password', component: () => import('../views/User/Resetpassword.vue') },
   { path: '/provider/login', component: () => import('../views/Provider/login.vue') },
   
   // AUTH ALIASES
   { path: '/login', redirect: '/user/login' },
   { path: '/register', redirect: '/user/register' },
+  { path: '/forgot-password', redirect: '/user/forgot-password' },
+  { path: '/verify-otp', redirect: '/user/verify-otp' },
+  { path: '/reset-password', redirect: '/user/reset-password' },
 ]
 
 // ==================== ROUTER ====================
@@ -140,7 +147,7 @@ router.beforeEach((to, from) => {
   const token = localStorage.getItem('token')
   const role = user?.role?.trim()?.toLowerCase()
 
-  // NOT LOGGED IN
+ // NOT LOGGED IN
   if (
     (to.path.startsWith('/admin') ||
      to.path.startsWith('/provider') ||
@@ -150,13 +157,12 @@ router.beforeEach((to, from) => {
     return `/user/login?redirect=${to.fullPath}`
   }
 
-  // STAFF PROTECTION  ← new
+    // STAFF PROTECTION  
   if (to.path.startsWith('/staff')) {
     if (!user || role !== 'staff') {
       return `/user/login?redirect=${to.fullPath}`
     }
   }
-
   // ADMIN PROTECTION
   if (to.path.startsWith('/admin')) {
     if (!user || role !== 'admin') {

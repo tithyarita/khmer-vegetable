@@ -130,8 +130,7 @@
                   @click="openAddModal"
                 >
                   <i class="bi bi-plus-circle"></i>
-
-                  Add Product
+                  បន្ថែមផលិតផល
                 </button>
               </div>
 

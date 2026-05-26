@@ -70,7 +70,9 @@ export default {
 
   data() {
     const u = this.userStore?.user || {}
+    const userId = u.id ?? null
     return {
+      userId,
       profile: {
         fullName:   u.name       || '',
         email:      u.email      || '',
@@ -83,10 +85,7 @@ export default {
         location:  u.location  || '—',
       },
       twoFaEnabled: false,
-
-      // Password cooldown ──────────────────────────────────────
-      passwordCooldownUntil: null,   // Date | null
-
+      passwordCooldownUntil: null,
       notifications: [
         { key: 'email', title: 'Email Updates',  sub: 'Weekly digest of reports',  icon: 'bi bi-envelope-fill', iconClass: 'icon-blue',   enabled: true  },
         { key: 'push',  title: 'Push Alerts',    sub: 'Real-time stock alerts',    icon: 'bi bi-clock-fill',    iconClass: 'icon-orange', enabled: true  },
@@ -96,12 +95,11 @@ export default {
   },
 
   computed: {
-    // Key is per-user so different accounts don't share the cooldown
     cooldownKey() {
-      return `pwdChangedAt_${this.userStore?.user?.id ?? 'staff'}`
+      if (!this.userId) return null
+      return `pwdChangedAt_${this.userId}`
     },
 
-    // How many full days remain on the cooldown (0 = can change now)
     cooldownDaysLeft() {
       if (!this.passwordCooldownUntil) return 0
       const msLeft = this.passwordCooldownUntil - Date.now()
@@ -115,12 +113,23 @@ export default {
   },
 
   mounted() {
-    this.loadCooldown()
+    if (this.userId) {
+      this.loadCooldown()
+    }
+  },
+
+  watch: {
+    'userStore.user.id'(newId) {
+      if (newId && !this.userId) {
+        this.userId = newId
+        this.loadCooldown()
+      }
+    },
   },
 
   methods: {
-    // ── Cooldown helpers ──────────────────────────────────────────────────────
     loadCooldown() {
+      if (!this.cooldownKey) return
       const stored = localStorage.getItem(this.cooldownKey)
       if (!stored) return
       const until = new Date(stored)
@@ -132,13 +141,23 @@ export default {
     },
 
     saveCooldown() {
+      if (!this.cooldownKey) return
       const until = new Date(Date.now() + COOLDOWN_DAYS * 24 * 60 * 60 * 1000)
       this.passwordCooldownUntil = until
       localStorage.setItem(this.cooldownKey, until.toISOString())
     },
 
-    // ── Password change ───────────────────────────────────────────────────────
     async onUpdatePassword({ currentPassword, newPassword }) {
+      if (!this.userId && this.userStore?.user?.id) {
+        this.userId = this.userStore.user.id
+        this.loadCooldown()
+      }
+
+      if (!this.userId) {
+        alert('User session not found. Please re-login.')
+        return
+      }
+
       // Guard: cooldown active
       if (this.passwordLocked) {
         alert(`You can only change your password once every ${COOLDOWN_DAYS} days.\n${this.cooldownDaysLeft} day(s) remaining.`)
@@ -151,15 +170,9 @@ export default {
         return
       }
 
-      const userId = this.userStore?.user?.id
-      if (!userId) {
-        alert('User ID not found. Please re-login.')
-        return
-      }
-
       try {
         const token = localStorage.getItem('token')
-        const res = await fetch(`${API_BASE}/users/${userId}/password`, {
+        const res = await fetch(`${API_BASE}/users/${this.userId}/password`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -187,7 +200,6 @@ export default {
       }
     },
 
-    // ── Other handlers ────────────────────────────────────────────────────────
     onSaveProfile() {
       alert('Profile changes saved!')
     },
@@ -229,7 +241,6 @@ export default {
   gap: 16px;
 }
 
-/* Deactivate Footer */
 .deactivate-footer {
   display: flex;
   align-items: center;

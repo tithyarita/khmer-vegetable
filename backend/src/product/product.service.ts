@@ -46,14 +46,16 @@ export class ProductService {
 
   // ================= GET ALL (FIXED ISOLATION) =================
   async findAll(userId: number, userRole: string) {
-    const isAdmin = userRole === 'admin'
+    const isAdmin = userRole === 'admin';
+    const isCustomer = userRole === 'customer';
 
+    // Customers and admins see all products; providers see only their own
     return this.productRepository.find({
-      where: isAdmin
+      where: isAdmin || isCustomer
         ? undefined
         : { provider: { user_id: userId } },
       relations: ['provider'],
-    })
+    });
   }
 
   // ================= GET ONE =================

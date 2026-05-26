@@ -21,19 +21,33 @@
 
     <!-- Bottom utilities -->
     <div class="sidebar-footer">
-      <a href="#" class="nav-item">
-        <i class="bi bi-gear nav-icon"></i>
-        <span>Settings</span>
-      </a>
+
+      <!-- Logout — replaces Settings -->
+      <button class="nav-item nav-item--logout" @click="handleLogout">
+        <i class="bi bi-box-arrow-left nav-icon"></i>
+        <span>Logout</span>
+      </button>
+
       <a href="#" class="nav-item">
         <i class="bi bi-question-circle nav-icon"></i>
         <span>Help</span>
       </a>
+
     </div>
   </aside>
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/userStore'
+
+const router    = useRouter()
+const userStore = useUserStore()
+
+function handleLogout() {
+  userStore.logout()       
+  router.replace('/user/login')
+}
 </script>
 
 <style scoped>
@@ -56,12 +70,6 @@
   text-transform: uppercase;
   padding: 18px 16px 10px;
 }
-.brand-sub {
-  font-size: 10.5px;
-  color: #7a9e7a;
-  line-height: 1;
-  margin-top: 1px;
-}
 
 /* ── Nav ── */
 .sidebar-nav {
@@ -71,6 +79,7 @@
   padding: 0 8px;
 }
 .sidebar-footer {
+  margin-top: auto;
   padding: 10px 10px 16px;
   border-top: 1px solid #e8e8e8;
   display: flex;
@@ -88,6 +97,12 @@
   color: #5a6a5a;
   transition: background .13s, color .13s;
   text-decoration: none;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
 }
 .nav-item:hover {
   background: #f0f7f0;
@@ -98,5 +113,11 @@
   color: #1a3d1a;
   font-weight: 700;
 }
+
+.nav-item--logout:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
 .nav-icon { font-size: 14px; flex-shrink: 0; }
 </style>

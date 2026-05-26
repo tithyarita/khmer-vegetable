@@ -1,15 +1,14 @@
+
 <template>
   <div class="cart">
     <NavigationBar />
     <br>
-
     <section class="section cart-section">
       <div class="section-inner">
         <div class="section-header">
-          <h2 class="section-title">My Cart</h2>
-          <a href="#" class="see-all">Continue Shopping →</a>
+          <h2 class="section-title">{{ t('myCart') }}</h2>
+          <a href="#" class="see-all">{{ t('continueShopping') }} →</a>
         </div>
-        
         <!-- Cart Items -->
         <div class="cart-items" v-if="cartItems.length > 0">
           <div v-for="item in cartItems" :key="item.id" class="cart-item">
@@ -30,59 +29,53 @@
             </div>
             <div class="item-price">
               <p>${{ (item.unitPrice * item.quantity).toFixed(2) }}</p>
-              <button @click="removeItem(item)" class="remove-btn">Remove</button>
+              <button @click="removeItem(item)" class="remove-btn">{{ t('remove') }}</button>
             </div>
           </div>
         </div>
-
         <div v-else class="empty-cart">
-          <h3>Your cart is empty</h3>
-          <p>Add some products from the shop to start your order.</p>
+          <h3>{{ t('yourCartIsEmpty') }}</h3>
+          <p>{{ t('addSomeProducts') }}</p>
         </div>
-
         <!-- Cart Summary -->
         <div class="cart-summary">
           <div class="summary-row">
-            <span>Subtotal</span>
+            <span>{{ t('subtotal') }}</span>
             <span>${{ calculateSubtotal() }}</span>
           </div>
           <div class="summary-row">
-            <span>Shipping</span>
+            <span>{{ t('shipping') }}</span>
             <span>${{ shippingCost }}</span>
           </div>
           <div class="summary-divider"></div>
           <div class="summary-row total">
-            <span>Total</span>
+            <span>{{ t('total') }}</span>
             <span>${{ calculateTotal() }}</span>
           </div>
         </div>
-
         <!-- Coupon Section -->
         <div class="coupon-section">
           <div class="coupon-input">
-            <input v-model="couponCode" type="text" placeholder="Enter coupon code" />
-            <button @click="applyCoupon" class="apply-coupon-btn">Apply</button>
+            <input v-model="couponCode" type="text" :placeholder="t('enterCoupon')" />
+            <button @click="applyCoupon" class="apply-coupon-btn">{{ t('apply') }}</button>
           </div>
         </div>
-
         <!-- Checkout Button -->
         <div class="checkout-section">
-          <button class="checkout-btn" @click="proceedToCheckout">Proceed to Checkout</button>
+          <button class="checkout-btn" @click="proceedToCheckout">{{ t('proceedToCheckout') }}</button>
         </div>
       </div>
     </section>
-
     <!-- Related Products -->
     <section class="section related-products">
       <div class="section-inner">
         <div class="section-header">
-          <h2 class="section-title">You May Also Like</h2>
-          <a href="#" class="see-all">View All →</a>
+          <h2 class="section-title">{{ t('youMayAlsoLike') }}</h2>
+          <a href="#" class="see-all">{{ t('viewAll') }} →</a>
         </div>
         <Card />
       </div>
     </section>
-
     <Footer />
   </div>
 </template>
@@ -94,9 +87,13 @@ import { useCartStore } from '../../stores/cartStore'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Card from '../../components/Customer/Card.vue'
 import Footer from '../../components/Customer/Footer.vue'
+import { useLanguageStore } from '@/stores/languageStore.js'
+import { messages } from '@/lang/index.js'
 
 const router = useRouter()
 const cartStore = useCartStore()
+const languageStore = useLanguageStore()
+const t = (key) => messages[languageStore.language][key] || key
 
 const couponCode = ref('')
 const shippingCost = ref('2.00')

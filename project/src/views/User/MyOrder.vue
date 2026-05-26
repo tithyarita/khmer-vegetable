@@ -1,11 +1,7 @@
 <template>
-  <div class="home">
-    <NavigationBar />
-    <div class="my-orders-page">
-      <nav class="breadcrumb">
-        <a href="/">Home</a><span class="sep">›</span>
-        <span class="cur">My Orders</span>
-      </nav>
+  <div class="dashboard-layout">
+    <DashboardSidebar activeMenu="orders" @navigate="handleNavigate" />
+    <main class="main-content">
       <div class="page-header">
         <h1>My Orders</h1>
         <p>Track and manage your deliveries</p>
@@ -61,72 +57,61 @@
           </button>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
-<script>
-import NavigationBar from '../../components/Customer/NavigationBar.vue'
+<script setup>
+import { useRouter } from 'vue-router'
 import { useCustomerOrderStore } from '@/stores/customerOrderStore'
+import DashboardSidebar from '../../components/Customer/sidebarUser.vue'
 
-export default {
-  name: 'MyOrder',
-  components: { NavigationBar },
-  data() {
-    return {
-      customerOrderStore: useCustomerOrderStore(),
-    }
-  },
-  computed: {
-    orders() {
-      return this.customerOrderStore.orders
-    },
-    loading() {
-      return this.customerOrderStore.loading
-    },
-    error() {
-      return this.customerOrderStore.error
-    },
-  },
-  async mounted() {
-    await this.customerOrderStore.fetchCustomerOrders()
-  },
-  methods: {
-    handlePrimary(order) {
-      if (order.status === 'pending') {
-        this.$router.push('/order-tracker')
-      } else {
-        alert(`Reordering #${order.orderCode}…`)
-      }
-    },
-    viewDetails(order) {
-      alert(`Viewing details for order #${order.orderCode}`)
-    }
+const router = useRouter()
+const customerOrderStore = useCustomerOrderStore()
+const orders = customerOrderStore.orders
+const loading = customerOrderStore.loading
+const error = customerOrderStore.error
+
+async function mounted() {
+  await customerOrderStore.fetchCustomerOrders()
+}
+mounted()
+
+function handleNavigate(section) {
+  if (section === 'dashboard') router.push('/profile')
+  else if (section === 'track') router.push('/order-tracker')
+}
+
+function handlePrimary(order) {
+  if (order.status === 'pending') {
+    router.push('/order-tracker')
+  } else {
+    alert(`Reordering #${order.orderCode}...`)
   }
+}
+
+function viewDetails(order) {
+  alert(`Viewing details for order #${order.orderCode}`)
 }
 </script>
 
 <style scoped>
-.breadcrumb { display: flex; gap: 6px; font-size: 13px; color: #8fa896; margin-bottom: 20px; }
-.breadcrumb a { color: #5a7060; text-decoration: none; }
-.breadcrumb .cur { color: #8fa896; }
-.sep { color: #c8d5cc; }
-
-.home {
-  background: #edf4ef;
-  min-height: 100vh;
+.dashboard-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  width: 100%;
+  background: #f7f9fa;
 }
-
-.my-orders-page {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 24px 80px;
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 48px;
+  max-width: 1280px;
 }
-
 .page-header {
   margin-bottom: 32px;
 }
-
 .page-header h1 {
   font-family: 'Fraunces', serif;
   font-size: 2.4rem;
@@ -136,13 +121,17 @@ export default {
   line-height: 1.1;
   margin: 0;
 }
-
 .page-header p {
   color: #5a7060;
   margin-top: 6px;
   font-size: 1rem;
 }
-
+.empty-state {
+  text-align: center;
+  padding: 48px 0;
+  color: #8fa896;
+  font-size: 15px;
+}
 .order-card {
   background: #fff;
   border-radius: 16px;
@@ -152,12 +141,10 @@ export default {
   border: 1px solid #e8ede9;
   transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
-
 .order-card:hover {
   box-shadow: 0 4px 24px rgba(30, 80, 45, 0.12);
   transform: translateY(-2px);
 }
-
 .card-top {
   display: flex;
   align-items: flex-start;
@@ -165,21 +152,18 @@ export default {
   gap: 14px;
   margin-bottom: 16px;
 }
-
 .card-top-left {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
-
 .order-number {
   font-family: 'Fraunces', serif;
   font-weight: 600;
   font-size: 1.1rem;
   color: #1a2e1f;
 }
-
 .badge {
   display: inline-flex;
   align-items: center;
@@ -190,34 +174,28 @@ export default {
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
-
 .badge-progress {
   background: #fffbeb;
   color: #f59e0b;
   border: 1px solid #fde68a;
 }
-
 .badge-delivered {
   background: #e8f5ee;
   color: #2d7a4f;
   border: 1px solid #bbf0d0;
 }
-
 .order-price {
   font-family: 'Fraunces', serif;
   font-weight: 700;
   font-size: 1.4rem;
   color: #2d7a4f;
-  letter-spacing: -0.02em;
   white-space: nowrap;
 }
-
 .order-meta {
   font-size: 0.85rem;
   color: #8fa896;
   margin-top: 4px;
 }
-
 .items-preview {
   display: flex;
   align-items: center;
@@ -228,12 +206,10 @@ export default {
   margin-bottom: 18px;
   border: 1px solid #e8ede9;
 }
-
 .item-images {
   display: flex;
   align-items: center;
 }
-
 .item-img {
   width: 40px;
   height: 40px;
@@ -246,11 +222,9 @@ export default {
   font-size: 1.2rem;
   flex-shrink: 0;
 }
-
 .item-img + .item-img {
   margin-left: -10px;
 }
-
 .item-count-bubble {
   width: 40px;
   height: 40px;
@@ -266,12 +240,10 @@ export default {
   border: 2px solid white;
   flex-shrink: 0;
 }
-
 .items-text {
   flex: 1;
   min-width: 0;
 }
-
 .items-name {
   font-size: 1rem;
   font-weight: 500;
@@ -280,19 +252,16 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .items-farm {
   font-size: 0.85rem;
   color: #8fa896;
   margin-top: 2px;
   font-style: italic;
 }
-
 .card-actions {
   display: flex;
   gap: 12px;
 }
-
 .btn {
   display: inline-flex;
   align-items: center;
@@ -306,30 +275,25 @@ export default {
   border: none;
   transition: all 0.2s ease;
 }
-
 .btn-primary {
   background: #1a4a2e;
   color: #fff;
 }
-
 .btn-primary:hover {
   background: #2d7a4f;
   transform: translateY(-1px);
   box-shadow: 0 3px 12px rgba(30, 80, 45, 0.25);
 }
-
 .btn-secondary {
   background: transparent;
   color: #5a7060;
   border: 1.5px solid #e8ede9;
 }
-
 .btn-secondary:hover {
   background: #e8f5ee;
   border-color: #3db870;
   color: #1a4a2e;
 }
-
 .pulse-dot {
   display: inline-block;
   width: 8px;
@@ -340,9 +304,16 @@ export default {
   animation: pulse 1.6s ease infinite;
   vertical-align: middle;
 }
-
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(0.75); }
+}
+@media (max-width: 768px) {
+  .dashboard-layout {
+    flex-direction: column;
+  }
+  .main-content {
+    padding: 16px;
+  }
 }
 </style>

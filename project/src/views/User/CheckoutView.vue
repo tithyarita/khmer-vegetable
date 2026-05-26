@@ -139,24 +139,9 @@
               >
                 <div class="form-grid">
 
-                  <div class="input-group">
-                    <label>First Name</label>
-
-                    <input
-                      v-model="shipping.firstName"
-                      type="text"
-                      placeholder="John"
-                    />
-                  </div>
-
-                  <div class="input-group">
-                    <label>Last Name</label>
-
-                    <input
-                      v-model="shipping.lastName"
-                      type="text"
-                      placeholder="Doe"
-                    />
+                  <div class="input-group full-width">
+                    <label>Name</label>
+                    <input v-model="shipping.name" type="text" readonly />
                   </div>
 
                   <div class="input-group full-width">
@@ -189,15 +174,7 @@
                     />
                   </div>
 
-                  <div class="input-group">
-                    <label>ZIP Code</label>
 
-                    <input
-                      v-model="shipping.zip"
-                      type="text"
-                      placeholder="12000"
-                    />
-                  </div>
 
                   <div class="input-group">
                     <label>Country</label>
@@ -211,22 +188,11 @@
 
                   <div class="input-group">
                     <label>Phone Number</label>
-
-                    <input
-                      v-model="shipping.phone"
-                      type="text"
-                      placeholder="+855"
-                    />
+                    <input v-model="shipping.phone" type="text" readonly />
                   </div>
-
                   <div class="input-group full-width">
                     <label>Email Address</label>
-
-                    <input
-                      v-model="shipping.email"
-                      type="email"
-                      placeholder="you@example.com"
-                    />
+                    <input v-model="shipping.email" type="email" readonly />
                   </div>
                 </div>
 
@@ -643,6 +609,7 @@ import { useRouter } from 'vue-router'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Footer from '../../components/Customer/Footer.vue'
 
+
 import { useCartStore } from '../../stores/cartStore'
 import { useUserStore } from '@/stores/userStore'
 
@@ -675,12 +642,11 @@ const card = reactive({
 })
 
 const shipping = reactive({
-  firstName: '',
-  lastName: '',
+  name: '',
   address: '',
   city: '',
   state: '',
-  zip: '',
+
   country: '',
   phone: '',
   email: '',
@@ -715,33 +681,36 @@ const toggleSection = section => {
       : section
 }
 
-const loadUserData = () => {
-  const localUser = JSON.parse(
-    localStorage.getItem('user') || 'null'
-  )
 
-  const user = userStore.user || localUser || {}
-
-  const names = String(user.name || '').split(' ')
-
-  shipping.firstName =
-    user.firstName || names[0] || ''
-
-  shipping.lastName =
-    user.lastName ||
-    names.slice(1).join(' ') ||
-    ''
-
-  shipping.address = user.address || ''
-  shipping.city = user.city || ''
-  shipping.state = user.state || ''
-  shipping.zip = user.zip || ''
-
-  shipping.country =
-    user.country || 'Cambodia'
-
+// Load user info and address from backend if exists
+const loadUserData = async () => {
+  const user = userStore.user
+  if (!user || !user.id) {
+    router.push('/login')
+    return
+  }
+  shipping.name = user.name || ''
   shipping.phone = user.phone || ''
   shipping.email = user.email || ''
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    const response = await fetch('http://localhost:3000/address', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) return
+    const data = await response.json()
+    if (data) {
+      shipping.address = data.street || ''
+      shipping.city = data.city || ''
+      shipping.state = data.state || ''
+
+      shipping.country = data.country || 'Cambodia'
+    }
+  } catch (error) {
+    // fallback: do nothing
+  }
 }
 
 const itemTotal = item => {
@@ -760,14 +729,8 @@ const clearErrors = () => {
 const validateForm = () => {
   clearErrors()
 
-  if (!shipping.firstName) {
-    errors.firstName =
-      'First name is required'
-  }
-
-  if (!shipping.lastName) {
-    errors.lastName =
-      'Last name is required'
+  if (!shipping.name) {
+    errors.name = 'Name is required'
   }
 
   if (!shipping.address) {
@@ -821,61 +784,57 @@ const confirmOrder = async () => {
   loading.value = true
 
   try {
-    const customer = JSON.parse(
-      localStorage.getItem('user') || 'null'
-    )
+    // Save/update address to backend before placing order
+    const token = localStorage.getItem('token')
+    if (!token) throw new Error('Please login before checkout.')
+    const addressRes = await fetch('http://localhost:3000/address', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        name: shipping.name,
+        street: shipping.address,
+        city: shipping.city,
+        state: shipping.state,
 
-    if (!customer?.id) {
-      throw new Error(
-        'Please login before checkout.'
-      )
-    }
+        country: shipping.country,
+        phone: shipping.phone,
+        email: shipping.email,
+      }),
+    })
+    if (!addressRes.ok) throw new Error('Failed to save address')
 
-    const groupedOrders =
-      groupItemsByProvider(orderItems.value)
-
-    const responses = await Promise.all(
+    // Place order as before
+    const customer = JSON.parse(localStorage.getItem('user') || 'null')
+    if (!customer?.id) throw new Error('Please login before checkout.')
+    const groupedOrders = groupItemsByProvider(orderItems.value)
+    await Promise.all(
       groupedOrders.map(group => {
         return axios.post(
           `${API_BASE_URL}/orders`,
           {
-            order_code:
-              generateOrderCode(),
-
+            order_code: generateOrderCode(),
             customer_id: customer.id,
-
-            provider_id:
-              group.providerId,
-
             status: 'pending',
-
             total: group.total,
-
             item: group.items.length,
-
-            items: group.items.map(
-              item => ({
-                product_id: item.id,
-                quantity: item.quantity,
-              })
-            ),
+            items: group.items.map(item => ({
+              product_id: item.id,
+              quantity: item.quantity,
+            })),
           }
         )
       })
     )
 
     const receipt = {
-      orderNumber:
-        generateOrderCode(),
-
+      orderNumber: generateOrderCode(),
       customer: { ...shipping },
-
       items: orderItems.value,
-
       total: total.value,
-
-      paymentMethod:
-        paymentMethod.value,
+      paymentMethod: paymentMethod.value,
 
       backendOrders:
         responses.map(r => r.data),

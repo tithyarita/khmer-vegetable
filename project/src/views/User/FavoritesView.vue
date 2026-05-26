@@ -2,22 +2,20 @@
   <div class="favorites">
     <NavigationBar />
     <br>
-
     <section class="section favorites-section">
       <div class="section-inner">
         <div class="section-header">
-          <h2 class="section-title">My Favorites</h2>
-          <span class="item-count">{{ favoriteStore.favoriteCount }} items</span>
+          <h2 class="section-title">{{ t('myFavorites') }}</h2>
+          <span class="item-count">{{ favoriteStore.favoriteCount }} {{ t('items') }}</span>
         </div>
         <div v-if="favoriteStore.favoriteCount > 0" class="favorites-grid">
           <Card :products="favoriteStore.favoriteItems" />
         </div>
         <div v-else class="empty-state">
-          <p>No favorites yet. Start adding products you love!</p>
+          <p>{{ t('noFavorites') }}</p>
         </div>
       </div>
     </section>
-
     <Footer />
   </div>
 </template>
@@ -28,8 +26,12 @@ import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Card from '../../components/Customer/Card.vue'
 import Footer from '../../components/Customer/Footer.vue'
 import { useFavoriteStore } from '../../stores/favoriteStore'
+import { useLanguageStore } from '@/stores/languageStore.js'
+import { messages } from '@/lang/index.js'
 
 const favoriteStore = useFavoriteStore()
+const languageStore = useLanguageStore()
+const t = (key) => messages[languageStore.language][key] || key
 
 onMounted(async () => {
   await favoriteStore.fetchFavoritesFromBackend()
