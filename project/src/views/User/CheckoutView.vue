@@ -393,12 +393,12 @@
 
                   <div class="total-row">
                     <span>Subtotal</span>
-                    <span>${{ calculateSubtotal() }}</span>
+                    <span>${{ subtotal.toFixed(2) }}</span>
                   </div>
 
                   <div class="total-row">
                     <span>Delivery Fee</span>
-                    <span>${{ getShippingCost() }}</span>
+                    <span>${{ shippingFee.toFixed(2) }}</span>
                   </div>
 
                   <div class="total-row">
@@ -410,7 +410,7 @@
 
                   <div class="total-row final">
                     <span>Total Amount</span>
-                    <span>${{ calculateTotal() }}</span>
+                    <span>${{ total.toFixed(2) }}</span>
                   </div>
 
                 </div>
@@ -686,7 +686,7 @@ const toggleSection = section => {
 const loadUserData = async () => {
   const user = userStore.user
   if (!user || !user.id) {
-    router.push('/login')
+    router.push('/user/login?redirect=/checkout')
     return
   }
   shipping.name = user.name || ''
@@ -810,7 +810,7 @@ const confirmOrder = async () => {
     const customer = JSON.parse(localStorage.getItem('user') || 'null')
     if (!customer?.id) throw new Error('Please login before checkout.')
     const groupedOrders = groupItemsByProvider(orderItems.value)
-    await Promise.all(
+    const responses = await Promise.all(
       groupedOrders.map(group => {
         return axios.post(
           `${API_BASE_URL}/orders`,
