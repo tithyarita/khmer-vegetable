@@ -50,6 +50,19 @@ export class OrdersService {
     return 'In Stock';
   }
 
+  private getPeriodStart(period: 'week' | 'month') {
+    const now = new Date();
+
+    if (period === 'week') {
+      const start = new Date(now);
+      start.setDate(now.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
+      return start;
+    }
+
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
   private async ensureCustomerProfile(
     customerId: number,
     manager?: EntityManager,
@@ -367,6 +380,88 @@ export class OrdersService {
       where: { customer_id: customerId },
       relations: ['provider', 'customer', 'order_items', 'order_items.product'],
     });
+  }
+
+  async getTopSellingProducts(
+    period: 'week' | 'month' = 'week',
+    customerId?: number,
+  ) {
+    const periodStart = this.getPeriodStart(period);
+
+    const orders = await this.ordersRepository.find({
+      where: customerId ? { customer_id: customerId } : undefined,
+      relations: ['order_items', 'order_items.product'],
+      order: { created_at: 'DESC' },
+    });
+
+    const filteredOrders = orders.filter((order) => {
+      if (!order.created_at) return false;
+      const orderDate = new Date(order.created_at);
+      return orderDate >= periodStart;
+    });
+
+    const productStats = new Map<
+      number,
+      {
+        id: number;
+        name: string;
+        imageUrl: string | null;
+        category: string;
+        price: number;
+        totalQuantity: number;
+        orderCount: number;
+      }
+    >();
+
+    for (const order of filteredOrders) {
+      const seenInOrder = new Set<number>();
+
+      for (const item of order.order_items || []) {
+        const product = item.product;
+        if (!product) continue;
+
+        const quantity = Number(item.quantity || 0);
+        if (!quantity) continue;
+
+        const existing = productStats.get(product.id) || {
+          id: product.id,
+          name: product.name,
+          imageUrl: product.imageUrl,
+          category: product.category,
+          price: Number(product.price || 0),
+          totalQuantity: 0,
+          orderCount: 0,
+        };
+
+        existing.totalQuantity += quantity;
+        if (!seenInOrder.has(product.id)) {
+          existing.orderCount += 1;
+          seenInOrder.add(product.id);
+        }
+
+        productStats.set(product.id, existing);
+      }
+    }
+
+    const products = Array.from(productStats.values())
+      .sort((left, right) => {
+        if (right.totalQuantity !== left.totalQuantity) {
+          return right.totalQuantity - left.totalQuantity;
+        }
+
+        return right.orderCount - left.orderCount;
+      })
+      .map((product, index) => ({
+        ...product,
+        rank: index + 1,
+      }));
+
+    return {
+      period,
+      customerId: customerId ?? null,
+      totalOrders: filteredOrders.length,
+      products,
+    };
   }
 
   // Update order

@@ -7,6 +7,7 @@ import {
   Delete,
   Param,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto, UpdateOrderDto } from './dto/orders.dto';
@@ -29,6 +30,20 @@ export class OrdersController {
   @Get()
   async findAll() {
     return this.ordersService.findAll();
+  }
+
+  // =========================
+  // TOP SELLING PRODUCTS
+  // =========================
+  @Get('top-products')
+  async getTopSellingProducts(
+    @Query('period') period?: 'week' | 'month',
+    @Query('customerId') customerId?: string,
+  ) {
+    return this.ordersService.getTopSellingProducts(
+      period === 'month' ? 'month' : 'week',
+      customerId ? Number(customerId) : undefined,
+    );
   }
 
   // =========================
