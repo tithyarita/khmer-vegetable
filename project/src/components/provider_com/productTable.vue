@@ -9,7 +9,7 @@
             <th class="price-header">PRICE</th>
             <th class="discount-header">DISCOUNT (%)</th>
             <th class="date-header">ADDED DATE</th>
-            <th class="stock-header">STOCK</th>
+            <th class="stock-header">STOCK (KG)</th>
             <th class="action-header">ACTIONS</th>
           </tr>
         </thead>
@@ -31,7 +31,7 @@
             <td class="price-col">${{ product.price }}</td>
             <td class="discount-col">{{ product.discount || 0 }}%</td>
             <td class="date-col">{{ product.addedDate || 'N/A' }}</td>
-            <td class="stock-col">{{ product.stock }}</td>
+            <td class="stock-col">{{ product.stock }} kg</td>
             <td class="action-col">
               <div class="action-buttons d-flex gap-2">
                 <button class="btn btn-sm btn-info" @click="$emit('view', product.id)" title="View Details">

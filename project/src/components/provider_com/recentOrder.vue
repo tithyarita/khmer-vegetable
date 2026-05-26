@@ -23,7 +23,7 @@
             <tr class="table-light">
               <th class="order-id-header px-4 py-3">ORDER ID</th>
               <th class="product-header px-4 py-3">PRODUCT</th>
-              <th class="quantity-header px-4 py-3">QUANTITY</th>
+              <th class="quantity-header px-4 py-3">QUANTITY (KG)</th>
               <th class="date-header px-4 py-3">DATE</th>
               <th class="status-header px-4 py-3">STATUS</th>
             </tr>

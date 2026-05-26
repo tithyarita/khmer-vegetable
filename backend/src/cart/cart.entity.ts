@@ -16,7 +16,7 @@ export class Cart {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column('double')
   quantity!: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
