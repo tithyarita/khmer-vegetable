@@ -173,16 +173,49 @@
               <!-- Write a Review -->
               <div class="review-form">
                 <h3 class="rf-title">Write a Review</h3>
+                
+                <!-- Star Rating -->
                 <div class="rf-stars">
                   <span class="rf-label">Your Rating:</span>
                   <span class="rf-star-row">
-                    <svg v-for="i in 5" :key="i" class="rf-star" :class="i <= newReview.rating ? 'f' : 'e'" viewBox="0 0 12 12" @click="newReview.rating = i">
-                      <path d="M6 1l1.39 2.82L10.5 4.27l-2.25 2.19.53 3.09L6 8l-2.78 1.55.53-3.09L1.5 4.27l3.11-.45L6 1z"/>
+                    <svg 
+                      v-for="i in 5" 
+                      :key="i" 
+                      class="rf-star" 
+                      :class="{ 
+                        'f': i <= newReview.rating, 
+                        'e': i > newReview.rating,
+                        'hover': i <= hoverRating 
+                      }" 
+                      viewBox="0 0 24 24" 
+                      @click="newReview.rating = i"
+                      @mouseenter="hoverRating = i"
+                      @mouseleave="hoverRating = 0"
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                     </svg>
                   </span>
+                  <span class="rf-rating-text" v-if="newReview.rating > 0">
+                    {{ newReview.rating }} star{{ newReview.rating > 1 ? 's' : '' }}
+                  </span>
                 </div>
-                <textarea v-model="newReview.body" class="rf-textarea" placeholder="Write your review..." rows="4"></textarea>
-                <button class="rf-submit" @click="submitReview">Submit Review</button>
+
+                <!-- Feedback Textarea -->
+                <div class="rf-feedback">
+                  <label class="rf-feedback-label">Your Feedback:</label>
+                  <textarea 
+                    v-model="newReview.body" 
+                    class="rf-textarea" 
+                    placeholder="Share your experience with this product. What did you like or dislike?"
+                    rows="4"
+                    maxlength="500"
+                  ></textarea>
+                  <div class="rf-char-count">{{ newReview.body.length }}/500</div>
+                </div>
+
+                <button class="rf-submit" @click="submitReview" :disabled="!newReview.rating || !newReview.body.trim()">
+                  Submit Review
+                </button>
               </div>
             </div>
           </div>
@@ -289,6 +322,7 @@ const wished = ref(false);
 const filterStar = ref(null);
 const toast = reactive({ show: false, msg: "" });
 const newReview = reactive({ rating: 0, body: '' });
+const hoverRating = ref(0);
 
 // --- COMPUTED ---
 const discPct = computed(() => Number(product.discount || 0));
@@ -635,51 +669,59 @@ watch(
   gap: 4px;
 }
 .rf-star {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: all 0.15s ease;
 }
 .rf-star:hover {
-  transform: scale(1.2);
+  transform: scale(1.15);
 }
-.rf-input {
-  width: 100%;
-  padding: 10px 14px;
-  border: 1.5px solid var(--bd);
-  border-radius: 10px;
-  font-family: 'DM Sans', sans-serif;
+.rf-star.hover {
+  fill: var(--amb);
+}
+.rf-rating-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gm);
+  margin-left: 8px;
+}
+.rf-feedback {
+  margin-bottom: 14px;
+}
+.rf-feedback-label {
+  display: block;
   font-size: 14px;
-  color: var(--t1);
-  background: var(--wh);
-  margin-bottom: 12px;
-  outline: none;
-  transition: border-color 0.2s;
-  box-sizing: border-box;
-}
-.rf-input:focus {
-  border-color: var(--gm);
+  font-weight: 500;
+  color: var(--t2);
+  margin-bottom: 8px;
 }
 .rf-textarea {
   width: 100%;
-  padding: 10px 14px;
+  padding: 12px 14px;
   border: 1.5px solid var(--bd);
   border-radius: 10px;
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   color: var(--t1);
   background: var(--wh);
-  margin-bottom: 14px;
   outline: none;
   resize: vertical;
   transition: border-color 0.2s;
   box-sizing: border-box;
+  line-height: 1.5;
 }
 .rf-textarea:focus {
   border-color: var(--gm);
 }
+.rf-char-count {
+  font-size: 12px;
+  color: var(--t3);
+  text-align: right;
+  margin-top: 4px;
+}
 .rf-submit {
-  padding: 10px 24px;
+  padding: 12px 28px;
   background: var(--gm);
   color: #fff;
   border: none;
@@ -688,10 +730,16 @@ watch(
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
-.rf-submit:hover {
+.rf-submit:hover:not(:disabled) {
   background: var(--gd);
+  transform: translateY(-1px);
+}
+.rf-submit:disabled {
+  background: var(--t3);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* 
