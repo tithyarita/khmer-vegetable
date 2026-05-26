@@ -72,7 +72,16 @@ export const useProductStore = defineStore('product', () => {
     loading.value = true
     error.value = null
 
+    // Debug: Show current user role
     try {
+      const user = JSON.parse(localStorage.getItem('user') || 'null')
+      console.log('[DEBUG] Current user:', user)
+      if (user && user.role) {
+        console.log('[DEBUG] Current user role:', user.role)
+      } else {
+        console.log('[DEBUG] No user or role found in localStorage')
+      }
+
       const res = await api.get('/products')
 
       console.log('API RESPONSE:', res.data)

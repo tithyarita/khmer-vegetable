@@ -64,5 +64,8 @@ select,
 textarea {
   transition: font-family 0.2s ease;
 }
+body {
+  font-family: 'Poppins', 'Kantumruy Pro', sans-serif;
+}
 
 </style>
