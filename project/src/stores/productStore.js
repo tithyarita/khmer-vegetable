@@ -32,6 +32,18 @@ export const useProductStore = defineStore('product', () => {
     if (!product) return product
 
     const img = product.imageUrl || ''
+    const providerId = Number(
+      product.providerId ??
+      product.provider_id ??
+      product.provider?.user_id ??
+      0
+    ) || null
+
+    const providerName =
+      product.providerName ||
+      product.provider?.provider_name ||
+      product.provider?.name ||
+      'Unknown'
 
     console.log('RAW imageUrl:', img)
 
@@ -47,6 +59,8 @@ export const useProductStore = defineStore('product', () => {
     }
 
     product.image = finalImage
+    product.providerId = providerId
+    product.providerName = providerName
 
     console.log('FINAL image URL:', product.image)
 
@@ -58,7 +72,16 @@ export const useProductStore = defineStore('product', () => {
     loading.value = true
     error.value = null
 
+    // Debug: Show current user role
     try {
+      const user = JSON.parse(localStorage.getItem('user') || 'null')
+      console.log('[DEBUG] Current user:', user)
+      if (user && user.role) {
+        console.log('[DEBUG] Current user role:', user.role)
+      } else {
+        console.log('[DEBUG] No user or role found in localStorage')
+      }
+
       const res = await api.get('/products')
 
       console.log('API RESPONSE:', res.data)

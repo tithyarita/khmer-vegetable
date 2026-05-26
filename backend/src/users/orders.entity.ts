@@ -17,6 +17,11 @@ export enum OrderStatus {
   DELIVERING = 'delivering',
   COMPLETED = 'completed',
 }
+export enum PaymentStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  REJECTED = 'rejected',
+}
 @Entity('orders')
 export class orders {
   @PrimaryGeneratedColumn()
@@ -49,6 +54,19 @@ export class orders {
 
   @Column({ default: 1 })
   item!: number;
+
+  @Column({ nullable: true })
+  payment_method!: string;
+
+  @Column({ nullable: true })
+  payment_proof!: string;
+
+  @Column({
+    type: 'enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING,
+  })
+  payment_status!: PaymentStatus;
 
   @ManyToOne(() => Customer, (customer) => customer.orders)
   @JoinColumn({ name: 'customer_id' })

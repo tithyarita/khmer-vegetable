@@ -7,6 +7,7 @@ import { ApplicationsService } from './provider-application.service';
 import * as fs from 'fs';
 import { Provider } from '../providers/providers.entity';
 import { users } from '../users/users.entity';
+import { Staff } from '../staff/staff.entity';
 
 // Ensure upload directory exists at startup
 const uploadDir = './uploads/applications';
@@ -16,7 +17,7 @@ if (!fs.existsSync(uploadDir)) {
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ProviderApplication, users, Provider]),
+    TypeOrmModule.forFeature([ProviderApplication, users, Provider, Staff]),
     MulterModule.register({ dest: uploadDir }),
   ],
   controllers: [ApplicationsController],

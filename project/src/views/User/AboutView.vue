@@ -1,8 +1,15 @@
 <template>
   <div class="about">
-    <h1>This is an about page</h1>
+    <h1>{{ t('aboutPage') }}</h1>
   </div>
 </template>
+
+<script setup>
+import { useLanguageStore } from '@/stores/languageStore.js'
+import { messages } from '@/lang/index.js'
+const languageStore = useLanguageStore()
+const t = (key) => messages[languageStore.language][key] || key
+</script>
 
 <style>
 @media (min-width: 1024px) {

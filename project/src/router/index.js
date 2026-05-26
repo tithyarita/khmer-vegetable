@@ -43,6 +43,8 @@ import OrderTracker from '../views/User/OrderTracker.vue'
 import ProductDetailUser from '../views/User/ProductDetail.vue'
 import ProductCategory from '@/views/User/ProductCategory.vue'
 import fashDeals from '../views/User/fashDeals.vue'
+import settings from '../views/User/settingView.vue'
+
 
 // ==================== Routes ====================
 const routes = [
@@ -66,6 +68,7 @@ const routes = [
       { path: 'product/:id', component: ProductDetailUser, props: true },
       { path: 'products', component: ProductCategory },
       { path: 'category/:type', component: ProductCategory, props: true },
+      { path: 'settings', component: settings },
       { path: 'farmer/:id', component: () => import('../views/User/FarmerProfile.vue'), props: true },
     ],
   },
@@ -122,6 +125,7 @@ const routes = [
   { path: '/user/login', component: () => import('../views/User/login.vue') },
   { path: '/user/register', component: () => import('../views/User/resgister.vue') },
   { path: '/user/forgot-password', component: () => import('../views/User/Forgotpassword.vue') },
+  { path: '/user/forgot-password', component: () => import('../views/User/Fogotpassword.vue') },
   { path: '/user/verify-otp', component: () => import('../views/User/VertifyOtp.vue') },
   { path: '/user/reset-password', component: () => import('../views/User/Resetpassword.vue') },
   { path: '/provider/login', component: () => import('../views/Provider/login.vue') },
@@ -151,6 +155,22 @@ router.beforeEach((to, from) => {
     return `/user/login?redirect=${to.fullPath}`
   }
 
+ // NOT LOGGED IN
+  if (
+    (to.path.startsWith('/admin') ||
+     to.path.startsWith('/provider') ||
+     to.path.startsWith('/staff')) &&
+    !token
+  ) {
+    return `/user/login?redirect=${to.fullPath}`
+  }
+
+    // STAFF PROTECTION  
+  if (to.path.startsWith('/staff')) {
+    if (!user || role !== 'staff') {
+      return `/user/login?redirect=${to.fullPath}`
+    }
+  }
   // ADMIN PROTECTION
   if (to.path.startsWith('/admin')) {
     if (!user || role !== 'admin') {

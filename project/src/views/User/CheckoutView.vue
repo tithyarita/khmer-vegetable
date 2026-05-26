@@ -2,11 +2,11 @@
   <div class="checkout-page">
     <NavigationBar />
 
-    <!-- BACKGROUND -->
+    <!-- Background -->
     <div class="bg-blur blur-1"></div>
     <div class="bg-blur blur-2"></div>
 
-    <!-- LOADING -->
+    <!-- Loading -->
     <transition name="fade">
       <div
         v-if="loading"
@@ -24,7 +24,7 @@
       </div>
     </transition>
 
-    <!-- RESULT -->
+    <!-- Result -->
     <transition name="fade">
       <div
         v-if="orderResult"
@@ -67,7 +67,7 @@
       </div>
     </transition>
 
-    <!-- EMPTY -->
+    <!-- Empty -->
     <main
       v-if="!loading && !orderResult && !orderItems.length"
       class="empty-wrapper"
@@ -92,17 +92,17 @@
       </div>
     </main>
 
-    <!-- CHECKOUT -->
+    <!-- Checkout -->
     <main
       v-if="!loading && !orderResult && orderItems.length"
       class="checkout-container"
     >
       <div class="checkout-grid">
 
-        <!-- LEFT -->
+        <!-- Left -->
         <section class="checkout-left">
 
-          <!-- ADDRESS COLLAPSE -->
+          <!-- Shipping -->
           <div class="glass-card collapse-card">
 
             <button
@@ -124,11 +124,7 @@
               </div>
 
               <span class="arrow">
-                {{
-                  activeSection === 'address'
-                    ? '−'
-                    : '+'
-                }}
+                {{ activeSection === 'address' ? '−' : '+' }}
               </span>
             </button>
 
@@ -139,23 +135,13 @@
               >
                 <div class="form-grid">
 
-                  <div class="input-group">
-                    <label>First Name</label>
+                  <div class="input-group full-width">
+                    <label>Name</label>
 
                     <input
-                      v-model="shipping.firstName"
+                      v-model="shipping.name"
                       type="text"
-                      placeholder="John"
-                    />
-                  </div>
-
-                  <div class="input-group">
-                    <label>Last Name</label>
-
-                    <input
-                      v-model="shipping.lastName"
-                      type="text"
-                      placeholder="Doe"
+                      readonly
                     />
                   </div>
 
@@ -190,16 +176,6 @@
                   </div>
 
                   <div class="input-group">
-                    <label>ZIP Code</label>
-
-                    <input
-                      v-model="shipping.zip"
-                      type="text"
-                      placeholder="12000"
-                    />
-                  </div>
-
-                  <div class="input-group">
                     <label>Country</label>
 
                     <input
@@ -215,7 +191,7 @@
                     <input
                       v-model="shipping.phone"
                       type="text"
-                      placeholder="+855"
+                      readonly
                     />
                   </div>
 
@@ -225,9 +201,10 @@
                     <input
                       v-model="shipping.email"
                       type="email"
-                      placeholder="you@example.com"
+                      readonly
                     />
                   </div>
+
                 </div>
 
                 <div
@@ -241,11 +218,13 @@
                     • {{ error }}
                   </p>
                 </div>
+
               </div>
             </transition>
+
           </div>
 
-          <!-- PAYMENT COLLAPSE -->
+          <!-- Payment -->
           <div class="glass-card collapse-card">
 
             <button
@@ -253,6 +232,7 @@
               @click="toggleSection('payment')"
             >
               <div class="collapse-left">
+
                 <div class="collapse-icon blue">
                   💳
                 </div>
@@ -264,14 +244,11 @@
                     Secure payment options
                   </p>
                 </div>
+
               </div>
 
               <span class="arrow">
-                {{
-                  activeSection === 'payment'
-                    ? '−'
-                    : '+'
-                }}
+                {{ activeSection === 'payment' ? '−' : '+' }}
               </span>
             </button>
 
@@ -280,15 +257,13 @@
                 v-if="activeSection === 'payment'"
                 class="collapse-body"
               >
+
                 <div class="payment-list">
 
                   <!-- ABA -->
                   <label
                     class="payment-card"
-                    :class="{
-                      active:
-                        paymentMethod === 'bank'
-                    }"
+                    :class="{ active: paymentMethod === 'bank' }"
                   >
                     <input
                       v-model="paymentMethod"
@@ -297,9 +272,7 @@
                     />
 
                     <div class="payment-content">
-                      <h4>
-                        🏦 ABA Bank Transfer
-                      </h4>
+                      <h4>🏦 ABA Bank Transfer</h4>
 
                       <p>
                         Pay using mobile banking.
@@ -310,10 +283,7 @@
                   <!-- COD -->
                   <label
                     class="payment-card"
-                    :class="{
-                      active:
-                        paymentMethod === 'cash'
-                    }"
+                    :class="{ active: paymentMethod === 'cash' }"
                   >
                     <input
                       v-model="paymentMethod"
@@ -322,9 +292,7 @@
                     />
 
                     <div class="payment-content">
-                      <h4>
-                        🚚 Cash On Delivery
-                      </h4>
+                      <h4>🚚 Cash On Delivery</h4>
 
                       <p>
                         Pay after delivery.
@@ -335,10 +303,7 @@
                   <!-- CARD -->
                   <label
                     class="payment-card"
-                    :class="{
-                      active:
-                        paymentMethod === 'card'
-                    }"
+                    :class="{ active: paymentMethod === 'card' }"
                   >
                     <input
                       v-model="paymentMethod"
@@ -347,9 +312,7 @@
                     />
 
                     <div class="payment-content">
-                      <h4>
-                        💳 Credit / Debit Card
-                      </h4>
+                      <h4>💳 Credit / Debit Card</h4>
 
                       <p>
                         Visa & Mastercard accepted.
@@ -357,12 +320,14 @@
                     </div>
                   </label>
 
-                  <!-- CARD FORM -->
+                  <!-- Card Form -->
                   <transition name="expand">
+
                     <div
                       v-if="paymentMethod === 'card'"
                       class="card-form"
                     >
+
                       <div class="form-grid">
 
                         <div class="input-group full-width">
@@ -407,18 +372,25 @@
                             placeholder="John Doe"
                           />
                         </div>
+
                       </div>
+
                     </div>
+
                   </transition>
+
                 </div>
+
               </div>
             </transition>
+
           </div>
 
-          <!-- REVIEW ITEMS -->
+          <!-- Review -->
           <div class="glass-card checkout-card">
 
             <div class="section-top">
+
               <div>
                 <span class="section-badge">
                   Review Order
@@ -430,6 +402,7 @@
               <span class="item-count">
                 {{ orderItems.length }} items
               </span>
+
             </div>
 
             <div class="review-list">
@@ -439,6 +412,7 @@
                 :key="item.id"
                 class="review-item"
               >
+
                 <img
                   :src="item.image"
                   :alt="item.name"
@@ -446,9 +420,11 @@
                 />
 
                 <div class="review-info">
+
                   <h4>{{ item.name }}</h4>
 
                   <div class="review-meta">
+
                     <span class="qty-pill">
                       ×{{ item.quantity }}
                     </span>
@@ -459,28 +435,36 @@
                         'Marketplace Seller'
                       }}
                     </span>
+
                   </div>
+
                 </div>
 
                 <div class="review-price">
                   ${{ itemTotal(item).toFixed(2) }}
                 </div>
+
               </div>
+
             </div>
+
           </div>
+
         </section>
 
-        <!-- RIGHT -->
+        <!-- Right -->
         <aside class="checkout-right">
 
           <div class="glass-card summary-card">
 
             <div class="summary-top">
+
               <span class="section-badge">
                 Payment Summary
               </span>
 
               <h2>Order Summary</h2>
+
             </div>
 
             <div class="summary-list">
@@ -518,6 +502,7 @@
                   ${{ total.toFixed(2) }}
                 </strong>
               </div>
+
             </div>
 
             <button
@@ -533,6 +518,7 @@
             </button>
 
             <div class="security-box">
+
               <div class="security-item">
                 🔒 SSL Encrypted
               </div>
@@ -540,9 +526,13 @@
               <div class="security-item">
                 ✅ Secure Checkout
               </div>
+
             </div>
+
           </div>
+
         </aside>
+
       </div>
     </main>
 
@@ -574,6 +564,10 @@ const router = useRouter()
 const cartStore = useCartStore()
 const userStore = useUserStore()
 
+/* --------------------------
+   STATE
+-------------------------- */
+
 const loading = ref(false)
 
 const orderResult = ref('')
@@ -596,16 +590,18 @@ const card = reactive({
 })
 
 const shipping = reactive({
-  firstName: '',
-  lastName: '',
+  name: '',
   address: '',
   city: '',
   state: '',
-  zip: '',
   country: '',
   phone: '',
   email: '',
 })
+
+/* --------------------------
+   COMPUTED
+-------------------------- */
 
 const orderItems = computed(() => {
   return cartStore.cartItems || []
@@ -625,9 +621,17 @@ const total = computed(() => {
   )
 })
 
+/* --------------------------
+   MOUNT
+-------------------------- */
+
 onMounted(() => {
   loadUserData()
 })
+
+/* --------------------------
+   UI
+-------------------------- */
 
 const toggleSection = section => {
   activeSection.value =
@@ -636,39 +640,67 @@ const toggleSection = section => {
       : section
 }
 
-const loadUserData = () => {
-  const localUser = JSON.parse(
-    localStorage.getItem('user') || 'null'
-  )
+/* --------------------------
+   LOAD USER DATA
+-------------------------- */
 
-  const user = userStore.user || localUser || {}
+const loadUserData = async () => {
+  try {
+    const user = userStore.user
 
-  const names = String(user.name || '').split(' ')
+    if (!user || !user.id) {
+      router.push('/user/login?redirect=/checkout')
+      return
+    }
 
-  shipping.firstName =
-    user.firstName || names[0] || ''
+    shipping.name = user.name || ''
+    shipping.phone = user.phone || ''
+    shipping.email = user.email || ''
 
-  shipping.lastName =
-    user.lastName ||
-    names.slice(1).join(' ') ||
-    ''
+    const token = localStorage.getItem('token')
 
-  shipping.address = user.address || ''
-  shipping.city = user.city || ''
-  shipping.state = user.state || ''
-  shipping.zip = user.zip || ''
+    if (!token) return
 
-  shipping.country =
-    user.country || 'Cambodia'
+    const response = await fetch(
+      `${API_BASE_URL}/address`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
 
-  shipping.phone = user.phone || ''
-  shipping.email = user.email || ''
+    if (!response.ok) return
+
+    const data = await response.json()
+
+    if (data) {
+      shipping.address = data.street || ''
+      shipping.city = data.city || ''
+      shipping.state = data.state || ''
+      shipping.country =
+        data.country || 'Cambodia'
+    }
+  } catch (error) {
+    console.error(
+      'Failed loading user data:',
+      error
+    )
+  }
 }
+
+/* --------------------------
+   HELPERS
+-------------------------- */
 
 const itemTotal = item => {
   return (
-    Number(item.unitPrice ?? item.price ?? 0) *
-    item.quantity
+    Number(
+      item.unitPrice ||
+      item.price ||
+      0
+    ) * Number(item.quantity || 1)
   )
 }
 
@@ -681,29 +713,34 @@ const clearErrors = () => {
 const validateForm = () => {
   clearErrors()
 
-  if (!shipping.firstName) {
-    errors.firstName =
-      'First name is required'
-  }
-
-  if (!shipping.lastName) {
-    errors.lastName =
-      'Last name is required'
+  if (!shipping.name) {
+    errors.name = 'Name is required'
   }
 
   if (!shipping.address) {
     errors.address =
-      'Address is required'
+      'Street address is required'
+  }
+
+  if (!shipping.city) {
+    errors.city = 'City is required'
   }
 
   if (!shipping.phone) {
     errors.phone =
-      'Phone number required'
+      'Phone number is required'
   }
 
-  if (!shipping.email.includes('@')) {
+  if (!shipping.email) {
+    errors.email = 'Email is required'
+  }
+
+  if (
+    shipping.email &&
+    !shipping.email.includes('@')
+  ) {
     errors.email =
-      'Valid email required'
+      'Please enter a valid email'
   }
 
   if (paymentMethod.value === 'card') {
@@ -714,10 +751,28 @@ const validateForm = () => {
       errors.card =
         'Invalid card number'
     }
+
+    if (!card.expiry) {
+      errors.expiry =
+        'Expiry date required'
+    }
+
+    if (!card.cvv) {
+      errors.cvv = 'CVV required'
+    }
+
+    if (!card.name) {
+      errors.cardName =
+        'Cardholder name required'
+    }
   }
 
-  return !Object.keys(errors).length
+  return Object.keys(errors).length === 0
 }
+
+/* --------------------------
+   CARD FORMATTERS
+-------------------------- */
 
 const handleCardNumber = event => {
   card.number = event.target.value
@@ -734,6 +789,80 @@ const handleExpiry = event => {
     .slice(0, 5)
 }
 
+/* --------------------------
+   ORDER HELPERS
+-------------------------- */
+
+const generateOrderCode = () => {
+  return (
+    'ORD-' +
+    Date.now() +
+    '-' +
+    Math.floor(Math.random() * 9999)
+  )
+}
+
+const groupItemsByProvider = items => {
+  const groups = {}
+
+  items.forEach(item => {
+    const providerId =
+      item.provider_id ||
+      item.providerId
+
+    if (!providerId) {
+      console.error(
+        'Missing provider_id:',
+        item
+      )
+      return
+    }
+
+    if (!groups[providerId]) {
+      groups[providerId] = {
+        providerId,
+        items: [],
+        total: 0,
+      }
+    }
+
+    groups[providerId].items.push(item)
+
+    groups[providerId].total +=
+      itemTotal(item)
+  })
+
+  return Object.values(groups)
+}
+
+/* --------------------------
+   SAVE ADDRESS
+-------------------------- */
+
+const saveAddress = async token => {
+  return await axios.post(
+    `${API_BASE_URL}/address`,
+    {
+      name: shipping.name,
+      street: shipping.address,
+      city: shipping.city,
+      state: shipping.state,
+      country: shipping.country,
+      phone: shipping.phone,
+      email: shipping.email,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  )
+}
+
+/* --------------------------
+   CONFIRM ORDER
+-------------------------- */
+
 const confirmOrder = async () => {
   if (!validateForm()) {
     return
@@ -742,134 +871,186 @@ const confirmOrder = async () => {
   loading.value = true
 
   try {
+    const token = localStorage.getItem('token')
+
+    if (!token) {
+      throw new Error(
+        'Please login first.'
+      )
+    }
+
     const customer = JSON.parse(
       localStorage.getItem('user') || 'null'
     )
 
     if (!customer?.id) {
       throw new Error(
-        'Please login before checkout.'
+        'Customer not found.'
       )
     }
 
+    /* --------------------------
+       SAVE ADDRESS
+    -------------------------- */
+
+    await saveAddress(token)
+
+    /* --------------------------
+       GROUP ORDERS
+    -------------------------- */
+
     const groupedOrders =
-      groupItemsByProvider(orderItems.value)
+      groupItemsByProvider(
+        orderItems.value
+      )
 
-    const responses = await Promise.all(
-      groupedOrders.map(group => {
-        return axios.post(
-          `${API_BASE_URL}/orders`,
-          {
-            order_code:
-              generateOrderCode(),
+    if (!groupedOrders.length) {
+      throw new Error(
+        'No valid products found.'
+      )
+    }
 
-            customer_id: customer.id,
+    /* --------------------------
+       CREATE ORDERS
+    -------------------------- */
 
-            provider_id:
-              group.providerId,
+    for (const group of groupedOrders) {
+      const payload = {
+        order_code: generateOrderCode(),
 
-            status: 'pending',
+        customer_id: Number(customer.id),
 
-            total: group.total,
+        provider_id: Number(
+          group.providerId
+        ),
 
-            item: group.items.length,
+        status: 'pending',
 
-            items: group.items.map(
-              item => ({
-                product_id: item.id,
-                quantity: item.quantity,
-              })
-            ),
-          }
-        )
-      })
-    )
+        total: Number(group.total),
+
+        item: Number(
+          group.items.length
+        ),
+
+        payment_method:
+          paymentMethod.value,
+
+        items: group.items.map(item => ({
+          product_id: Number(item.id),
+          quantity: Number(
+            item.quantity
+          ),
+        })),
+      }
+
+      console.log(
+        'ORDER PAYLOAD:',
+        payload
+      )
+
+      await axios.post(
+        `${API_BASE_URL}/orders`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+    }
+
+    /* --------------------------
+       SAVE RECEIPT
+    -------------------------- */
 
     const receipt = {
-      orderNumber:
-        generateOrderCode(),
-
-      customer: { ...shipping },
+      orderNumber: generateOrderCode(),
 
       items: orderItems.value,
+
+      subtotal: subtotal.value,
+
+      shippingFee: shippingFee.value,
+
+      serviceFee: serviceFee.value,
 
       total: total.value,
 
       paymentMethod:
         paymentMethod.value,
 
-      backendOrders:
-        responses.map(r => r.data),
+      shipping: {
+        ...shipping,
+      },
+
+      createdAt:
+        new Date().toISOString(),
     }
 
     localStorage.setItem(
-      'lastOrder',
+      'latestReceipt',
       JSON.stringify(receipt)
     )
 
+    /* --------------------------
+       CLEAR CART
+    -------------------------- */
+
     cartStore.clearCart()
+
+    /* --------------------------
+       SUCCESS
+    -------------------------- */
 
     orderResult.value = 'success'
 
     orderMessage.value =
       'Your order has been placed successfully.'
-  }
-  catch (error) {
+  } catch (error) {
+    console.error(
+      'CHECKOUT ERROR:',
+      error
+    )
+
     orderResult.value = 'error'
 
-    orderMessage.value =
-      error.response?.data?.message ||
-      error.message ||
-      'Checkout failed.'
-  }
-  finally {
+    if (error.response) {
+      console.log(
+        'SERVER ERROR:',
+        error.response.data
+      )
+
+      orderMessage.value =
+        error.response.data.message ||
+        error.response.data.error ||
+        'Failed to process order.'
+    } else {
+      orderMessage.value =
+        error.message ||
+        'Checkout failed.'
+    }
+  } finally {
     loading.value = false
   }
 }
 
-const groupItemsByProvider = items => {
-  const map = new Map()
-
-  items.forEach(item => {
-    const providerId =
-      item.providerId ||
-      item.provider_id ||
-      null
-
-    if (!map.has(providerId)) {
-      map.set(providerId, {
-        providerId,
-        items: [],
-        total: 0,
-      })
-    }
-
-    const group = map.get(providerId)
-
-    group.items.push(item)
-
-    group.total += itemTotal(item)
-  })
-
-  return Array.from(map.values())
-}
-
-const generateOrderCode = () => {
-  return `ORD-${crypto.randomUUID()
-    .slice(0, 8)
-    .toUpperCase()}`
-}
+/* --------------------------
+   RECEIPT
+-------------------------- */
 
 const goToReceipt = () => {
   router.push('/receipt')
 }
+
+/* --------------------------
+   RESET
+-------------------------- */
 
 const resetOrder = () => {
   orderResult.value = ''
   orderMessage.value = ''
 }
 </script>
-
 <style scoped>
 .checkout-page {
   min-height: 100vh;
@@ -888,30 +1069,20 @@ const resetOrder = () => {
     #f8fafc;
 
   overflow-x: hidden;
-
   position: relative;
-
-  font-family:
-    Inter,
-    sans-serif;
 }
 
 .bg-blur {
   position: absolute;
-
   border-radius: 999px;
-
   filter: blur(90px);
-
   opacity: 0.4;
 }
 
 .blur-1 {
   width: 220px;
   height: 220px;
-
   background: #86efac;
-
   top: -100px;
   left: -100px;
 }
@@ -919,29 +1090,22 @@ const resetOrder = () => {
 .blur-2 {
   width: 220px;
   height: 220px;
-
   background: #93c5fd;
-
   bottom: -100px;
   right: -100px;
 }
 
 .checkout-container {
   max-width: 1320px;
-
   margin: auto;
-
   padding: 26px 16px 100px;
-
   position: relative;
   z-index: 2;
 }
 
 .checkout-grid {
   display: grid;
-
   grid-template-columns: 1fr 340px;
-
   gap: 20px;
 }
 
@@ -977,9 +1141,7 @@ const resetOrder = () => {
 
 .collapse-header {
   width: 100%;
-
   border: none;
-
   background: transparent;
 
   display: flex;
@@ -987,7 +1149,6 @@ const resetOrder = () => {
   align-items: center;
 
   cursor: pointer;
-
   padding: 0;
 }
 
@@ -1020,22 +1181,18 @@ const resetOrder = () => {
 
 .collapse-header h3 {
   margin: 0;
-
   font-size: 14px;
   font-weight: 700;
 }
 
 .collapse-header p {
   margin: 4px 0 0;
-
   font-size: 12px;
-
   color: #64748b;
 }
 
 .arrow {
   font-size: 22px;
-
   color: #64748b;
 }
 
@@ -1043,64 +1200,9 @@ const resetOrder = () => {
   margin-top: 18px;
 }
 
-.section-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  margin-bottom: 18px;
-}
-
-.section-badge {
-  display: inline-flex;
-
-  padding: 6px 12px;
-
-  border-radius: 999px;
-
-  background: rgba(34,197,94,0.08);
-
-  color: #16a34a;
-
-  font-size: 10px;
-  font-weight: 700;
-
-  margin-bottom: 8px;
-}
-
-h1 {
-  margin: 0;
-
-  font-size: 30px;
-}
-
-h2 {
-  margin: 0;
-
-  font-size: 20px;
-
-  color: #0f172a;
-}
-
-h4 {
-  margin: 0;
-
-  font-size: 13px;
-}
-
-p {
-  font-size: 12px;
-
-  color: #64748b;
-
-  line-height: 1.5;
-}
-
 .form-grid {
   display: grid;
-
   grid-template-columns: 1fr 1fr;
-
   gap: 14px;
 }
 
@@ -1116,9 +1218,7 @@ p {
 
 .input-group label {
   font-size: 11px;
-
   font-weight: 600;
-
   color: #475569;
 }
 
@@ -1175,15 +1275,6 @@ p {
   border-color: #16a34a;
 
   background: rgba(240,253,244,0.7);
-}
-
-.payment-card input {
-  width: 16px;
-  height: 16px;
-}
-
-.payment-content h4 {
-  margin-bottom: 4px;
 }
 
 .card-form {
@@ -1256,12 +1347,6 @@ p {
   font-weight: 700;
 }
 
-.item-count {
-  font-size: 11px;
-
-  color: #64748b;
-}
-
 .summary-list {
   margin-top: 18px;
 }
@@ -1277,9 +1362,7 @@ p {
 
 .summary-divider {
   height: 1px;
-
   background: #e2e8f0;
-
   margin: 10px 0;
 }
 
@@ -1358,7 +1441,6 @@ p {
 
 .error-box p {
   margin: 4px 0;
-
   color: #dc2626;
 }
 
@@ -1377,9 +1459,7 @@ p {
 .empty-card {
   max-width: 460px;
   width: 100%;
-
   padding: 36px;
-
   text-align: center;
 }
 
@@ -1410,6 +1490,7 @@ p {
   border-radius: 999px;
 
   border: 5px solid #e2e8f0;
+
   border-top-color: #16a34a;
 
   animation: spin 1s linear infinite;

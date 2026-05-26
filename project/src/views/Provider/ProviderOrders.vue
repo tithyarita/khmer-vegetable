@@ -255,7 +255,7 @@
 import { ref, computed, reactive, onMounted } from 'vue'
 import axios from 'axios'
 import SideBar from "@/components/provider_com/sideBar.vue"
-import PageHeader from "@/components/provider_com/pageHeader.vue"
+import pageHeader from '@/components/provider_com/PageHeader.vue'
 import { useUserStore } from '@/stores/userStore'
 
 const API_BASE_URL = 'http://localhost:3000'
@@ -388,24 +388,36 @@ const getStatusLabel = (status) => ({
 })[status] || status
 
 // --- Update Status ---
-const updateStatus = async (order, newStatus) => {
+// --- Update Status ---
+const updateStatus = async (order, status) => {
   try {
-    console.log('Updating order:', order.orderId, 'to:', newStatus)
-    await axios.patch(`${API_BASE_URL}/orders/${order.orderId}/status`, {
-      status: newStatus
-    })
+    console.log('Updating order:', order.orderId, status)
+
+    await axios.patch(
+      `${API_BASE_URL}/orders/${order.orderId}/status`,
+      {
+        status,
+      }
+    )
+
+    // instant UI update
+    order.status = status
+
+    // update modal too
+    if (selectedOrder.value?.orderId === order.orderId) {
+      selectedOrder.value.status = status
+    }
+
+    // reload from backend
     await fetchOrders()
 
-      if (selectedOrder.value?.orderId === order.orderId) {
-        selectedOrder.value.status = newStatus
-      }
-    showToast(`Order updated to ${newStatus}`, 'success')
-  } catch (err) {
-    console.error('Update failed:', err.response?.data || err.message)
-    showToast('Failed to update status', 'error')
+    showToast('Order status updated successfully')
+  } catch (error) {
+    console.error('UPDATE ERROR:', error.response?.data || error.message)
+
+    showToast('Failed to update order status', 'error')
   }
 }
-
 // --- Modal ---
 const openDetailModal = (order) => {
   selectedOrder.value = { ...order }

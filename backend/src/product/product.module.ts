@@ -5,10 +5,11 @@ import { ProductService } from './product.service';
 import { ProductController } from './product.controller';
 import { HttpModule } from '@nestjs/axios';
 import { AuthModule } from '../auth/auth.module';
+import { orderItems } from '../users/order-items.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product]),
+    TypeOrmModule.forFeature([Product, orderItems]),
     HttpModule, // ✅ IMPORTANT
     AuthModule,
   ],

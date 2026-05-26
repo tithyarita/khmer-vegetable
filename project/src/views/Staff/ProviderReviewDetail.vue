@@ -77,6 +77,7 @@ import FarmDetailsCard       from '../../components/Staff/Farmdetailscard.vue'
 import UploadedDocuments     from '../../components/Staff/Uploadeddocuments.vue'
 import VerificationHealth    from '../../components/Staff/Verificationhealth.vue'
 import ProcessTimeline       from '../../components/Staff/Processtimeline.vue'
+import { useUserStore } from '@/stores/userStore'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
@@ -247,13 +248,15 @@ export default {
       if (this.isDecided || this.deciding) return   // ← guard
       this.deciding = true
       const status = type === 'accept' ? 'approved' : 'rejected'
+      const userStore = useUserStore()
+      const staffId = userStore.user?.id
       try {
         const res = await fetch(
           `${API_BASE}/api/applications/${this.applicationId}/status`,
           {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status }),
+            body: JSON.stringify({ status, staffId }),
           }
         )
         if (!res.ok) throw new Error('Failed to update status')

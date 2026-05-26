@@ -32,6 +32,13 @@
             </div>
           </div>
 
+          <!-- Top Orders Section -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <TopOrders :limit="5" />
+            </div>
+          </div>
+
           <!-- Recent Orders -->
           <RecentOrder />
         </div>
@@ -42,11 +49,12 @@
 
 <script setup>
 import SideBar from '../../components/provider_com/sideBar.vue'
-import PageHeader from '../../components/provider_com/pageHeader.vue'
-// import RevenueStats from '../../components/provider_com/revenueStats.vue'
+import PageHeader from '../../components/provider_com/PageHeader.vue'
+import RevenueStats from '../../components/provider_com/revenueStats.vue'
 import ProductsSellAnalysis from '../../components/provider_com/ProductsSellAnalysis.vue'
 import RecentOrder from '../../components/provider_com/recentOrder.vue'
 import TopCustomers from '../../components/provider_com/TopCustomers.vue'
+import TopOrders from '../../components/provider_com/TopOrders.vue'
 </script>
 
 <style scoped>

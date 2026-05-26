@@ -4,6 +4,12 @@
       <h5 class="mb-0">Products Sell Analysis</h5>
       <span class="badge bg-secondary">This Year</span>
     </div>
+    <div v-if="error" class="alert alert-warning mb-3">
+      {{ error }}
+    </div>
+    <div v-if="loading" class="text-muted small mb-2">
+      Loading analysis...
+    </div>
     <div class="chart-container">
       <canvas ref="chartRef"></canvas>
     </div>
@@ -11,53 +17,134 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import axios from 'axios'
 import Chart from 'chart.js/auto'
+import { useUserStore } from '@/stores/userStore'
 
+const API_BASE_URL = 'http://localhost:3000'
+const userStore = useUserStore()
 const chartRef = ref(null)
+const loading = ref(false)
+const error = ref('')
+const monthlyRevenue = ref([
+  { month: 'Jan', value: 0 },
+  { month: 'Feb', value: 0 },
+  { month: 'Mar', value: 0 },
+  { month: 'Apr', value: 0 },
+  { month: 'May', value: 0 },
+  { month: 'Jun', value: 0 },
+  { month: 'Jul', value: 0 },
+  { month: 'Aug', value: 0 },
+  { month: 'Sep', value: 0 },
+  { month: 'Oct', value: 0 },
+  { month: 'Nov', value: 0 },
+  { month: 'Dec', value: 0 },
+])
 let chartInstance = null
 
-onMounted(() => {
-  if (chartRef.value) {
-    chartInstance = new Chart(chartRef.value, {
-      type: 'bar',
-      data: {
-        labels: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
-        datasets: [
-          {
-            label: 'Chart Data',
-            data: [1500, 1200, 1300, 1600, 1400, 1300, 1500, 1400, 1200, 1300, 1400, 1300],
-            backgroundColor: ['#4169E1', '#00C851', '#4169E1', '#00C851', '#4169E1', '#00C851', '#4169E1', '#00C851', '#4169E1', '#00C851', '#4169E1', '#00C851'],
-            borderRadius: 4,
-            borderSkipped: false
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 2000,
-            ticks: {
-              stepSize: 500
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            }
-          }
-        }
-      }
-    })
+const getProviderId = () => {
+  const user = userStore.user || JSON.parse(localStorage.getItem('user') || 'null')
+  return Number(user?.id ?? user?.providerId ?? user?.provider_id ?? 0) || null
+}
+
+const formatCurrency = (value) => `$${Number(value || 0).toLocaleString('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})}`
+
+const destroyChart = () => {
+  if (chartInstance) {
+    chartInstance.destroy()
+    chartInstance = null
   }
+}
+
+const buildChart = async () => {
+  await nextTick()
+
+  if (!chartRef.value) return
+
+  destroyChart()
+
+  const labels = monthlyRevenue.value.map((entry) => entry.month.toUpperCase())
+  const data = monthlyRevenue.value.map((entry) => Number(entry.value || 0))
+  const maxValue = Math.max(...data, 0)
+
+  chartInstance = new Chart(chartRef.value, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Revenue',
+          data,
+          backgroundColor: data.map((value, index) => (index % 2 === 0 ? '#1f4ed8' : '#22c55e')),
+          borderRadius: 8,
+          borderSkipped: false,
+          barPercentage: 0.72,
+          categoryPercentage: 0.82,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => formatCurrency(context.parsed.y),
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          suggestedMax: Math.max(100, Math.ceil(maxValue * 1.2)),
+          ticks: {
+            callback: (value) => `$${value}`,
+          },
+        },
+        x: {
+          grid: { display: false },
+        },
+      },
+    },
+  })
+}
+
+const loadAnalysis = async () => {
+  loading.value = true
+  error.value = ''
+
+  const providerId = getProviderId()
+  if (!providerId) {
+    error.value = 'Provider account not found. Please log in again.'
+    loading.value = false
+    return
+  }
+
+  try {
+    const response = await axios.get(`${API_BASE_URL}/orders/provider/${providerId}/revenue`)
+    monthlyRevenue.value = Array.isArray(response.data?.monthlyRevenue)
+      ? response.data.monthlyRevenue
+      : monthlyRevenue.value
+    await buildChart()
+  } catch (err) {
+    error.value = err.response?.data?.message || err.message || 'Failed to load analysis.'
+    await buildChart()
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadAnalysis()
+})
+
+onBeforeUnmount(() => {
+  destroyChart()
 })
 
 </script>

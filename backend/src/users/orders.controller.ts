@@ -45,7 +45,17 @@ export class OrdersController {
   }
 
   // =========================
+
   // GET ORDERS BY CUSTOMER
+  // GET PROVIDER REVENUE SUMMARY
+  // =========================
+  @Get('provider/:providerId/revenue')
+  getProviderRevenue(@Param('providerId', ParseIntPipe) providerId: number) {
+    return this.ordersService.getProviderRevenue(providerId);
+  }
+
+  // =========================
+  // GET ORDERS BY CUSTOMER ID
   // =========================
   @Get('customer/:customerId')
   async findByCustomer(
