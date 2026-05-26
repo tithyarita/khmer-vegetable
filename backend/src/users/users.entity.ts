@@ -12,6 +12,7 @@ import { Customer } from '../customer/customer.entity';
 import { Provider } from '../providers/providers.entity';
 import { Cart } from '../cart/cart.entity'
 import { Favorite } from '../favorite/favorite.entity'
+import { Review } from '../review/review.entity'
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -68,5 +69,8 @@ export class users {
 
   @OneToMany(() => Favorite, (favorite) => favorite.user)
   favorites!: Favorite[];
+
+  @OneToMany(() => Review, (review) => review.user)
+  reviews!: Review[];
 
 }

@@ -12,6 +12,7 @@ import { Provider } from '../providers/providers.entity';
 import { orderItems } from '../users/order-items.entity';
 import { Cart } from '../cart/cart.entity';
 import { Favorite } from '../favorite/favorite.entity';
+import { Review } from '../review/review.entity';
 @Entity('product')
 export class Product {
   @PrimaryGeneratedColumn()
@@ -56,4 +57,7 @@ export class Product {
 
   @OneToMany(() => Favorite, (favorite) => favorite.product)
   favorites!: Favorite[];
+
+  @OneToMany(() => Review, (review) => review.product)
+  reviews!: Review[];
 }
