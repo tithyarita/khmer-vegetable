@@ -8,9 +8,9 @@ import {
   UseInterceptors,
   Req,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Provider } from './providers.entity';
+
+import { ProvidersService } from './provider.service';
+
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -18,211 +18,94 @@ import type { Request } from 'express';
 
 @Controller('providers')
 export class ProvidersController {
-  constructor(
-    @InjectRepository(Provider)
-    private readonly providerRepo: Repository<Provider>,
-  ) {}
+  constructor(private readonly providerService: ProvidersService) {}
 
-  // ========================================
-  // UPDATE PROVIDER
-  // ========================================
-
-  @Put(':id')
-  async updateProvider(
-    @Param('id') id: number,
-    @Body() body: Partial<Provider>,
-  ) {
-    const userId = Number(id);
-
-    const cleanedBanks = Array.isArray(body.banks)
-      ? body.banks.map((b) => ({
-          name: b.name || '',
-          account: b.account || '',
-          qr: b.qr || '',
-        }))
-      : undefined;
-
-    await this.providerRepo.update(
-      { user_id: userId },
-      {
-        ...body,
-        banks: cleanedBanks,
-      },
-    );
-
-    return this.providerRepo.findOne({
-      where: { user_id: userId },
-      relations: ['user'],
-    });
-  }
-
-  // ========================================
-  // GET PROVIDER
-  // ========================================
-
+  // GET
   @Get(':id')
-  async getProvider(@Param('id') id: number) {
-    return this.providerRepo.findOne({
-      where: { user_id: Number(id) },
-      relations: ['user'],
-    });
+  getProvider(@Param('id') id: number) {
+    return this.providerService.findByUserId(Number(id));
   }
 
-  // ========================================
-  // UPLOAD AVATAR
-  // ========================================
+  // UPDATE
+  @Put(':id')
+  updateProvider(@Param('id') id: number, @Body() body: any) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return this.providerService.updateProvider(Number(id), body);
+  }
 
+  // AVATAR
   @Put(':id/avatar')
   @UseInterceptors(
     FileInterceptor('avatar', {
       storage: diskStorage({
         destination: './uploads/avatar',
-
         filename: (_req, file, cb) => {
           const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-
           cb(null, unique + extname(file.originalname));
         },
       }),
     }),
   )
-  async uploadAvatar(
+  uploadAvatar(
     @Param('id') id: number,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    if (!file) {
-      return {
-        message: 'No file uploaded',
-      };
-    }
+    if (!file) return { message: 'No file uploaded' };
 
-    const imagePath = `/images/avatar/${file.filename}`;
+    const path = `/images/avatar/${file.filename}`;
 
-    await this.providerRepo.update(
-      { user_id: Number(id) },
-      {
-        avatar: imagePath,
-      },
-    );
-
-    return {
-      avatar: `http://localhost:3000${imagePath}`,
-    };
+    return this.providerService.updateAvatar(Number(id), path);
   }
 
-  // ========================================
-  // UPLOAD FARM IMAGE
-  // ========================================
-
+  // FARM IMAGE
   @Put(':id/farm-image')
   @UseInterceptors(
     FileInterceptor('farm', {
       storage: diskStorage({
         destination: './uploads/farm',
-
         filename: (_req, file, cb) => {
           const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-
           cb(null, unique + extname(file.originalname));
         },
       }),
     }),
   )
-  async uploadFarmImage(
+  uploadFarmImage(
     @Param('id') id: number,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    if (!file) {
-      return {
-        message: 'No file uploaded',
-      };
-    }
+    if (!file) return { message: 'No file uploaded' };
 
-    const imagePath = `/images/farm/${file.filename}`;
+    const path = `/images/farm/${file.filename}`;
 
-    await this.providerRepo.update(
-      { user_id: Number(id) },
-      {
-        farm_image: imagePath,
-      },
-    );
-
-    return {
-      farm_image: `http://localhost:3000${imagePath}`,
-    };
+    return this.providerService.updateFarmImage(Number(id), path);
   }
 
-  // ========================================
-  // UPLOAD BANK QR
-  // ========================================
-
+  // BANK QR
   @Put(':id/bank-qr')
   @UseInterceptors(
     FileInterceptor('qr', {
       storage: diskStorage({
         destination: './uploads/qr',
-
         filename: (_req, file, cb) => {
           const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-
           cb(null, unique + extname(file.originalname));
         },
       }),
     }),
   )
-  async uploadBankQr(
-    @Param('id') id: number,
+  uploadBankQr(
+    @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
     @Req() req: Request,
   ) {
-    if (!file) {
-      return {
-        message: 'No QR uploaded',
-      };
-    }
+    if (!file) return { message: 'No QR uploaded' };
 
-    const imagePath = `/images/qr/${file.filename}`;
-
-    const provider = await this.providerRepo.findOne({
-      where: {
-        user_id: Number(id),
-      },
-    });
-
-    if (!provider) {
-      return {
-        message: 'Provider not found',
-      };
-    }
-
-    const banks = Array.isArray(provider.banks) ? provider.banks : [];
-
-    const body = req.body as {
-      bank_index: string;
-    };
-
-    const bankIndex = Number(body.bank_index);
-
-    if (isNaN(bankIndex)) {
-      return {
-        message: 'Invalid bank index',
-      };
-    }
-
-    while (banks.length <= bankIndex) {
-      banks.push({
-        name: '',
-        account: '',
-        qr: '',
-      });
-    }
-
-    banks[bankIndex].qr = `http://localhost:3000${imagePath}`;
-
-    await this.providerRepo.update({ user_id: Number(id) }, { banks });
-
-    return {
-      qr: `http://localhost:3000${imagePath}`,
-    };
+    const bankIndex =
+      typeof req.body === 'object' && req.body !== null
+        ? Number((req.body as Record<string, any>).bank_index)
+        : NaN;
+    const path = `/images/qr/${file.filename}`;
+    return this.providerService.updateBankQr(Number(id), bankIndex, path);
   }
 }
