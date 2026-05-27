@@ -426,6 +426,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cartStore'
 import { useProductStore } from '@/stores/productStore'
 import { useUserStore } from '@/stores/userStore'
+import { useReviewStore } from '@/stores/reviewStore'
 
 import { useI18n } from '@/composables/useI18n'
 
@@ -436,6 +437,7 @@ const router = useRouter()
 const productStore = useProductStore()
 const cartStore = useCartStore()
 const userStore = useUserStore()
+const reviewStore = useReviewStore()
 
 // YOUR OLD SCRIPT CONTINUES HERE...
 
@@ -490,13 +492,12 @@ const loadProduct = async () => {
   const data = await productStore.fetchProductById(id);
   applyProduct(data);
   activeIdx.value = 0;
+  // Fetch reviews for this product
+  await reviewStore.fetchReviewsByProduct(id);
 };
 
 // --- REVIEWS DATA ---
-const reviews = ref([
-  { id: 1, author: "Sophie K.", initials: "SK", color: "#2d6a3f", rating: 5, date: "Oct 24, 2025", location: "Paris, FR", verified: true, title: "Absolutely Stunning!", body: "The fractals were perfect and it tasted so sweet when roasted." },
-  { id: 2, author: "Marc L.", initials: "ML", color: "#a3c585", rating: 4, date: "Oct 20, 2025", location: "Lyon, FR", verified: true, title: "Great Quality", body: "Very fresh, though slightly smaller than expected." }
-]);
+const reviews = computed(() => reviewStore.reviews)
 
 // --- STATE ---
 const activeTab = ref('culinary');
@@ -513,11 +514,7 @@ const hoverRating = ref(0);
 // --- COMPUTED ---
 const discPct = computed(() => Number(product.discount || 0));
 
-const avgRating = computed(() => {
-  if (!reviews.value.length) return 0;
-  const total = reviews.value.reduce((acc, curr) => acc + curr.rating, 0);
-  return (total / reviews.value.length).toFixed(1);
-});
+const avgRating = computed(() => reviewStore.averageRating)
 
 const filteredReviews = computed(() => {
   if (!filterStar.value) return reviews.value;
@@ -555,27 +552,30 @@ const showToast = (msg) => {
 const getStarCount = (s) => reviews.value.filter(r => r.rating === s).length;
 const getStarPercentage = (s) => (getStarCount(s) / reviews.value.length) * 100;
 
-const submitReview = () => {
+const submitReview = async () => {
+  if (!userStore.isLoggedIn) {
+    router.push('/user/login')
+    return
+  }
+
   if (!newReview.rating || !newReview.body.trim()) {
     showToast('Please write a review and select a rating')
     return
   }
-  const colors = ['#2d6a3f', '#a3c585', '#e8a87c', '#6b8e6b', '#c9a87c']
-  reviews.value.unshift({
-    id: Date.now(),
-    author: 'Anonymous',
-    initials: 'AN',
-    color: colors[Math.floor(Math.random() * colors.length)],
-    rating: newReview.rating,
-    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    location: 'Phnom Penh, KH',
-    verified: false,
-    title: 'Customer Review',
-    body: newReview.body,
-  })
-  newReview.rating = 0
-  newReview.body = ''
-  showToast('Your review has been submitted!')
+
+  try {
+    await reviewStore.createReview({
+      rating: newReview.rating,
+      feedback: newReview.body,
+      productId: product.id,
+    })
+    newReview.rating = 0
+    newReview.body = ''
+    showToast('Your review has been submitted!')
+  } catch (err) {
+    showToast('Failed to submit review. Please try again.')
+    console.error('Submit review error:', err)
+  }
 }
 
 watch(
