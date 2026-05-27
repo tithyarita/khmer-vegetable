@@ -103,6 +103,15 @@ export const useCartStore = defineStore('cart', () => {
 
   // ================= ACTIONS =================
   const addToCart = async (product) => {
+    const stockValue = product?.stock
+    if (stockValue !== undefined && stockValue !== null) {
+      const availableStock = Number(stockValue)
+      if (Number.isFinite(availableStock) && availableStock <= 0) {
+        alert('This product is out of stock.')
+        return
+      }
+    }
+
     const existingItem = cartItems.value.find(item => item.id === product.id || item.id === product.product_id || item.id === product.productId)
     const itemPrice = Number(product.price ?? product.unitPrice ?? 0)
     const itemOriginalPrice = Number(product.originalPrice ?? itemPrice)

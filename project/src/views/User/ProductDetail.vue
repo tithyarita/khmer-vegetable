@@ -418,18 +418,21 @@ import Footer from '@/components/Customer/Footer.vue'
 import NavigationBar from '@/components/Customer/NavigationBar.vue'
 
 import { ref, reactive, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useCartStore } from '@/stores/cartStore'
 import { useProductStore } from '@/stores/productStore'
+import { useUserStore } from '@/stores/userStore'
 
 import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()
 
 const route = useRoute()
+const router = useRouter()
 const productStore = useProductStore()
 const cartStore = useCartStore()
+const userStore = useUserStore()
 
 // YOUR OLD SCRIPT CONTINUES HERE...
 
@@ -442,6 +445,7 @@ const product = reactive({
   price: 0,
   originalPrice: 0,
   discount: 0,
+  stock: 0,
   providerId: null,
   providerName: 'Unknown',
   weight: 'N/A',
@@ -466,6 +470,7 @@ const applyProduct = (data) => {
     price,
     discount,
     originalPrice,
+    stock: Number(data.stock ?? 0),
     providerId: data.provider?.user_id || data.provider_id || data.providerId || null,
     providerName: data.provider?.provider_name || data.providerName || data.provider?.name || 'Unknown',
     weight: data.weight || `${Number(data.stock || 0)} in stock`,
@@ -523,6 +528,18 @@ const addToCart = () => {
     router.push('/user/login')
     return
   }
+
+  const availableStock = Number(product.stock ?? 0)
+  if (availableStock <= 0) {
+    alert('This product is out of stock.')
+    return
+  }
+
+  if (qty.value > availableStock) {
+    alert(`Only ${availableStock} in stock.`)
+    return
+  }
+
   cartStore.addToCart({
     ...product,
     unitPrice: Number(product.price ?? 0),

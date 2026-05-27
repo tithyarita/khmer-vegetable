@@ -67,7 +67,10 @@
             <span class="original-price">${{ formatPrice(getOriginalPrice(product)) }}</span>
           </div>
 
-          <button class="btn-add" @click.stop="addToCart(product)">
+          <button
+            class="btn-add"
+            @click.stop="addToCart(product)"
+          >
             <span class="plus">+</span> {{ t('Add') }}
           </button>
         </div>
@@ -111,6 +114,7 @@ const normalizeProduct = product => ({
   providerId: Number(product?.providerId ?? product?.provider_id ?? product?.provider?.user_id ?? 0) || null,
   providerName: product?.providerName || product?.provider?.provider_name || product?.provider?.name || 'Unknown',
   image: product?.image || product?.imageUrl || '',
+  stock: Number(product?.stock ?? 0),
 })
 
 const displayProducts = computed(() => {
@@ -142,6 +146,11 @@ const badgeClass = badge => ({
 })
 
 const addToCart = product => {
+  if (Number(product.stock || 0) <= 0) {
+    alert('This product is out of stock.')
+    return
+  }
+
   cartStore.addToCart({
     ...product,
     originalPrice: getOriginalPrice(product),

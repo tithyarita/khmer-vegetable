@@ -384,12 +384,17 @@ export class OrdersService {
 
   async getTopSellingProducts(
     period: 'week' | 'month' = 'week',
+    providerId?: number,
     customerId?: number,
   ) {
     const periodStart = this.getPeriodStart(period);
 
     const orders = await this.ordersRepository.find({
-      where: customerId ? { customer_id: customerId } : undefined,
+      where: providerId
+        ? { provider_id: providerId }
+        : customerId
+          ? { customer_id: customerId }
+          : undefined,
       relations: ['order_items', 'order_items.product'],
       order: { created_at: 'DESC' },
     });
@@ -443,6 +448,11 @@ export class OrdersService {
       }
     }
 
+    const periodRevenue = filteredOrders.reduce(
+      (sum, order) => sum + Number(order.total || 0),
+      0,
+    );
+
     const products = Array.from(productStats.values())
       .sort((left, right) => {
         if (right.totalQuantity !== left.totalQuantity) {
@@ -458,8 +468,10 @@ export class OrdersService {
 
     return {
       period,
+      providerId: providerId ?? null,
       customerId: customerId ?? null,
       totalOrders: filteredOrders.length,
+      periodRevenue: Number(periodRevenue.toFixed(2)),
       products,
     };
   }

@@ -2,7 +2,36 @@
   <div class="products-sell-analysis">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h5 class="mb-0">Products Sell Analysis</h5>
-      <span class="badge bg-secondary">This Year</span>
+      <div class="period-switch" role="tablist" aria-label="Sales analysis period">
+        <button
+          type="button"
+          :class="['period-btn', { active: period === 'year' }]"
+          @click="period = 'year'"
+        >
+          Year
+        </button>
+        <button
+          type="button"
+          :class="['period-btn', { active: period === 'day' }]"
+          @click="period = 'day'"
+        >
+          Day
+        </button>
+        <button
+          type="button"
+          :class="['period-btn', { active: period === 'week' }]"
+          @click="period = 'week'"
+        >
+          Week
+        </button>
+        <button
+          type="button"
+          :class="['period-btn', { active: period === 'month' }]"
+          @click="period = 'month'"
+        >
+          Month
+        </button>
+      </div>
     </div>
     <div v-if="error" class="alert alert-warning mb-3">
       {{ error }}
@@ -17,7 +46,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import axios from 'axios'
 import Chart from 'chart.js/auto'
 import { useUserStore } from '@/stores/userStore'
@@ -25,22 +54,10 @@ import { useUserStore } from '@/stores/userStore'
 const API_BASE_URL = 'http://localhost:3000'
 const userStore = useUserStore()
 const chartRef = ref(null)
+const period = ref('month')
 const loading = ref(false)
 const error = ref('')
-const monthlyRevenue = ref([
-  { month: 'Jan', value: 0 },
-  { month: 'Feb', value: 0 },
-  { month: 'Mar', value: 0 },
-  { month: 'Apr', value: 0 },
-  { month: 'May', value: 0 },
-  { month: 'Jun', value: 0 },
-  { month: 'Jul', value: 0 },
-  { month: 'Aug', value: 0 },
-  { month: 'Sep', value: 0 },
-  { month: 'Oct', value: 0 },
-  { month: 'Nov', value: 0 },
-  { month: 'Dec', value: 0 },
-])
+const chartData = ref([])
 let chartInstance = null
 
 const getProviderId = () => {
@@ -60,6 +77,75 @@ const destroyChart = () => {
   }
 }
 
+const getPeriodLabels = (selectedPeriod) => {
+  if (selectedPeriod === 'year') {
+    return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  }
+
+  if (selectedPeriod === 'day') {
+    return Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`)
+  }
+
+  if (selectedPeriod === 'week') {
+    return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  }
+
+  const now = new Date()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  return Array.from({ length: daysInMonth }, (_, index) => `${index + 1}`)
+}
+
+const buildPeriodBuckets = (orders, selectedPeriod) => {
+  const labels = getPeriodLabels(selectedPeriod)
+  const buckets = labels.map((label) => ({ label, value: 0 }))
+
+  const now = new Date()
+  const startOfToday = new Date(now)
+  startOfToday.setHours(0, 0, 0, 0)
+
+  const startOfWeek = new Date(now)
+  const day = startOfWeek.getDay()
+  startOfWeek.setDate(now.getDate() - day)
+  startOfWeek.setHours(0, 0, 0, 0)
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const startOfYear = new Date(now.getFullYear(), 0, 1)
+
+  orders.forEach((order) => {
+    const date = new Date(order.created_at || order.createdAt || order.date)
+    if (Number.isNaN(date.getTime())) return
+
+    const revenue = Number(order.total || 0)
+
+    if (selectedPeriod === 'day') {
+      if (date >= startOfToday) {
+        buckets[date.getHours()].value += revenue
+      }
+      return
+    }
+
+    if (selectedPeriod === 'week') {
+      if (date >= startOfWeek) {
+        buckets[date.getDay()].value += revenue
+      }
+      return
+    }
+
+    if (selectedPeriod === 'year') {
+      if (date >= startOfYear && date.getFullYear() === now.getFullYear()) {
+        buckets[date.getMonth()].value += revenue
+      }
+      return
+    }
+
+    if (date >= startOfMonth && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
+      buckets[date.getDate() - 1].value += revenue
+    }
+  })
+
+  return buckets
+}
+
 const buildChart = async () => {
   await nextTick()
 
@@ -67,8 +153,8 @@ const buildChart = async () => {
 
   destroyChart()
 
-  const labels = monthlyRevenue.value.map((entry) => entry.month.toUpperCase())
-  const data = monthlyRevenue.value.map((entry) => Number(entry.value || 0))
+  const labels = chartData.value.map((entry) => entry.label)
+  const data = chartData.value.map((entry) => Number(entry.value || 0))
   const maxValue = Math.max(...data, 0)
 
   chartInstance = new Chart(chartRef.value, {
@@ -126,18 +212,22 @@ const loadAnalysis = async () => {
   }
 
   try {
-    const response = await axios.get(`${API_BASE_URL}/orders/provider/${providerId}/revenue`)
-    monthlyRevenue.value = Array.isArray(response.data?.monthlyRevenue)
-      ? response.data.monthlyRevenue
-      : monthlyRevenue.value
+    const response = await axios.get(`${API_BASE_URL}/orders/provider/${providerId}`)
+    const orders = Array.isArray(response.data) ? response.data : []
+    chartData.value = buildPeriodBuckets(orders, period.value)
     await buildChart()
   } catch (err) {
     error.value = err.response?.data?.message || err.message || 'Failed to load analysis.'
+    chartData.value = buildPeriodBuckets([], period.value)
     await buildChart()
   } finally {
     loading.value = false
   }
 }
+
+watch(period, async () => {
+  await loadAnalysis()
+})
 
 onMounted(() => {
   loadAnalysis()
@@ -171,6 +261,30 @@ h5 {
 .badge {
   font-size: 0.75rem;
   padding: 0.4rem 0.8rem;
+}
+
+.period-switch {
+  display: inline-flex;
+  gap: 4px;
+  background: #eef4ef;
+  border-radius: 999px;
+  padding: 4px;
+  flex-wrap: wrap;
+}
+
+.period-btn {
+  border: none;
+  background: transparent;
+  color: #355341;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.period-btn.active {
+  background: #1f5c34;
+  color: #fff;
 }
 
 @media (max-width: 1024px) {

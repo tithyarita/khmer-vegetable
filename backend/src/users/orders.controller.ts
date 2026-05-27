@@ -38,10 +38,12 @@ export class OrdersController {
   @Get('top-products')
   async getTopSellingProducts(
     @Query('period') period?: 'week' | 'month',
+    @Query('providerId') providerId?: string,
     @Query('customerId') customerId?: string,
   ) {
     return this.ordersService.getTopSellingProducts(
       period === 'month' ? 'month' : 'week',
+      providerId ? Number(providerId) : undefined,
       customerId ? Number(customerId) : undefined,
     );
   }
