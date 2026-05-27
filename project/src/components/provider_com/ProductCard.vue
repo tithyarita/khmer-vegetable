@@ -105,7 +105,7 @@ const handleImageError = (e) => {
 
 .product-price {
   margin: 6px 0 0 0;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #2d6a4f;
 }
