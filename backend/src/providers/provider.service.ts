@@ -10,80 +10,94 @@ export class ProvidersService {
     private readonly providerRepo: Repository<Provider>,
   ) {}
 
-  // GET provider by user_id (with user relation)
-  async findByUserId(userId: number) {
+  // =========================
+  // GET PROVIDER
+  // =========================
+  findByUserId(userId: number) {
     return this.providerRepo.findOne({
       where: { user_id: userId },
-      relations: ['user'], // important for created_at from users table
+      relations: ['user'],
     });
   }
 
-  // CREATE provider (used when user registers as provider)
-  async createProvider(data: Partial<Provider>) {
-    const provider = this.providerRepo.create(data);
-    return this.providerRepo.save(provider);
-  }
+  // =========================
+  // UPDATE GENERAL PROVIDER
+  // =========================
+  async updateProvider(userId: number, data: any) {
+    const { banks, user_id, user, ...rest } = data || {};
 
-  // UPDATE provider by user_id
-  async updateProvider(userId: number, data: Partial<Provider>) {
-    await this.providerRepo.update({ user_id: userId }, data);
+    const cleanBanks = Array.isArray(banks)
+      ? banks.map((b: any) => ({
+          name: b?.name ?? '',
+          account: b?.account ?? '',
+          qr: b?.qr ?? '',
+        }))
+      : undefined;
+
+    await this.providerRepo.update(
+      { user_id: userId },
+      cleanBanks ? { ...rest, banks: cleanBanks } : rest,
+    );
 
     return this.findByUserId(userId);
   }
 
-  // DELETE provider
-  async deleteProvider(userId: number) {
-    return this.providerRepo.delete({ user_id: userId });
-  }
-
-  // =============================
-  // UPLOAD AVATAR
-  // =============================
+  // =========================
+  // UPDATE AVATAR
+  // =========================
   async updateAvatar(userId: number, avatar: string) {
-    await this.providerRepo.update({ user_id: userId }, { avatar });
+    await this.providerRepo.update(
+      { user_id: userId },
+      { avatar: avatar as any },
+    );
 
     return {
       avatar: `http://localhost:3000${avatar}`,
     };
   }
 
-  // =============================
-  // UPLOAD FARM IMAGE
-  // =============================
+  // =========================
+  // UPDATE FARM IMAGE
+  // =========================
   async updateFarmImage(userId: number, farm_image: string) {
-    await this.providerRepo.update({ user_id: userId }, { farm_image });
+    await this.providerRepo.update(
+      { user_id: userId },
+      { farm_image: farm_image as any },
+    );
 
     return {
       farm_image: `http://localhost:3000${farm_image}`,
     };
   }
 
-  // =============================
-  // UPLOAD QR IMAGE
-  // =============================
-  async updateBankQr(userId: number, qr: string, bankIndex: number) {
-    const provider = await this.providerRepo.findOne({
-      where: { user_id: userId },
-    });
+  // =========================
+  // UPDATE BANK QR
+  // =========================
+  async updateBankQr(userId: number, bankIndex: number, qr: string) {
+    const provider = await this.findByUserId(userId);
 
     if (!provider) {
       throw new Error('Provider not found');
     }
 
-    const banks = provider.banks || [];
+    const banks = Array.isArray(provider.banks)
+      ? [...provider.banks]
+      : [];
 
-    // make sure bank exists
-    if (!banks[bankIndex]) {
-      banks[bankIndex] = {
+    while (banks.length <= bankIndex) {
+      banks.push({
         name: '',
         account: '',
         qr: '',
-      };
+      });
     }
 
     banks[bankIndex].qr = `http://localhost:3000${qr}`;
 
-    await this.providerRepo.update({ user_id: userId }, { banks });
+    await this.providerRepo.update(
+      { user_id: userId },
+      { banks },
+    );
 
     return {
       qr: `http://localhost:3000${qr}`,

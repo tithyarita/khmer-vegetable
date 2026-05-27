@@ -69,6 +69,10 @@ const t = (key) => messages[languageStore.language][key] || key
   flex-direction: column;
   overflow-x: hidden;
 }
+.admin{
+  width: 100%;
+  min-height: 100vh;
+}
 
 /* ── SECTION ── */
 .section {

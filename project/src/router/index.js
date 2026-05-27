@@ -43,6 +43,7 @@ import OrderTracker from '../views/User/OrderTracker.vue'
 import ProductDetailUser from '../views/User/ProductDetail.vue'
 import ProductCategory from '@/views/User/ProductCategory.vue'
 import fashDeals from '../views/User/fashDeals.vue'
+import settings from '../views/User/settingView.vue'
 
 
 // ==================== Routes ====================
@@ -67,6 +68,7 @@ const routes = [
       { path: 'product/:id', component: ProductDetailUser, props: true },
       { path: 'products', component: ProductCategory },
       { path: 'category/:type', component: ProductCategory, props: true },
+      { path: 'settings', component: settings },
       { path: 'farmer/:id', component: () => import('../views/User/FarmerProfile.vue'), props: true },
     ],
   },

@@ -321,6 +321,15 @@ loadSavedAddress()
   color: #1a2e1a;
   margin: 0;
 }
+.address-header h2::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: #2D7A3A;
+  border-radius: 2px;
+  margin-top: 8px;
+}
 
 .back-btn {
   background: none;

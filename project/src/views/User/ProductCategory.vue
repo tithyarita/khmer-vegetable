@@ -1,9 +1,11 @@
 <template>
   <div class="category-page">
     <NavigationBar />
+
     <div class="category-content">
       <nav class="breadcrumb">
-        <router-link to="/">Home</router-link><span class="sep">›</span>
+        <router-link to="/">{{ t('home') }}</router-link>
+        <span class="sep">›</span>
         <span class="cur">{{ categoryIcon }} {{ categoryName }}</span>
       </nav>
 
@@ -11,36 +13,42 @@
         <div>
           <h1>{{ categoryName }}</h1>
           <p class="subtitle">
-            We found <em>{{ filteredProducts.length }}</em> items for you!
+            {{ t('foundItems') }} <em>{{ filteredProducts.length }}</em> {{ t('items') }}
           </p>
         </div>
 
         <div class="header-controls">
           <div class="search-box">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input v-model="searchQuery" type="text" placeholder="Search products..." />
+            <input
+              v-model="searchQuery"
+              type="text"
+              :placeholder="t('searchProducts')"
+            />
           </div>
+
           <div class="view-toggle">
             <button :class="['view-btn', { active: view === 'grid' }]" @click="view = 'grid'">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              {{ t('grid') }}
             </button>
             <button :class="['view-btn', { active: view === 'list' }]" @click="view = 'list'">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              {{ t('list') }}
             </button>
           </div>
 
           <select class="sort-select" v-model="sortBy">
-            <option value="featured">Featured</option>
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
+            <option value="featured">{{ t('featured') }}</option>
+            <option value="price-asc">{{ t('priceLowHigh') }}</option>
+            <option value="price-desc">{{ t('priceHighLow') }}</option>
           </select>
         </div>
       </div>
 
       <div class="main-content">
         <aside class="sidebar">
+
           <div class="sidebar-section">
-            <h3>Category</h3>
+            <h3>{{ t('category') }}</h3>
+
             <div class="category-list">
               <div
                 v-for="cat in allCategories"
@@ -56,16 +64,28 @@
           </div>
 
           <div class="sidebar-section">
-            <h3>Filter by Price</h3>
-            <input type="range" min="0" max="150" v-model="maxPrice" class="price-slider" />
+            <h3>{{ t('price') }}</h3>
+
+            <input
+              type="range"
+              min="0"
+              max="150"
+              v-model="maxPrice"
+              class="price-slider"
+            />
+
             <div class="price-range">
-              Range: <strong>$0 – ${{ maxPrice }}</strong>
+              {{ t('range') }}: <strong>$0 – ${{ maxPrice }}</strong>
             </div>
-            <button class="filter-btn" @click="applyFilter">Filter</button>
+
+            <button class="filter-btn" @click="applyFilter">
+              {{ t('filter') }}
+            </button>
           </div>
 
           <div class="sidebar-section">
-            <h3>Popular Tags</h3>
+            <h3>{{ t('popularTags') }}</h3>
+
             <div class="tags">
               <span
                 v-for="tag in tags"
@@ -78,56 +98,59 @@
               </span>
             </div>
           </div>
+
         </aside>
 
         <div class="products-section">
-          <div v-if="loading" class="no-results">Loading products...</div>
 
-          <div v-else class="products-grid" :class="{ 'list-view': view === 'list' }" :key="view">
+          <div v-if="loading" class="no-results">
+            {{ t('loading') }}
+          </div>
+
+          <div v-else class="products-grid" :class="{ 'list-view': view === 'list' }">
+
             <div
               v-for="(product, index) in paginatedProducts"
               :key="product.id + '-' + index"
               class="product-card"
               @click="goToProduct(product.id)"
             >
+
               <div class="card-image">
                 <img :src="product.image" :alt="product.name" />
-                <span v-if="product.discount > 0" class="badge badge-discount">-{{ product.discount }}%</span>
               </div>
+
               <div class="card-body">
                 <p class="category-label">{{ product.category }}</p>
                 <h3 class="product-name">{{ product.name }}</h3>
+
                 <p class="provider-owner">
-                  Provider: {{ product.providerName || 'Unknown' }}
-                  <span v-if="product.providerId">(#{{ product.providerId }})</span>
+                  {{ t('provider') }}: {{ product.providerName || t('unknown') }}
                 </p>
+
                 <div class="price-row">
-                  <div class="prices">
-                    <span class="price">${{ product.price }}</span>
-                    <span v-if="product.discount > 0" class="original-price">${{ product.originalPrice }}</span>
-                  </div>
+                  <span class="price">${{ product.price }}</span>
+
                   <button class="btn-add" @click.stop="addToCart(product)">
-                    <span class="plus">+</span> Add
+                    {{ t('add') }}
                   </button>
                 </div>
               </div>
+
             </div>
+
           </div>
 
           <div v-if="!loading && paginatedProducts.length === 0" class="no-results">
-            No products found in this category.
+            {{ t('noProducts') }}
           </div>
 
-          <div class="pagination" v-if="totalPages > 1">
-            <button @click="prevPage" :disabled="page === 1">‹</button>
-            <button v-for="n in totalPages" :key="n" :class="['page-btn', { active: page === n }]" @click="goToPage(n)">{{ n }}</button>
-            <button @click="nextPage" :disabled="page === totalPages">›</button>
-          </div>
         </div>
       </div>
     </div>
+
+    <Footer />
   </div>
-  <Footer />
 </template>
 
 <script setup>
@@ -137,10 +160,17 @@ import { useProductStore } from '../../stores/productStore'
 import { useCartStore } from '../../stores/cartStore'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Footer from '../../components/Customer/Footer.vue'
+import { useLanguageStore } from '@/stores/languageStore.js'
+import { messages } from '@/lang/index.js'
+
+const languageStore = useLanguageStore()
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
 const cartStore = useCartStore()
+
+const t = (key) =>
+  messages?.[languageStore.language]?.[key] || key
 
 const view = ref('grid')
 const sortBy = ref('featured')
@@ -152,6 +182,7 @@ const searchQuery = ref('')
 const page = ref(1)
 const perPage = ref(6)
 const loading = ref(false)
+
 const tags = ['Organic', 'Fresh', 'Healthy', 'Snacks', 'Dairy']
 
 const allCategories = [
@@ -168,48 +199,63 @@ const categoryMap = {
   vegetables: 'Vegetables',
   greens: 'Leafy Greens',
   tubers: 'Tubers',
-  'root veg': 'Root Veg',
   'root-veg': 'Root Veg',
   cruciferous: 'Cruciferous',
   fruits: 'Fruits',
   herbs: 'Herbs',
 }
 
-const categoryType = computed(() => {
-  return decodeURIComponent(route.params.type || '').toLowerCase()
-})
+const categoryType = computed(() =>
+  decodeURIComponent(route.params.type || '').toLowerCase()
+)
 
-const categoryName = computed(() => {
-  return categoryMap[categoryType.value] || route.params.type || 'Products'
+const categoryName = computed(() =>
+  categoryMap[categoryType.value] || route.params.type || 'Products'
+)
+
+const categoryIcon = computed(() => {
+  const cat = allCategories.find(c => c.value === categoryType.value)
+  return cat?.icon || ''
 })
 
 const filteredProducts = computed(() => {
   let list = productStore.products.filter(p => {
     const cat = (p.category || '').toLowerCase()
-    const catMatch = !categoryType.value || cat === categoryType.value || cat === categoryName.value.toLowerCase()
-    const priceMatch = parseFloat(p.price || 0) <= appliedMaxPrice.value
-    const categoryFilterMatch = !activeCategory.value || cat === activeCategory.value
-    const tagMatch = !activeTag.value || (p.name || '').toLowerCase().includes(activeTag.value.toLowerCase())
-    const searchMatch = !searchQuery.value || (p.name || '').toLowerCase().includes(searchQuery.value.toLowerCase())
-    return catMatch && priceMatch && categoryFilterMatch && tagMatch && searchMatch
+
+    return (
+      (!categoryType.value || cat === categoryType.value) &&
+      parseFloat(p.price || 0) <= appliedMaxPrice.value &&
+      (!activeCategory.value || cat === activeCategory.value) &&
+      (!activeTag.value ||
+        (p.name || '').toLowerCase().includes(activeTag.value.toLowerCase())) &&
+      (!searchQuery.value ||
+        (p.name || '').toLowerCase().includes(searchQuery.value.toLowerCase()))
+    )
   })
 
-  if (sortBy.value === 'price-asc') list.sort((a, b) => parseFloat(a.price || 0) - parseFloat(b.price || 0))
-  if (sortBy.value === 'price-desc') list.sort((a, b) => parseFloat(b.price || 0) - parseFloat(a.price || 0))
+  if (sortBy.value === 'price-asc') {
+    list.sort((a, b) => a.price - b.price)
+  }
+  if (sortBy.value === 'price-desc') {
+    list.sort((a, b) => b.price - a.price)
+  }
 
   return list
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredProducts.value.length / perPage.value)))
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredProducts.value.length / perPage.value))
+)
 
 const paginatedProducts = computed(() => {
   const start = (page.value - 1) * perPage.value
   return filteredProducts.value.slice(start, start + perPage.value)
 })
 
-watch(sortBy, () => { page.value = 1 })
-watch(activeTag, () => { page.value = 1 })
-watch(appliedMaxPrice, () => { page.value = 1 })
+watch([sortBy, activeTag, appliedMaxPrice], () => {
+  page.value = 1
+})
+
 watch(() => route.params.type, () => {
   page.value = 1
   activeCategory.value = null
@@ -246,14 +292,7 @@ function goToProduct(id) {
 function addToCart(product) {
   cartStore.addToCart(product)
 }
-
-function prevPage() { if (page.value > 1) page.value-- }
-
-function nextPage() { if (page.value < totalPages.value) page.value++ }
-
-function goToPage(n) { page.value = n }
 </script>
-
 <style scoped>
 .category-page {
   --gd: #1a3d28; --gm: #2d6a3f; --ga: #3a8f52; --gl: #e6f4eb; --gp: #f3faf5;
@@ -270,7 +309,6 @@ function goToPage(n) { page.value = n }
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px 20px 60px;
-  font-family: 'DM Sans', sans-serif;
   color: var(--t1);
 }
 
@@ -303,7 +341,6 @@ h1 {
   font-weight: 700;
   margin: 0;
   color: var(--t1);
-  font-family: 'Playfair Display', serif;
 }
 
 .subtitle { color: var(--t3); margin-top: 4px; }
@@ -330,7 +367,6 @@ h1 {
   background: none;
   outline: none;
   padding: 9px 0;
-  font-family: 'DM Sans', sans-serif;
   font-size: 13px;
   color: #16261e;
   width: 180px;
@@ -351,7 +387,6 @@ h1 {
   cursor: pointer;
   font-size: 14px;
   color: var(--t3);
-  font-family: 'DM Sans', sans-serif;
   transition: var(--tr);
 }
 
@@ -362,7 +397,6 @@ h1 {
   border-radius: 8px;
   border: 1.5px solid var(--bd);
   background: var(--wh);
-  font-family: 'DM Sans', sans-serif;
   color: var(--t2);
 }
 

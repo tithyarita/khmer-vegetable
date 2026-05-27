@@ -366,6 +366,9 @@
                       />
                     </svg>
                   </span>
+                  <span class="rf-rating-text" v-if="newReview.rating > 0">
+                    {{ newReview.rating }} star{{ newReview.rating > 1 ? 's' : '' }}
+                  </span>
                 </div>
 
                 <textarea
@@ -507,6 +510,7 @@ const wished = ref(false);
 const filterStar = ref(null);
 const toast = reactive({ show: false, msg: "" });
 const newReview = reactive({ rating: 0, body: '' });
+const hoverRating = ref(0);
 
 // --- COMPUTED ---
 const discPct = computed(() => Number(product.discount || 0));
@@ -869,51 +873,59 @@ watch(
   gap: 4px;
 }
 .rf-star {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: all 0.15s ease;
 }
 .rf-star:hover {
-  transform: scale(1.2);
+  transform: scale(1.15);
 }
-.rf-input {
-  width: 100%;
-  padding: 10px 14px;
-  border: 1.5px solid var(--bd);
-  border-radius: 10px;
-  font-family: 'DM Sans', sans-serif;
+.rf-star.hover {
+  fill: var(--amb);
+}
+.rf-rating-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gm);
+  margin-left: 8px;
+}
+.rf-feedback {
+  margin-bottom: 14px;
+}
+.rf-feedback-label {
+  display: block;
   font-size: 14px;
-  color: var(--t1);
-  background: var(--wh);
-  margin-bottom: 12px;
-  outline: none;
-  transition: border-color 0.2s;
-  box-sizing: border-box;
-}
-.rf-input:focus {
-  border-color: var(--gm);
+  font-weight: 500;
+  color: var(--t2);
+  margin-bottom: 8px;
 }
 .rf-textarea {
   width: 100%;
-  padding: 10px 14px;
+  padding: 12px 14px;
   border: 1.5px solid var(--bd);
   border-radius: 10px;
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   color: var(--t1);
   background: var(--wh);
-  margin-bottom: 14px;
   outline: none;
   resize: vertical;
   transition: border-color 0.2s;
   box-sizing: border-box;
+  line-height: 1.5;
 }
 .rf-textarea:focus {
   border-color: var(--gm);
 }
+.rf-char-count {
+  font-size: 12px;
+  color: var(--t3);
+  text-align: right;
+  margin-top: 4px;
+}
 .rf-submit {
-  padding: 10px 24px;
+  padding: 12px 28px;
   background: var(--gm);
   color: #fff;
   border: none;
@@ -922,10 +934,16 @@ watch(
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
-.rf-submit:hover {
+.rf-submit:hover:not(:disabled) {
   background: var(--gd);
+  transform: translateY(-1px);
+}
+.rf-submit:disabled {
+  background: var(--t3);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* 

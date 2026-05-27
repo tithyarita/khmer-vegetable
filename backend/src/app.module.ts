@@ -16,6 +16,7 @@ import { AppController } from './app.controller';
 import { AddressModule } from './address/address.module';
 import { AppService } from './app.service';
 import { MailModule } from './mail/mail.module';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { MailModule } from './mail/mail.module';
     ApplicationsModule,
     ProductModule,
     ProviderApplicationsModule,
+    ReportModule,
     CartModule,
     FavoriteModule,
     AddressModule,
