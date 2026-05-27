@@ -300,45 +300,66 @@
 
               <!-- REVIEW LIST -->
               <div class="rev-list">
-                <div
-                  class="rev-card"
-                  v-for="rv in filteredReviews"
-                  :key="rv.id"
-                >
-                  <div class="rev-head">
-                    <div
-                      class="avatar"
-                      :style="{ background: rv.color }"
+                <table class="review-table">
+                  <thead>
+                    <tr>
+                      <th>{{ t('user') }}</th>
+                      <th>{{ t('rating') }}</th>
+                      <th>{{ t('feedback') }}</th>
+                      <th>{{ t('date') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="rv in filteredReviews"
+                      :key="rv.id"
                     >
-                      {{ rv.initials }}
-                    </div>
-
-                    <div class="rev-meta">
-                      <div class="rev-author">
-                        {{ rv.author }}
-
-                        <span
-                          v-if="rv.verified"
-                          class="vbadge"
-                        >
-                          {{ t('verified') }}
-                        </span>
-                      </div>
-
-                      <div class="rev-date">
-                        {{ rv.date }} · {{ rv.location }}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="rev-title">
-                    {{ rv.title }}
-                  </div>
-
-                  <div class="rev-body">
-                    {{ rv.body }}
-                  </div>
-                </div>
+                      <td class="user-cell">
+                        <div class="user-info">
+                          <div
+                            class="avatar"
+                            :style="{ background: rv.color }"
+                          >
+                            {{ rv.initials }}
+                          </div>
+                          <div>
+                            <div class="user-name">
+                              {{ rv.author }}
+                              <span
+                                v-if="rv.verified"
+                                class="vbadge"
+                              >
+                                {{ t('verified') }}
+                              </span>
+                            </div>
+                            <div class="user-location">{{ rv.location }}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="rating-cell">
+                        <div class="stars">
+                          <svg
+                            v-for="i in 5"
+                            :key="i"
+                            class="st"
+                            :class="i <= rv.rating ? 'f' : 'e'"
+                            viewBox="0 0 12 12"
+                          >
+                            <path
+                              d="M6 1l1.39 2.82L10.5 4.27l-2.25 2.19.53 3.09L6 8l-2.78 1.55.53-3.09L1.5 4.27l3.11-.45L6 1z"
+                            />
+                          </svg>
+                        </div>
+                        <span class="rating-text">{{ rv.rating }}/5</span>
+                      </td>
+                      <td class="feedback-cell">
+                        <div class="feedback-title">{{ rv.title }}</div>
+                        <div class="feedback-body">{{ rv.body }}</div>
+                      </td>
+                      <td class="date-cell">{{ rv.date }}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               <!-- REVIEW FORM -->
@@ -379,8 +400,9 @@
                 ></textarea>
 
                 <button
+                  type="button"
                   class="rf-submit"
-                  @click="submitReview"
+                  @click.prevent="submitReview"
                 >
                   {{ t('submitReview') }}
                 </button>
@@ -553,17 +575,26 @@ const getStarCount = (s) => reviews.value.filter(r => r.rating === s).length;
 const getStarPercentage = (s) => (getStarCount(s) / reviews.value.length) * 100;
 
 const submitReview = async () => {
+  console.log('Submit review clicked')
+  console.log('User logged in:', userStore.isLoggedIn)
+  console.log('Rating:', newReview.rating)
+  console.log('Body:', newReview.body)
+  console.log('Product ID:', product.id)
+
   if (!userStore.isLoggedIn) {
+    console.log('User not logged in, redirecting to login')
     router.push('/user/login')
     return
   }
 
   if (!newReview.rating || !newReview.body.trim()) {
+    console.log('Validation failed - rating or body empty')
     showToast('Please write a review and select a rating')
     return
   }
 
   try {
+    console.log('Calling reviewStore.createReview')
     await reviewStore.createReview({
       rating: newReview.rating,
       feedback: newReview.body,
@@ -572,9 +603,12 @@ const submitReview = async () => {
     newReview.rating = 0
     newReview.body = ''
     showToast('Your review has been submitted!')
+    console.log('Review submitted successfully')
+    // Refresh reviews from API to get the latest data
+    await reviewStore.fetchReviewsByProduct(product.id)
   } catch (err) {
-    showToast('Failed to submit review. Please try again.')
     console.error('Submit review error:', err)
+    showToast('Failed to submit review. Please try again.')
   }
 }
 
@@ -811,8 +845,8 @@ watch(
 .nutrition h4 { margin-bottom: 12px; font-size: 14px; }
 .nrow { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--bd); font-size: 13px; }
 
-/* 
-   REVIEWS 
+/*
+   REVIEWS
 */
 .rev-summary { display: grid; grid-template-columns: 150px 1fr; gap: 32px; background: var(--gp); padding: 24px; border-radius: 12px; margin-bottom: 24px; }
 .rev-num { font-size: 48px; font-family: 'Playfair Display', serif; font-weight: 700; }
@@ -820,11 +854,150 @@ watch(
 .bar-track { flex: 1; height: 8px; background: var(--gl); border-radius: 4px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--gm); }
 
-.rev-card { border: 1px solid var(--bd); padding: 20px; border-radius: 12px; margin-bottom: 12px; background: #fff; }
-.rev-head { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
-.avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; }
-.rev-author { font-weight: 600; font-size: 14px; }
-.vbadge { font-size: 10px; background: var(--gl); color: var(--gm); padding: 2px 6px; border-radius: 10px; }
+/* Review Table */
+.review-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.review-table thead {
+  background: var(--gp);
+  border-bottom: 2px solid var(--bd);
+}
+
+.review-table th {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--t2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.review-table tbody tr {
+  border-bottom: 1px solid var(--bd);
+  transition: background 0.2s;
+}
+
+.review-table tbody tr:hover {
+  background: var(--gp);
+}
+
+.review-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.review-table td {
+  padding: 16px;
+  vertical-align: top;
+}
+
+.user-cell {
+  width: 25%;
+}
+
+.user-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--t1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-location {
+  font-size: 12px;
+  color: var(--t3);
+  margin-top: 2px;
+}
+
+.vbadge {
+  font-size: 10px;
+  background: var(--gl);
+  color: var(--gm);
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.rating-cell {
+  width: 15%;
+  text-align: center;
+}
+
+.stars {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.st {
+  width: 14px;
+  height: 14px;
+}
+
+.st.f {
+  fill: var(--amb);
+  stroke: var(--amb);
+}
+
+.st.e {
+  fill: var(--bd);
+  stroke: var(--bd);
+}
+
+.rating-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gm);
+}
+
+.feedback-cell {
+  width: 45%;
+}
+
+.feedback-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--t1);
+  margin-bottom: 4px;
+}
+
+.feedback-body {
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.5;
+}
+
+.date-cell {
+  width: 15%;
+  font-size: 13px;
+  color: var(--t3);
+  white-space: nowrap;
+}
 
 /* 
    REVIEW FORM 
