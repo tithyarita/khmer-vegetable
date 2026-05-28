@@ -20,7 +20,7 @@ export class Product {
   @Column()
   name!: string;
 
-  @Column()
+  @Column('double')
   stock!: number;
 
   @Column({ default: 'In Stock' })

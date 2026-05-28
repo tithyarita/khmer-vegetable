@@ -17,12 +17,12 @@
       <div v-if="!filteredItems.length" class="sd-empty">No products found</div>
     </div>
 
-    <div class="sd-section">
-      <div class="sd-label">Farmers</div>
+    <div class="sd-section" v-if="filteredProviders.length">
+      <div class="sd-label">Providers</div>
       <div class="sd-farms">
-        <div v-for="f in filteredFarmers" :key="f.id" class="sd-farm" @mousedown.prevent="goToFarmer(f)">
-          <div class="sd-farm-avatar">{{ f.initials }}</div>
-          <div class="sd-farm-name">{{ f.name }}</div>
+        <div v-for="provider in filteredProviders" :key="provider.id" class="sd-farm" @mousedown.prevent="goToFarmer(provider)">
+          <div class="sd-farm-avatar">{{ provider.initials }}</div>
+          <div class="sd-farm-name">{{ provider.name }}</div>
         </div>
       </div>
     </div>
@@ -44,19 +44,6 @@ export default {
   setup() { return { productStore: useProductStore() } },
   data() {
     return {
-      exampleProducts: [
-        { id: 1, name: 'Fresh Kale', category: 'Leafy Greens', price: 4.99, image: null },
-        { id: 2, name: 'Bok Choy', category: 'Cruciferous', price: 3.50, image: null },
-        { id: 3, name: 'Red Radishes', category: 'Root Veg', price: 2.75, image: null },
-        { id: 4, name: 'Oyster Mushrooms', category: 'Fungi', price: 7.50, image: null },
-        { id: 5, name: 'Sunflower Shoots', category: 'Leafy Greens', price: 5.25, image: null },
-        { id: 6, name: 'Sweet Turnips', category: 'Root Veg', price: 3.20, image: null },
-      ],
-      farmers: [
-        { id: 1, name: 'Dara Farm', initials: '🧑‍🌾', location: 'Takeo Province' },
-        { id: 2, name: 'Green Valley Farm', initials: '👩‍🌾', location: 'Kampong Speu' },
-        { id: 3, name: 'Mekong Harvest', initials: '🧑‍🌾', location: 'Kampong Cham' },
-      ],
       popularTags: ['Leafy Greens', 'Microgreens', 'Heirloom', 'Organic', 'Herbs'],
     }
   },
@@ -68,14 +55,42 @@ export default {
       return this.productStore.products.filter(p => (p.name||'').toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q)).slice(0, 4)
     },
     filteredFarmers() {
-      if (!this.query.trim()) return this.farmers
+      return this.filteredProviders
+    },
+    filteredProviders() {
+      if (!this.productStore.products.length) return []
+
+      const providersMap = new Map()
+      this.productStore.products.forEach((product) => {
+        const providerId = Number(product.providerId || product.provider_id || product.provider?.user_id || 0)
+        if (!providerId) return
+
+        const providerName = product.providerName || product.provider?.provider_name || product.provider?.name || 'Unknown Provider'
+        if (!providersMap.has(providerId)) {
+          providersMap.set(providerId, {
+            id: providerId,
+            name: providerName,
+            initials: providerName
+              .split(' ')
+              .map((part) => part[0])
+              .slice(0, 2)
+              .join('')
+              .toUpperCase(),
+          })
+        }
+      })
+
+      const providers = Array.from(providersMap.values())
+
+      if (!this.query.trim()) return providers.slice(0, 4)
+
       const q = this.query.toLowerCase()
-      return this.farmers.filter(f => f.name.toLowerCase().includes(q)).slice(0, 3)
+      return providers.filter((provider) => provider.name.toLowerCase().includes(q)).slice(0, 4)
     },
   },
   methods: {
     goToProduct(item) { this.$router.push(`/product/${item.id}`); this.$emit('close') },
-    goToFarmer(f) { this.$router.push(`/search?farmer=${f.id}`); this.$emit('close') },
+    goToFarmer(provider) { this.$router.push(`/farmer/${provider.id}`); this.$emit('close') },
     searchTag(tag) { this.$emit('close') },
   },
   mounted() { if (!this.productStore.products.length) this.productStore.fetchAllProducts() },

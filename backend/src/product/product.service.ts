@@ -30,6 +30,18 @@ export class ProductService {
     return res.data.message
   }
 
+  private resolveStockStatus(stock: number) {
+    if (stock <= 0) {
+      return 'Out of Stock'
+    }
+
+    if (stock < 10) {
+      return 'Low Stock'
+    }
+
+    return 'In Stock'
+  }
+
   // ================= CREATE =================
   async create(data: Partial<Product>, providerId: number) {
     if (!data.imageUrl) {
@@ -40,6 +52,8 @@ export class ProductService {
       ...data,
       provider: { user_id: providerId },
     })
+
+    product.status = this.resolveStockStatus(Number(product.stock || 0))
 
     return this.productRepository.save(product)
   }
@@ -111,12 +125,7 @@ export class ProductService {
       imageUrl: data.imageUrl ?? product.imageUrl,
     })
 
-    product.status =
-      product.stock === 0
-        ? 'Out of Stock'
-        : product.stock < 10
-        ? 'Low Stock'
-        : 'In Stock'
+    product.status = this.resolveStockStatus(Number(product.stock || 0))
 
     return this.productRepository.save(product)
   }

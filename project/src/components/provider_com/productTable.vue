@@ -9,7 +9,7 @@
             <th class="price-header">PRICE</th>
             <th class="discount-header">DISCOUNT (%)</th>
             <th class="date-header">ADDED DATE</th>
-            <th class="stock-header">STOCK</th>
+            <th class="stock-header">STOCK (KG)</th>
             <th class="action-header">ACTIONS</th>
           </tr>
         </thead>
@@ -31,7 +31,11 @@
             <td class="price-col">${{ product.price }}</td>
             <td class="discount-col">{{ product.discount || 0 }}%</td>
             <td class="date-col">{{ product.addedDate || 'N/A' }}</td>
-            <td class="stock-col">{{ product.stock }}</td>
+            <td class="stock-col">
+              <span :class="stockClass(product.stock)">
+                {{ stockLabel(product.stock) }}
+              </span>
+            </td>
             <td class="action-col">
               <div class="action-buttons d-flex gap-2">
                 <button class="btn btn-sm btn-info" @click="$emit('view', product.id)" title="View Details">
@@ -70,6 +74,20 @@ const handleImageError = (event) => {
   if (event.target.src !== placeholderImage) {
     event.target.src = placeholderImage
   }
+}
+
+const stockClass = (stock) => {
+  const value = Number(stock || 0)
+  if (value <= 0) return 'stock-badge stock-out'
+  if (value < 5) return 'stock-badge stock-low'
+  return 'stock-badge stock-ok'
+}
+
+const stockLabel = (stock) => {
+  const value = Number(stock || 0)
+  if (value <= 0) return 'Out of stock'
+  if (value < 5) return `${value} kg - Low stock`
+  return `${value} kg`
 }
 </script>
 
@@ -206,6 +224,30 @@ const handleImageError = (event) => {
   color: #212529;
   width: 14%;
 
+}
+
+.stock-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.stock-ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.stock-low {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.stock-out {
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 .action-col {

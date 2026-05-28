@@ -5,6 +5,12 @@
 
     <HeroBanner />
 
+    <section class="section">
+      <div class="section-inner">
+        <TopSellingProducts />
+      </div>
+    </section>
+
     <section class="section popular-vegetables">
       <div class="section-inner">
         <div class="section-header">
@@ -39,6 +45,7 @@ import Card from '../../components/Customer/Card.vue'
 import Deals from '../../components/Customer/DealsCard.vue'
 import Footer from '../../components/Customer/Footer.vue'
 import FashDeal from './fashDeals.vue'
+import TopSellingProducts from '../../components/Customer/TopSellingProducts.vue'
 import { useLanguageStore } from '@/stores/languageStore.js'
 import { messages } from '@/lang/index.js'
 import { computed } from 'vue'

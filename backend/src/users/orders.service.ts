@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, In, Repository } from 'typeorm';
+import { DataSource, DeepPartial, EntityManager, In, Repository } from 'typeorm';
 import { orders, OrderStatus } from './orders.entity';
 import {
   CreateOrderDto,
@@ -31,14 +31,50 @@ export class OrdersService {
     private readonly customerRepository: Repository<Customer>,
     @InjectRepository(users)
     private readonly usersRepository: Repository<users>,
+    private readonly dataSource: DataSource,
   ) {}
 
   private generateOrderCode() {
     return `ORD-${Date.now().toString(36).toUpperCase()}`;
   }
 
-  private async ensureCustomerProfile(customerId: number) {
-    const existingCustomer = await this.customerRepository.findOne({
+  private resolveStockStatus(stock: number) {
+    if (stock <= 0) {
+      return 'Out of Stock';
+    }
+
+    if (stock < 10) {
+      return 'Low Stock';
+    }
+
+    return 'In Stock';
+  }
+
+  private getPeriodStart(period: 'week' | 'month') {
+    const now = new Date();
+
+    if (period === 'week') {
+      const start = new Date(now);
+      start.setDate(now.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
+      return start;
+    }
+
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  private async ensureCustomerProfile(
+    customerId: number,
+    manager?: EntityManager,
+  ) {
+    const customerRepository = manager
+      ? manager.getRepository(Customer)
+      : this.customerRepository;
+    const usersRepository = manager
+      ? manager.getRepository(users)
+      : this.usersRepository;
+
+    const existingCustomer = await customerRepository.findOne({
       where: { user_id: customerId },
     });
 
@@ -46,7 +82,7 @@ export class OrdersService {
       return existingCustomer.user_id;
     }
 
-    const user = await this.usersRepository.findOne({ where: { id: customerId } });
+    const user = await usersRepository.findOne({ where: { id: customerId } });
     if (!user) {
       throw new BadRequestException('Invalid customer id. Please log in again.');
     }
@@ -58,7 +94,7 @@ export class OrdersService {
       status: CustomerStatus.ACTIVE,
     });
 
-    await this.customerRepository.save(createdCustomer);
+    await customerRepository.save(createdCustomer);
     return createdCustomer.user_id;
   }
 
@@ -69,71 +105,119 @@ export class OrdersService {
     orderCode?: string,
     status: OrderStatus = OrderStatus.PENDING,
   ) {
-    const resolvedCustomerId = await this.ensureCustomerProfile(customerId);
+    return this.dataSource.transaction(async (manager) => {
+      const orderRepository = manager.getRepository(orders);
+      const orderItemsRepository = manager.getRepository(orderItems);
+      const productRepository = manager.getRepository(Product);
 
-    const productIds = items.map((item) => item.product_id);
-    const products = await this.productRepository.find({
-      where: { id: In(productIds) },
-      relations: ['provider'],
-    });
+      const resolvedCustomerId = await this.ensureCustomerProfile(
+        customerId,
+        manager,
+      );
 
-    if (products.length !== productIds.length) {
-      throw new NotFoundException('One or more products were not found');
-    }
+      const normalizedItemsMap = new Map<number, number>();
+      for (const item of items) {
+        const quantity = Number(item.quantity);
+        if (!Number.isFinite(quantity) || quantity <= 0) {
+          throw new BadRequestException('Each item quantity must be greater than 0');
+        }
 
-    const productsById = new Map(products.map((product) => [product.id, product]));
-
-    const resolvedProviderId = products[0].provider?.user_id;
-    if (!resolvedProviderId) {
-      throw new BadRequestException('Product provider is missing');
-    }
-
-    for (const product of products) {
-      if (product.provider?.user_id !== resolvedProviderId) {
-        throw new BadRequestException(
-          'Checkout can only contain products from one provider at a time',
+        normalizedItemsMap.set(
+          item.product_id,
+          (normalizedItemsMap.get(item.product_id) || 0) + quantity,
         );
       }
-    }
 
-    if (providerId && providerId !== resolvedProviderId) {
-      throw new BadRequestException('Provider does not match the selected products');
-    }
+      const normalizedItems = Array.from(normalizedItemsMap.entries()).map(
+        ([product_id, quantity]) => ({ product_id, quantity }),
+      );
 
-    const total = items.reduce((sum, item) => {
-      const product = productsById.get(item.product_id);
-      if (!product) return sum;
-      return sum + Number(product.price) * Number(item.quantity);
-    }, 0);
-
-    const order = this.ordersRepository.create({
-      order_code: orderCode || this.generateOrderCode(),
-      customer_id: resolvedCustomerId,
-      provider_id: resolvedProviderId,
-      status,
-      total,
-      item: items.reduce((sum, item) => sum + Number(item.quantity), 0),
-      completed_at:
-        status === OrderStatus.DELIVERING ? new Date() : undefined,
-    } as DeepPartial<orders>);
-
-    const savedOrder = await this.ordersRepository.save(order);
-
-    const orderItemEntities = items.map((item) => {
-      const product = productsById.get(item.product_id);
-      return this.orderItemsRepository.create({
-        order_id: savedOrder.id,
-        product_id: item.product_id,
-        quantity: String(item.quantity),
-        price: Number(product?.price ?? 0),
+      const productIds = normalizedItems.map((item) => item.product_id);
+      const products = await productRepository.find({
+        where: { id: In(productIds) },
+        relations: ['provider'],
       });
-    });
 
-    await this.orderItemsRepository.save(orderItemEntities);
+      if (products.length !== productIds.length) {
+        throw new NotFoundException('One or more products were not found');
+      }
 
-    return this.ordersRepository.findOne({
-      where: { id: savedOrder.id },
-      relations: ['provider', 'customer', 'order_items', 'order_items.product'],
+      const productsById = new Map(products.map((product) => [product.id, product]));
+
+      const resolvedProviderId = products[0].provider?.user_id;
+      if (!resolvedProviderId) {
+        throw new BadRequestException('Product provider is missing');
+      }
+
+      for (const product of products) {
+        if (product.provider?.user_id !== resolvedProviderId) {
+          throw new BadRequestException(
+            'Checkout can only contain products from one provider at a time',
+          );
+        }
+      }
+
+      if (providerId && providerId !== resolvedProviderId) {
+        throw new BadRequestException('Provider does not match the selected products');
+      }
+
+      for (const item of normalizedItems) {
+        const product = productsById.get(item.product_id);
+        if (!product) {
+          throw new NotFoundException('One or more products were not found');
+        }
+
+        const currentStock = Number(product.stock ?? 0);
+        if (currentStock < item.quantity) {
+          throw new BadRequestException(
+            `${product.name} only has ${currentStock} kg available`,
+          );
+        }
+      }
+
+      const total = normalizedItems.reduce((sum, item) => {
+        const product = productsById.get(item.product_id);
+        if (!product) return sum;
+        return sum + Number(product.price) * Number(item.quantity);
+      }, 0);
+
+      const order = orderRepository.create({
+        order_code: orderCode || this.generateOrderCode(),
+        customer_id: resolvedCustomerId,
+        provider_id: resolvedProviderId,
+        status,
+        total,
+        item: normalizedItems.reduce((sum, item) => sum + Number(item.quantity), 0),
+        completed_at:
+          status === OrderStatus.DELIVERING ? new Date() : undefined,
+      } as DeepPartial<orders>);
+
+      const savedOrder = await orderRepository.save(order);
+
+      const orderItemEntities = normalizedItems.map((item) => {
+        const product = productsById.get(item.product_id);
+        return orderItemsRepository.create({
+          order_id: savedOrder.id,
+          product_id: item.product_id,
+          quantity: String(item.quantity),
+          price: Number(product?.price ?? 0),
+        });
+      });
+
+      await orderItemsRepository.save(orderItemEntities);
+
+      for (const item of normalizedItems) {
+        const product = productsById.get(item.product_id)!;
+        product.stock = Number(product.stock ?? 0) - item.quantity;
+        product.status = this.resolveStockStatus(Number(product.stock ?? 0));
+      }
+
+      await productRepository.save(products);
+
+      return orderRepository.findOne({
+        where: { id: savedOrder.id },
+        relations: ['provider', 'customer', 'order_items', 'order_items.product'],
+      });
     });
   }
 
@@ -296,6 +380,100 @@ export class OrdersService {
       where: { customer_id: customerId },
       relations: ['provider', 'customer', 'order_items', 'order_items.product'],
     });
+  }
+
+  async getTopSellingProducts(
+    period: 'week' | 'month' = 'week',
+    providerId?: number,
+    customerId?: number,
+  ) {
+    const periodStart = this.getPeriodStart(period);
+
+    const orders = await this.ordersRepository.find({
+      where: providerId
+        ? { provider_id: providerId }
+        : customerId
+          ? { customer_id: customerId }
+          : undefined,
+      relations: ['order_items', 'order_items.product'],
+      order: { created_at: 'DESC' },
+    });
+
+    const filteredOrders = orders.filter((order) => {
+      if (!order.created_at) return false;
+      const orderDate = new Date(order.created_at);
+      return orderDate >= periodStart;
+    });
+
+    const productStats = new Map<
+      number,
+      {
+        id: number;
+        name: string;
+        imageUrl: string | null;
+        category: string;
+        price: number;
+        totalQuantity: number;
+        orderCount: number;
+      }
+    >();
+
+    for (const order of filteredOrders) {
+      const seenInOrder = new Set<number>();
+
+      for (const item of order.order_items || []) {
+        const product = item.product;
+        if (!product) continue;
+
+        const quantity = Number(item.quantity || 0);
+        if (!quantity) continue;
+
+        const existing = productStats.get(product.id) || {
+          id: product.id,
+          name: product.name,
+          imageUrl: product.imageUrl,
+          category: product.category,
+          price: Number(product.price || 0),
+          totalQuantity: 0,
+          orderCount: 0,
+        };
+
+        existing.totalQuantity += quantity;
+        if (!seenInOrder.has(product.id)) {
+          existing.orderCount += 1;
+          seenInOrder.add(product.id);
+        }
+
+        productStats.set(product.id, existing);
+      }
+    }
+
+    const periodRevenue = filteredOrders.reduce(
+      (sum, order) => sum + Number(order.total || 0),
+      0,
+    );
+
+    const products = Array.from(productStats.values())
+      .sort((left, right) => {
+        if (right.totalQuantity !== left.totalQuantity) {
+          return right.totalQuantity - left.totalQuantity;
+        }
+
+        return right.orderCount - left.orderCount;
+      })
+      .map((product, index) => ({
+        ...product,
+        rank: index + 1,
+      }));
+
+    return {
+      period,
+      providerId: providerId ?? null,
+      customerId: customerId ?? null,
+      totalOrders: filteredOrders.length,
+      periodRevenue: Number(periodRevenue.toFixed(2)),
+      products,
+    };
   }
 
   // Update order
