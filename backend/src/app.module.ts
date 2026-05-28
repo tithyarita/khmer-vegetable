@@ -23,13 +23,14 @@ import { ReportModule } from './report/report.module';
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
     type: 'mysql',
+    // Use 'db' for Docker Compose, 'localhost' for local dev (set in .env)
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
     username: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'root',
-    database: process.env.DB_NAME || 'vegetable',
+    database: process.env.DB_NAME || 'Khmer_vegetable_market',
     autoLoadEntities: true,
-    synchronize: true,
+    synchronize: false,
   }),
     AuthModule,
     UsersModule,
