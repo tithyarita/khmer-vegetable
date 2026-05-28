@@ -70,7 +70,7 @@ async function handleSubmit() {
   const payload = isPhone ? { phone: val } : { email: val }
 
   try {
-    await axios.post('http://localhost:3000/auth/forgot-password', payload)
+    await axios.post(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/auth/forgot-password`, payload)
     router.push(`/verify-otp?contact=${encodeURIComponent(val)}`)
   } catch {
     error.value = 'Failed to send reset link. Try again later.'

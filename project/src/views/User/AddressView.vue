@@ -187,7 +187,7 @@ const saveAddress = async () => {
     }
 
     const response = await fetch(
-      'http://localhost:3000/address',
+      `${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/address`,
       {
         method: 'POST',
 
@@ -248,7 +248,7 @@ const loadSavedAddress = async () => {
     }
 
     const response = await fetch(
-      'http://localhost:3000/address',
+      `${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/address`,
       {
         method: 'GET',
 
