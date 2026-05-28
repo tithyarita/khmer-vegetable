@@ -59,23 +59,28 @@ export class ProductService {
   }
 
   // ================= GET ALL (FIXED ISOLATION) =================
-  async findAll(userId: number, userRole: string) {
-    const isAdmin = userRole === 'admin';
-    const isCustomer = userRole === 'customer';
-
-    // Customers and admins see all products; providers see only their own
-    const products = await this.productRepository.find({
-      where: isAdmin || isCustomer
-        ? undefined
-        : { provider: { user_id: userId } },
-      relations: ['provider'],
-    });
+  async findAll(userId?: number, userRole?: string) {
+    let products;
+    if (!userId || !userRole) {
+      // Public access: return all products
+      products = await this.productRepository.find({ relations: ['provider'] });
+    } else {
+      const isAdmin = userRole === 'admin';
+      const isCustomer = userRole === 'customer';
+      // Customers and admins see all products; providers see only their own
+      products = await this.productRepository.find({
+        where: isAdmin || isCustomer
+          ? undefined
+          : { provider: { user_id: userId } },
+        relations: ['provider'],
+      });
+    }
 
     // Debug logging
-    this.logger.debug(`[findAll] userId=${userId} role=${userRole} products.length=${products.length}`);
+    this.logger?.debug?.(`[findAll] userId=${userId} role=${userRole} products.length=${products.length}`);
     const missingProviders = products.filter(p => !p.provider);
     if (missingProviders.length > 0) {
-      this.logger.warn(`[findAll] Products with missing provider: ${missingProviders.map(p => p.id).join(', ')}`);
+      this.logger?.warn?.(`[findAll] Products with missing provider: ${missingProviders.map(p => p.id).join(', ')}`);
     }
 
     return products;

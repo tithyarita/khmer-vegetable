@@ -26,13 +26,10 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   // ================= GET ALL (FIXED) =================
-  @UseGuards(JwtAuthGuard)
+  // Public GET all products
   @Get()
-  findAll(@Req() req: any) {
-    return this.productService.findAll(
-      req.user.id,
-      req.user.role,
-    )
+  findAll() {
+    return this.productService.findAll();
   }
 
   // ================= GET ONE =================
