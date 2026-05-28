@@ -3,7 +3,7 @@ import { onMounted } from "vue"
 import { useProviderStore } from "@/stores/providerStore"
 
 import SideBar from '../../components/provider_com/sideBar.vue'
-import PageHeader from '../../components/provider_com/PageHeader.vue'
+import PageHeader from '../../components/provider_com/pageHeader.vue'
 import ProfileCard  from "../../components/provider_com/ProfileCard.vue"
 import FormProvider from "../../components/provider_com/ProviderForm.vue"
 import BankAccount  from "../../components/provider_com/BankAccount.vue"
