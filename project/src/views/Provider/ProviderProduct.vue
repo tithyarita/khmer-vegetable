@@ -228,7 +228,7 @@ import { useProductStore } from '../../stores/productStore'
 
 import SideBar from '../../components/provider_com/sideBar.vue'
 
-import PageHeader from '@/components/provider_com/PageHeader.vue'
+import PageHeader from '@/components/provider_com/pageHeader.vue'
 
 import ProductTable from '../../components/provider_com/productTable.vue'
 
