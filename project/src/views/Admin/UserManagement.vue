@@ -211,8 +211,9 @@ import axios from 'axios'
 |--------------------------------------------------------------------------
 */
 
-const API_URL = 'http://localhost:3000/users'
-const REGISTER_URL = 'http://localhost:3000/users/register'
+const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+const API_URL = `${BASE}/users`
+const REGISTER_URL = `${BASE}/users/register`
 
 /*
 |--------------------------------------------------------------------------

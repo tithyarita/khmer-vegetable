@@ -3,7 +3,7 @@ import { ref, computed } from "vue"
 import { useProviderStore } from "@/stores/providerStore"
 import axios from "axios"
 
-const BASE = "http://localhost:3000"
+const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 const store = useProviderStore()
 

@@ -231,7 +231,7 @@ import RevenueTrendChart from '../../components/Admin/Revenuetrendchart.vue'
 import OrderDistributionChart from '../../components/Admin/Orderdistributionchart.vue'
 import EliteProvidersList from '../../components/Admin/Eliteproviderslist.vue'
 
-const API = 'http://localhost:3000'
+const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 const periodTabs = ['Daily', 'Weekly', 'Monthly', 'Yearly']
 const activePeriod = ref('Monthly')

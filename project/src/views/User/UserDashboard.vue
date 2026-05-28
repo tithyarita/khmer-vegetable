@@ -193,7 +193,7 @@ async function saveProfile() {
   savingProfile.value = true
   try {
     // Replace with your actual backend endpoint
-    const res = await axios.put(`http://localhost:3000/users/${user.id}`, editForm.value, {
+    const res = await axios.put(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.id}`, editForm.value, {
       headers: { Authorization: `Bearer ${userStore.token}` }
     })
     // Update user in store
@@ -209,7 +209,7 @@ onMounted(async () => {
   if (user && user.id) {
     try {
       // Replace with your actual backend endpoint
-      const res = await axios.get(`http://localhost:3000/users/${user.id}/orders`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.id}/orders`, {
         headers: { Authorization: `Bearer ${userStore.token}` }
       })
       orders.value = res.data

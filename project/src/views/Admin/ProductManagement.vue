@@ -236,7 +236,7 @@ const { products } = storeToRefs(store)
 /* =========================
    IMAGE FIX (IMPORTANT)
 ========================= */
-const IMAGE_BASE_URL = 'http://localhost:3000/uploads/'
+const IMAGE_BASE_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/uploads/`
 
 function getImageUrl(image) {
   if (!image) {
@@ -250,7 +250,7 @@ function getImageUrl(image) {
   }
 
   if (image.startsWith('/uploads/')) {
-    const url = `http://localhost:3000${image}`
+    const url = `${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}${image}`
     console.log('Image with /uploads/ prefix:', url)
     return url
   }

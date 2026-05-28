@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-const BASE = 'http://localhost:3000'
+const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 function fullUrl(path) {
   if (!path) return null
