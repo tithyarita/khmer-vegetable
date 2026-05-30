@@ -200,7 +200,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
-const API      = 'http://localhost:3000'
+const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 const IMG_BASE = `${API}/images`
 
 const providers        = ref([])

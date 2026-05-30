@@ -11,58 +11,83 @@
         <button class="export-btn">Export Report</button>
       </div>
     </div>
+
+    <!-- SUMMARY (NOW DYNAMIC) -->
     <div class="summary-row">
       <div class="summary-card">
         <div class="icon-box"><span>📦</span></div>
         <div>
           <div class="summary-label">TOTAL ORDERS</div>
-          <div class="summary-value">2,482 <span class="summary-change">+12%</span></div>
+          <div class="summary-value">
+            {{ totalOrders }}
+          </div>
         </div>
       </div>
+
       <div class="summary-card">
         <div class="icon-box"><span>⏳</span></div>
         <div>
           <div class="summary-label">PENDING ORDERS</div>
-          <div class="summary-value pending">128 <span class="summary-pending">Queueing</span></div>
+          <div class="summary-value pending">
+            {{ pendingOrders }}
+          </div>
         </div>
       </div>
+
       <div class="summary-card">
         <div class="icon-box"><span>✅</span></div>
         <div>
           <div class="summary-label">COMPLETED</div>
-          <div class="summary-value">2,240 <span class="summary-sub">90.2%</span></div>
+          <div class="summary-value">
+            {{ completedOrders }}
+          </div>
         </div>
       </div>
+
       <div class="summary-card revenue">
         <div class="icon-box"><span>💰</span></div>
         <div>
           <div class="summary-label">TOTAL REVENUE</div>
-          <div class="summary-value">$124,500</div>
+          <div class="summary-value">
+            ${{ totalRevenue.toFixed(2) }}
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- FILTER -->
     <div class="filter-bar">
       <select v-model="status" class="status-filter">
         <option>All Statuses</option>
+<<<<<<< HEAD
         <option>Delivering</option>
         <option>Pending</option>
         <option>Confirmed</option>
         <!-- <option>Shipped</option> -->
         <!-- <option>Cancelled</option> -->
+=======
+        <option>pending</option>
+        <option>completed</option>
+        <option>shipped</option>
+        <option>delivering</option>
+>>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
       </select>
-      <input type="text" class="date-filter" placeholder="Oct 01, 2023 - Oct 31, 2023" />
-      <button class="clear-filter-btn">Clear Filters</button>
+
+      <button class="clear-filter-btn" @click="clearFilter">
+        Clear Filters
+      </button>
     </div>
+
+    <!-- TABLE -->
     <div class="main-content">
       <div v-if="loading" class="loading-state">
         <p>Loading orders...</p>
       </div>
+
       <div v-else-if="error" class="error-state">
-        <p>Error: {{ error }}</p>
+        <p>{{ error }}</p>
       </div>
-      <div v-else-if="orders.length === 0" class="empty-state">
-        <p>No orders found</p>
-      </div>
+
       <div v-else class="table-section">
         <table class="orders-table">
           <thead>
@@ -74,19 +99,18 @@
               <th>STATUS</th>
             </tr>
           </thead>
+
           <tbody>
-            <tr v-for="order in paginatedOrders" :key="order.id" :class="{selected: order.id === selectedOrder?.id}" @click="selectOrder(order)">
-              <td><span class="order-id">#ORD-{{ order.id }}</span></td>
-              <td>
-                <div class="customer-cell">
-                  <span class="customer-avatar" :style="{background: order.customerColor}">{{ order.customerInitials }}</span>
-                  <div>
-                    <span>{{ order.customer }}</span>
-                    <span v-if="order.customerRawId === 9" class="customer-id">#C{{ order.customerRawId }}</span>
-                  </div>
-                </div>
-              </td>
+            <tr
+              v-for="order in paginatedOrders"
+              :key="order.id"
+              @click="selectOrder(order)"
+              :class="{ selected: selectedOrder?.id === order.id }"
+            >
+              <td>#ORD-{{ order.id }}</td>
+              <td>{{ order.customer }}</td>
               <td>{{ order.provider }}</td>
+<<<<<<< HEAD
               <td>{{ order.price }}</td>
               <td class="col-status" @click.stop>
                 <!-- STEP 1: pending → delivering -->
@@ -166,6 +190,13 @@
             <button class="cancel-btn">Cancel</button>
           </div>
         </div>
+=======
+              <td>${{ order.total }}</td>
+              <td>{{ order.status }}</td>
+            </tr>
+          </tbody>
+        </table>
+>>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
       </div>
     </div>
   </div>
@@ -181,17 +212,20 @@
 </template>
 
 <script setup>
+<<<<<<< HEAD
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+=======
+import { ref, computed, onMounted, watch } from 'vue'
+>>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:3000'
-const status = ref('All Statuses')
-const page = ref(1)
-const pageSize = 10
+const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+
 const orders = ref([])
 const loading = ref(false)
 const error = ref(null)
 
+<<<<<<< HEAD
 const toast = reactive({ show: false, message: '', type: 'success' })
 
 let toastTimer = null
@@ -210,23 +244,20 @@ const showToast = (message, type = 'success') => {
 
 }
 // --- Fetch All Orders from API ---
+=======
+const status = ref('All Statuses')
+const selectedOrder = ref(null)
+
+/* -----------------------
+   FETCH ORDERS
+------------------------*/
+>>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
 const fetchOrders = async () => {
   loading.value = true
-  error.value = null
   try {
-    const response = await axios.get(`${API_BASE_URL}/orders`)
-    
-    // Transform API response to match component structure
-    orders.value = response.data.map(order => {
-      const customerRawId = order.customer?.id ?? order.customer_id
-      const customerName = order.customer?.name || `Customer ${order.customer_id}`
-      const initials = (customerName || '')
-        .split(' ')
-        .map(part => part.charAt(0))
-        .join('')
-        .slice(0, 2)
-        .toUpperCase() || `C${customerRawId}`
+    const res = await axios.get(`${API}/orders`)
 
+<<<<<<< HEAD
       return {
         id: order.id,
         customerRawId,
@@ -250,11 +281,23 @@ const fetchOrders = async () => {
   } catch (err) {
     error.value = err.message || 'Failed to load orders'
     console.error('Error fetching orders:', err)
+=======
+    orders.value = res.data.map(o => ({
+      id: o.id,
+      customer: o.customer?.name || 'Unknown',
+      provider: o.provider?.provider_name || 'Unknown',
+      total: Number(o.total || 0),
+      status: o.status
+    }))
+  } catch (e) {
+    error.value = 'Failed to load orders'
+>>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
   } finally {
     loading.value = false
   }
 }
 
+<<<<<<< HEAD
 // --- Load orders on mount ---
 let pollInterval = null
 onMounted(() => {
@@ -269,35 +312,55 @@ onUnmounted(() => {
   if (pollInterval) clearInterval(pollInterval)
 
 })
+=======
+/* -----------------------
+   FILTERED ORDERS
+------------------------*/
+>>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
 const filteredOrders = computed(() => {
-  let result = orders.value
-  if (status.value !== 'All Statuses') {
-    result = result.filter(o => o.status === status.value)
-  }
-  return result
+  if (status.value === 'All Statuses') return orders.value
+  return orders.value.filter(o => o.status === status.value)
 })
 
-const totalPages = computed(() => Math.ceil(filteredOrders.value.length / pageSize))
+/* -----------------------
+   SUMMARY CALCULATIONS
+------------------------*/
+const totalOrders = computed(() => filteredOrders.value.length)
+
+const pendingOrders = computed(() =>
+  filteredOrders.value.filter(o => o.status === 'pending').length
+)
+
+const completedOrders = computed(() =>
+  filteredOrders.value.filter(o => o.status === 'completed').length
+)
+
+const totalRevenue = computed(() =>
+  filteredOrders.value.reduce((sum, o) => sum + o.total, 0)
+)
+
+/* -----------------------
+   PAGINATION
+------------------------*/
+const page = ref(1)
+const pageSize = 10
+
 const paginatedOrders = computed(() => {
   const start = (page.value - 1) * pageSize
   return filteredOrders.value.slice(start, start + pageSize)
 })
 
-const selectedOrder = ref(null)
-function selectOrder(order) {
+/* -----------------------
+   ACTIONS
+------------------------*/
+const selectOrder = (order) => {
   selectedOrder.value = order
 }
 
-const formatDate = (date) => {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+const clearFilter = () => {
+  status.value = 'All Statuses'
 }
+<<<<<<< HEAD
 // In updateStatus function
 const updateStatus = async (order, newStatus) => {
   try {
@@ -323,6 +386,20 @@ const updateStatus = async (order, newStatus) => {
     showToast('Failed to update status', 'error')
   }
 }
+=======
+
+/* -----------------------
+   WATCH FILTER
+------------------------*/
+watch(status, () => {
+  page.value = 1
+})
+
+/* -----------------------
+   INIT
+------------------------*/
+onMounted(fetchOrders)
+>>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
 </script>
 
 <style scoped>

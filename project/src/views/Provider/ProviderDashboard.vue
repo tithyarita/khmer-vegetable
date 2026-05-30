@@ -127,9 +127,9 @@ import { useProductStore } from '@/stores/productStore'
 
 import SideBar from '@/components/provider_com/sideBar.vue'
 
-import PageHeader from '@/components/provider_com/PageHeader.vue'
+import PageHeader from '../../components/provider_com/pageHeader.vue'
 
-import AnalyseBar from '@/components/provider_com/AnalyseBar.vue'
+import AnalyseBar from '@/components/provider_com/analyseBar.vue'
 
 import ProductsSellAnalysis from '@/components/provider_com/ProductsSellAnalysis.vue'
 

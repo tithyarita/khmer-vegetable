@@ -253,10 +253,10 @@
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import SideBar from "@/components/provider_com/sideBar.vue"
-import PageHeader from '@/components/provider_com/PageHeader.vue'
+import PageHeader from "@/components/common/PageHeader.vue"
 import { useUserStore } from '@/stores/userStore'
 
-const API_BASE_URL = 'http://localhost:3000'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 const userStore = useUserStore()
 
 const getProviderId = () => {

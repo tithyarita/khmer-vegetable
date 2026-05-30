@@ -76,7 +76,7 @@ async function handleVerify() {
     : { email: contact.value, otp: code }
 
   try {
-    const res = await axios.post('http://localhost:3000/auth/verify-otp', payload)
+    const res = await axios.post(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/auth/verify-otp`, payload)
     router.push(`/reset-password?token=${res.data.reset_token}`)
   } catch (e) {
     error.value = e.response?.data?.message || 'Invalid or expired code. Try again.'

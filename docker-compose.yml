@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+
+  backend:
+    build: ./backend
+    container_name: vegetable-backend
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  frontend:
+    build: ./project
+    container_name: vegetable-frontend
+    restart: always
+    ports:
+      - "8080:80"
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8
+    container_name: vegetable-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: vegetable
+    expose:
+      - "3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+
+networks:
+  app-network:

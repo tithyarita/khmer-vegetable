@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 import { useUserStore } from '@/stores/userStore'
 
-const API_BASE_URL = 'http://localhost:3000'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 export const useCustomerOrderStore = defineStore('customerOrders', () => {
   const orders = ref([])

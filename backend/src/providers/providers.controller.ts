@@ -16,6 +16,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Provider } from './providers.entity';
 import { ProviderBank, BankType } from './provider_bank.entity';
+
+import { ProvidersService } from './provider.service';
+
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -126,6 +129,9 @@ export class ProvidersController {
   // ========================================
   // UPLOAD AVATAR
   // ========================================
+  constructor(private readonly providerService: ProvidersService) {}
+
+  // AVATAR
   @Put(':id/avatar')
   @UseInterceptors(
     FileInterceptor('avatar', {
@@ -153,9 +159,7 @@ export class ProvidersController {
     return { avatar: `http://localhost:3000${imagePath}` };
   }
 
-  // ========================================
-  // UPLOAD FARM IMAGE
-  // ========================================
+  // FARM IMAGE
   @Put(':id/farm-image')
   @UseInterceptors(
     FileInterceptor('farm', {
@@ -183,9 +187,7 @@ export class ProvidersController {
     return { farm_image: `http://localhost:3000${imagePath}` };
   }
 
-  // ========================================
-  // UPLOAD BANK QR CODE
-  // ========================================
+  // BANK QR
   @Put(':id/bank-qr')
   @UseInterceptors(
     FileInterceptor('qr', {
