@@ -1,5 +1,13 @@
 <template>
   <div class="analyse-bar">
+    <div v-if="error" class="alert alert-warning mb-3">
+      {{ error }}
+    </div>
+
+    <div v-if="loading" class="text-muted small mb-3">
+      Loading dashboard metrics...
+    </div>
+
     <div class="row g-3">
       <div v-for="card in cards" :key="card.id" class="col-12 col-sm-6 col-lg-3">
         <div class="card-item card h-100 border-0 shadow-sm">
@@ -19,42 +27,100 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import axios from 'axios'
+import { useUserStore } from '@/stores/userStore'
 
-const cards = ref([
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+const userStore = useUserStore()
+
+const loading = ref(false)
+const error = ref('')
+const summary = ref({
+  customers: 0,
+  ordersReceived: 0,
+  pendingOrders: 0,
+  completedOrders: 0,
+})
+
+const getProviderId = () => {
+  const user = userStore.user || JSON.parse(localStorage.getItem('user') || 'null')
+  return Number(user?.id ?? user?.providerId ?? user?.provider_id ?? 0) || null
+}
+
+const formatNumber = (num) => {
+  return Number(num || 0).toLocaleString()
+}
+
+const cards = computed(() => [
   {
     id: 1,
     icon: 'bi bi-person-circle',
     label: 'Customers',
-    value: 5583,
-    color: '#e0a0e3'
+    value: summary.value.customers,
+    color: '#1a3d2a'
   },
   {
     id: 2,
     icon: 'bi bi-briefcase',
     label: 'Orders Received',
-    value: 539,
-    color: '#8ec5fc'
+    value: summary.value.ordersReceived,
+    color: '#2d7a3a'
   },
   {
     id: 3,
-    icon: 'bi bi-people',
-    label: 'Delivery Partners',
-    value: 105,
-    color: '#d97ef1'
+    icon: 'bi bi-hourglass-split',
+    label: 'Pending Orders',
+    value: summary.value.pendingOrders,
+    color: '#0f766e'
   },
   {
     id: 4,
-    icon: 'bi bi-box',
-    label: 'Delivery',
-    value: 20835,
-    color: '#ffc56d'
+    icon: 'bi bi-check2-circle',
+    label: 'Completed Orders',
+    value: summary.value.completedOrders,
+    color: '#c97b63'
   }
 ])
 
-const formatNumber = (num) => {
-  return num.toLocaleString()
+const loadSummary = async () => {
+  loading.value = true
+  error.value = ''
+
+  const providerId = getProviderId()
+  if (!providerId) {
+    error.value = 'Provider account not found. Please log in again.'
+    loading.value = false
+    return
+  }
+
+  try {
+    const [ordersResponse, revenueResponse] = await Promise.all([
+      axios.get(`${API_BASE_URL}/orders/provider/${providerId}`),
+      axios.get(`${API_BASE_URL}/orders/provider/${providerId}/revenue`),
+    ])
+
+    const orders = Array.isArray(ordersResponse.data) ? ordersResponse.data : []
+    const uniqueCustomers = new Set(
+      orders.map((order) => order?.customer?.id ?? order?.customer_id).filter(Boolean),
+    )
+
+    summary.value = {
+      customers: uniqueCustomers.size,
+      ordersReceived: Number(revenueResponse.data?.totalOrders ?? orders.length ?? 0),
+      pendingOrders: Number(revenueResponse.data?.pendingOrders ?? 0),
+      completedOrders: orders.filter((order) => order?.status === 'completed').length,
+    }
+  } catch (err) {
+    error.value = err.response?.data?.message || err.message || 'Failed to load dashboard metrics.'
+  } finally {
+    loading.value = false
+  }
 }
+
+onMounted(() => {
+  loadSummary()
+})
 </script>
 
 <style scoped>
