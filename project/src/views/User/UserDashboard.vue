@@ -59,11 +59,9 @@
           </div>
           <div class="summary-card">
             <div class="summary-title">Items in Cart</div>
-<<<<<<< HEAD
+
             <div class="summary-value">{{ userStore.cart.length }} <span class="summary-change">items waiting</span></div>
-=======
             <div class="summary-value">{{ cartStore.cartCount }} <span class="summary-change">items waiting</span></div>
->>>>>>> 24b89f35ff9c5539343ebe2542d9c12ef3c8163d
           </div>
         </section>
 
@@ -151,19 +149,13 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
-<<<<<<< HEAD
-=======
 import { useCartStore } from '@/stores/cartStore'
->>>>>>> 24b89f35ff9c5539343ebe2542d9c12ef3c8163d
 import DashboardSidebar from '@/components/Customer/sidebarUser.vue'
 import axios from 'axios'
 
 const router = useRouter()
 const userStore = useUserStore()
-<<<<<<< HEAD
-=======
 const cartStore = useCartStore()
->>>>>>> 24b89f35ff9c5539343ebe2542d9c12ef3c8163d
 const activeMenu = ref('dashboard')
 const user = userStore.user
 const orders = ref([])

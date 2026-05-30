@@ -1,22 +1,14 @@
 <template>
   <div class="provider-orders">
     <div class="orders-container">
-      <!-- Sidebar -->
       <div class="sidebar-wrapper">
         <SideBar />
       </div>
 
-      <!-- Main Content -->
       <div class="main-content">
-        <!-- Header -->
         <PageHeader title="Provider Orders" />
 
-        <!-- Content Wrapper -->
-        <div class="content-wrapper">
-          <div style="background:red;color:white;padding:10px;border-radius:8px;">
-            Provider ID used: {{ getProviderId() }}
-          </div>
-          <!-- Stats Cards -->
+        <div class="content-wrapper">  
           <div class="stats-grid">
             <div
               v-for="card in statCards"
@@ -35,13 +27,10 @@
             </div>
           </div>
 
-          <!-- Loading / Error / Empty -->
           <div v-if="loading" class="state-box">Loading orders...</div>
           <div v-else-if="error" class="state-box error-box">{{ error }}</div>
 
-          <!-- Orders Section -->
           <div v-else class="orders-section">
-            <!-- Section Header -->
             <div class="section-header">
               <div class="header-left">
                 <h2 class="section-title">{{ sectionTitle }}</h2>
@@ -58,7 +47,6 @@
               </button>
             </div>
 
-            <!-- Search Bar -->
             <div class="search-bar">
               <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
@@ -78,7 +66,6 @@
               </button>
             </div>
 
-            <!-- Orders Table -->
             <div class="table-container">
               <table class="orders-table">
                 <thead>
@@ -133,7 +120,6 @@
                       {{ formatDate(order.createdAt) }}
                     </td>
                     <td class="col-status">
-                      <!-- STEP 1: pending → click to set delivering -->
                       <button
                         v-if="order.status === 'pending'"
                         class="btn btn-pending"
@@ -141,7 +127,6 @@
                       >
                         Pending
                       </button>
-                      <!-- STEP 2: delivering → click to set completed -->
                       <button
                         v-else-if="order.status === 'delivering'"
                         class="btn btn-delivering"
@@ -149,7 +134,6 @@
                       >
                         Delivering
                       </button>
-                      <!-- STEP 3: completed -->
                       <span v-else class="done-text">✓ Completed</span>
                     </td>
                     <td class="col-action">
@@ -170,7 +154,6 @@
       </div>
     </div>
 
-    <!-- Detail Modal -->
     <transition name="modal">
       <div v-if="showDetailModal && selectedOrder" class="modal-overlay" @click.self="closeDetailModal">
         <div class="modal-content" @click.stop>
@@ -188,7 +171,6 @@
           </div>
 
           <div class="modal-body">
-            <!-- Customer Info -->
             <div class="info-card card-customer">
               <h3 class="card-title">Customer Information</h3>
               <div class="info-grid">
@@ -203,7 +185,6 @@
               </div>
             </div>
 
-            <!-- Order Info -->
             <div class="info-card card-order">
               <h3 class="card-title">Order Information</h3>
               <div class="info-grid">
@@ -212,13 +193,32 @@
                   <span class="info-value">{{ formatFullDate(selectedOrder.createdAt) }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Completed At</span>
-                  <span class="info-value">{{ selectedOrder.completedAt ? formatFullDate(selectedOrder.completedAt) : 'Pending' }}</span>
+                  <span class="info-label">Payment Method</span>
+                  <span class="info-value" style="text-transform: uppercase; font-weight: 700; color: #1e3a8a;">
+                    {{ selectedOrder.paymentMethod }}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <!-- Summary -->
+            <div v-if="selectedOrder.paymentMethod === 'bank'" class="info-card card-receipt">
+              <h3 class="card-title">Customer Remittance Receipt</h3>
+              <div class="receipt-wrapper">
+                <div v-if="selectedOrder.receiptUrl" class="receipt-container">
+                  <img 
+                    :src="selectedOrder.receiptUrl.startsWith('http') ? selectedOrder.receiptUrl : `${API_BASE_URL}${selectedOrder.receiptUrl}`" 
+                    class="receipt-preview-img" 
+                    alt="Customer Payment Receipt"
+                    @click="openReceipt(selectedOrder.receiptUrl)"
+                  />
+                  <p class="receipt-hint">💡 Click image to open file layout full size</p>
+                </div>
+                <div v-else class="no-receipt-error">
+                  <span>⚠️ No receipt image attached by customer.</span>
+                </div>
+              </div>
+            </div>
+
             <div class="info-card summary-card">
               <div class="summary-row total">
                 <span class="summary-label">Total</span>
@@ -226,7 +226,6 @@
               </div>
             </div>
 
-            <!-- Status -->
             <div class="modal-status-bar">
               <span class="status-label">Status</span>
               <span class="status-badge" :class="`badge-${selectedOrder.status}`">
@@ -238,7 +237,6 @@
       </div>
     </transition>
 
-    <!-- Toast -->
     <transition name="toast">
       <div v-if="toast.show" class="toast" :class="`toast-${toast.type}`">
         <svg class="toast-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -252,10 +250,10 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import SideBar from "@/components/provider_com/sideBar.vue"
-import pageHeader from '@/components/provider_com/PageHeader.vue'
+import PageHeader from '@/components/provider_com/PageHeader.vue'
 import { useUserStore } from '@/stores/userStore'
 
 const API_BASE_URL = 'http://localhost:3000'
@@ -305,8 +303,8 @@ const fetchOrders = async () => {
     orders.value = response.data.map(order => {
       const customerRawId = order.customer?.id ?? order.customer_id
       return {
-        orderId: order.id,                                              // real DB id for PATCH
-        id: order.order_code || `#O${order.id}`,                       // display id
+        orderId: order.id,
+        id: order.order_code || `#O${order.id}`,
         customerIdRaw: customerRawId,
         customerId: `#C${customerRawId}`,
         customerName: order.customer?.name || `Customer ${order.customer_id}`,
@@ -316,6 +314,9 @@ const fetchOrders = async () => {
         completedAt: order.completed_at ? new Date(order.completed_at) : null,
         items: [],
         item: order.item ?? 1,
+        // ✅ Map database fields correctly for payment verification
+        paymentMethod: order.payment_method || order.paymentMethod || 'bank',
+        receiptUrl: order.receipt_url || order.receipt || order.payment_receipt || null
       }
     })
   } catch (err) {
@@ -326,9 +327,20 @@ const fetchOrders = async () => {
     loading.value = false
   }
 }
+let pollInterval = null
 
 onMounted(() => {
+
   fetchOrders()
+
+  pollInterval = setInterval(fetchOrders, 10000)
+
+})
+
+onUnmounted(() => {
+
+  if (pollInterval) clearInterval(pollInterval)
+
 })
 
 // --- Sort / Filter ---
@@ -382,12 +394,11 @@ const sectionTitle = computed(() => ({
   delivering: 'Delivering Orders', completed: 'Completed Orders',
 })[activeFilter.value] || 'All Orders')
 
-// --- Status ---
+// --- Status Label ---
 const getStatusLabel = (status) => ({
   pending: 'Pending', delivering: 'Delivering', completed: 'Completed'
 })[status] || status
 
-// --- Update Status ---
 // --- Update Status ---
 const updateStatus = async (order, status) => {
   try {
@@ -395,30 +406,26 @@ const updateStatus = async (order, status) => {
 
     await axios.patch(
       `${API_BASE_URL}/orders/${order.orderId}/status`,
-      {
-        status,
-      }
+      { status }
     )
 
-    // instant UI update
-    order.status = status
+    const local = orders.value.find(o => o.orderId === order.orderId)
 
-    // update modal too
-    if (selectedOrder.value?.orderId === order.orderId) {
+    if (local) local.status = status
+
+    if (selectedOrder.value?.orderId === order.orderId)
+
       selectedOrder.value.status = status
-    }
 
-    // reload from backend
     await fetchOrders()
-
     showToast('Order status updated successfully')
   } catch (error) {
     console.error('UPDATE ERROR:', error.response?.data || error.message)
-
     showToast('Failed to update order status', 'error')
   }
 }
-// --- Modal ---
+
+// --- Modal Controls ---
 const openDetailModal = (order) => {
   selectedOrder.value = { ...order }
   showDetailModal.value = true
@@ -427,6 +434,17 @@ const openDetailModal = (order) => {
 const closeDetailModal = () => {
   showDetailModal.value = false
   selectedOrder.value = null
+}
+const openReceipt = (url) => {
+
+  const full = url.startsWith('http')
+
+    ? url
+
+    : `${API_BASE_URL}${url}`
+
+  window.open(full, '_blank')
+
 }
 
 // --- Date Formatting ---
@@ -643,18 +661,11 @@ const formatFullDate = (date) => {
 }
 
 .sort-btn svg:first-child { width: 14px; height: 14px; }
-
-.sort-arrow {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.2s ease;
-}
-
+.sort-arrow { width: 14px; height: 14px; transition: transform 0.2s ease; }
 .sort-arrow.flipped { transform: rotate(180deg); }
 
 /* Search */
 .search-bar { position: relative; }
-
 .search-icon {
   position: absolute;
   left: 12px;
@@ -679,7 +690,6 @@ const formatFullDate = (date) => {
 }
 
 .search-input::placeholder { color: #bbb; }
-
 .search-input:focus {
   outline: none;
   border-color: var(--color-primary);
@@ -704,11 +714,7 @@ const formatFullDate = (date) => {
   padding: 0;
 }
 
-.clear-search-btn:hover {
-  color: var(--color-text-primary);
-  background: var(--color-bg-light);
-}
-
+.clear-search-btn:hover { color: var(--color-text-primary); background: var(--color-bg-light); }
 .clear-search-btn svg { width: 16px; height: 16px; }
 
 /* Table */
@@ -760,12 +766,7 @@ const formatFullDate = (date) => {
 .order-row.status-delivering { border-left-color: var(--color-delivering); }
 .order-row.status-completed  { border-left-color: var(--color-completed); }
 
-.order-row td {
-  padding: 12px;
-  vertical-align: middle;
-  color: var(--color-text-primary);
-}
-
+.order-row td { padding: 12px; vertical-align: middle; color: var(--color-text-primary); }
 .col-order-id { text-align: left; }
 .col-customer { text-align: left; }
 .col-items    { text-align: center; }
@@ -786,22 +787,9 @@ const formatFullDate = (date) => {
   white-space: nowrap;
 }
 
-.customer-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.customer-name {
-  font-weight: 500;
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-}
-
-.customer-id {
-  font-size: 0.7rem;
-  color: var(--color-text-secondary);
-}
+.customer-info { display: flex; flex-direction: column; gap: 2px; }
+.customer-name { font-weight: 500; color: var(--color-text-primary); font-size: 0.9rem; }
+.customer-id { font-size: 0.7rem; color: var(--color-text-secondary); }
 
 .item-count {
   display: inline-block;
@@ -815,17 +803,8 @@ const formatFullDate = (date) => {
   text-align: center;
 }
 
-.price {
-  font-weight: 600;
-  color: var(--color-primary);
-  font-size: 0.95rem;
-}
-
-.col-date {
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
+.price { font-weight: 600; color: var(--color-primary); font-size: 0.95rem; }
+.col-date { color: var(--color-text-secondary); font-size: 0.85rem; white-space: nowrap; }
 
 /* Status buttons */
 .btn {
@@ -838,33 +817,11 @@ const formatFullDate = (date) => {
   transition: all 0.2s;
 }
 
-.btn-pending {
-  background: #FF9800;
-  color: white;
-}
-
-.btn-pending:hover {
-  background: #F57C00;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
-}
-
-.btn-delivering {
-  background: #2196F3;
-  color: white;
-}
-
-.btn-delivering:hover {
-  background: #1976D2;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
-}
-
-.done-text {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #4CAF50;
-}
+.btn-pending { background: #FF9800; color: white; }
+.btn-pending:hover { background: #F57C00; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3); }
+.btn-delivering { background: #2196F3; color: white; }
+.btn-delivering:hover { background: #1976D2; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3); }
+.done-text { font-size: 0.75rem; font-weight: 700; color: #4CAF50; }
 
 .btn-view-detail {
   display: inline-flex;
@@ -886,40 +843,17 @@ const formatFullDate = (date) => {
   box-shadow: 0 2px 6px rgba(33, 150, 243, 0.2);
 }
 
-.btn-view-detail:hover {
-  background: #1976D2;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
-}
-
+.btn-view-detail:hover { background: #1976D2; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3); }
 .btn-view-detail svg { width: 13px; height: 13px; }
 
 /* Empty state */
 .empty-row td { padding: 0; border: none; }
-
-.empty-state {
-  padding: 60px 20px;
-  text-align: center;
-  color: var(--color-text-secondary);
-}
-
-.empty-state svg {
-  width: 56px;
-  height: 56px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.empty-state h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 8px 0 4px;
-}
-
+.empty-state { padding: 60px 20px; text-align: center; color: var(--color-text-secondary); }
+.empty-state svg { width: 56px; height: 56px; margin-bottom: 16px; opacity: 0.5; }
+.empty-state h3 { font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin: 8px 0 4px; }
 .empty-state p { font-size: 0.85rem; margin: 0; }
 
-/* Modal */
+/* Modal Styles */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -958,21 +892,8 @@ const formatFullDate = (date) => {
 }
 
 .modal-title-section { flex: 1; }
-
-.modal-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0 0 3px 0;
-}
-
-.modal-subtitle {
-  font-size: 0.8rem;
-  color: #999;
-  margin: 0;
-  font-family: 'Courier New', monospace;
-  font-weight: 600;
-}
+.modal-title { font-size: 1.2rem; font-weight: 700; color: var(--color-text-primary); margin: 0 0 3px 0; }
+.modal-subtitle { font-size: 0.8rem; color: #999; margin: 0; font-family: 'Courier New', monospace; font-weight: 600; }
 
 .modal-close-btn {
   width: 32px;
@@ -1012,6 +933,7 @@ const formatFullDate = (date) => {
 
 .card-customer { border-left-color: #4CAF50; }
 .card-order    { border-left-color: #2196F3; }
+.card-receipt  { border-left-color: #1e3a8a; }
 
 .card-title {
   font-size: 0.72rem;
@@ -1022,73 +944,66 @@ const formatFullDate = (date) => {
   margin: 0 0 12px 0;
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.info-item { display: flex; flex-direction: column; gap: 3px; }
+.info-label { font-size: 0.68rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
+.info-value { font-size: 0.9rem; color: var(--color-text-primary); font-weight: 500; }
 
-.info-item {
+/* ✅ Receipt CSS Elements */
+.receipt-wrapper {
+  margin-top: 4px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  width: 100%;
 }
 
-.info-label {
-  font-size: 0.68rem;
-  color: #aaa;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  font-weight: 600;
+.receipt-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
-.info-value {
-  font-size: 0.9rem;
-  color: var(--color-text-primary);
-  font-weight: 500;
+.receipt-preview-img {
+  max-width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  cursor: pointer;
+  background: #fff;
+  transition: transform 0.2s ease;
+}
+
+.receipt-preview-img:hover {
+  transform: scale(1.02);
+}
+
+.receipt-hint {
+  font-size: 11px;
+  color: #64748b;
+  margin: 0;
+}
+
+.no-receipt-error {
+  padding: 12px;
+  background: #fff1f2;
+  border: 1px dashed #fecdd3;
+  color: #be123c;
+  font-size: 13px;
+  border-radius: 8px;
+  text-align: center;
 }
 
 /* Summary */
-.summary-card {
-  background: #ffffff;
-  border-left: none !important;
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 9px 0;
-}
-
-.summary-row.total {
-  border-top: 1.5px solid #e8eaed;
-  padding-top: 12px;
-}
-
-.summary-label {
-  color: var(--color-text-secondary);
-  font-weight: 500;
-  font-size: 0.88rem;
-}
-
-.summary-row.total .summary-label {
-  font-weight: 700;
-  color: var(--color-text-primary);
-  font-size: 0.95rem;
-}
-
-.summary-value {
-  font-weight: 600;
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-}
-
-.summary-row.total .summary-value {
-  font-weight: 700;
-  color: var(--color-primary);
-  font-size: 1rem;
-}
+.summary-card { background: #ffffff; border-left: none !important; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; }
+.summary-row.total { border-top: 1.5px solid #e8eaed; padding-top: 12px; }
+.summary-label { color: var(--color-text-secondary); font-weight: 500; font-size: 0.88rem; }
+.summary-row.total .summary-label { font-weight: 700; color: var(--color-text-primary); font-size: 0.95rem; }
+.summary-value { font-weight: 600; color: var(--color-text-primary); font-size: 0.9rem; }
+.summary-row.total .summary-value { font-weight: 700; color: var(--color-primary); font-size: 1rem; }
 
 /* Status bar */
 .modal-status-bar {
@@ -1101,23 +1016,8 @@ const formatFullDate = (date) => {
   border: 1px solid #e8eaed;
 }
 
-.status-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #aaa;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 5px 12px;
-  border-radius: 14px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
+.status-label { font-size: 0.72rem; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
+.status-badge { display: inline-block; padding: 5px 12px; border-radius: 14px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
 .badge-pending    { background: #fff3e0; color: #e65100; }
 .badge-delivering { background: #e3f2fd; color: #1565c0; }
 .badge-completed  { background: #e8f5e9; color: #2e7d32; }
@@ -1144,28 +1044,13 @@ const formatFullDate = (date) => {
 .toast-error   { background: #F44336; }
 
 /* Transitions */
-.modal-enter-active, .modal-leave-active {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.modal-enter-from, .modal-leave-to {
-  opacity: 0;
-  transform: scale(0.97);
-}
-
-.toast-enter-active, .toast-leave-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.toast-enter-from, .toast-leave-to {
-  opacity: 0;
-  transform: translateY(20px) translateX(100px);
-}
+.modal-enter-active, .modal-leave-active { transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.97); }
+.toast-enter-active, .toast-leave-active { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(20px) translateX(100px); }
 
 /* Responsive */
-@media (max-width: 1024px) {
-  .content-wrapper { padding: 20px 24px; }
-  .orders-section  { padding: 20px; }
-}
-
+@media (max-width: 1024px) { .content-wrapper { padding: 20px 24px; } .orders-section  { padding: 20px; } }
 @media (max-width: 768px) {
   .sidebar-wrapper { display: none; }
   .content-wrapper { padding: 16px; }
@@ -1186,7 +1071,7 @@ const formatFullDate = (date) => {
   .stat-icon  { width: 40px; height: 40px; font-size: 1.2rem; }
   .orders-table { font-size: 0.8rem; }
   .orders-table th, .orders-table td { padding: 8px; }
-  .btn-view-detail { padding: 4px 6px; font-size: 0.6rem; }
+  .btn-view-detail { padding: 4px 6px; font-size: 0.6amp; }
   .modal-content { max-width: 95vw; }
   .modal-header { padding: 14px 16px; }
   .modal-body   { padding: 14px 16px 18px; gap: 10px; }

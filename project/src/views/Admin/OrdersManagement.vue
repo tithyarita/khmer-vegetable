@@ -44,11 +44,11 @@
     <div class="filter-bar">
       <select v-model="status" class="status-filter">
         <option>All Statuses</option>
-        <option>Delivered</option>
+        <option>Delivering</option>
         <option>Pending</option>
         <option>Confirmed</option>
-        <option>Shipped</option>
-        <option>Cancelled</option>
+        <!-- <option>Shipped</option> -->
+        <!-- <option>Cancelled</option> -->
       </select>
       <input type="text" class="date-filter" placeholder="Oct 01, 2023 - Oct 31, 2023" />
       <button class="clear-filter-btn">Clear Filters</button>
@@ -127,7 +127,7 @@
           <div class="details-header">
             <span class="details-order-id">#ORD-{{ selectedOrder.id }}</span>
             <span class="details-date">{{ formatDate(selectedOrder.createdAt) }}</span>
-            <span class="details-status delivered">DELIVERED</span>
+            <span class="details-status" :class="selectedOrder.status">{{ selectedOrder.status.toUpperCase() }}</span>
           </div>
           <div class="details-customer">
             <span class="customer-avatar" :style="{background: selectedOrder.customerColor}">{{ selectedOrder.customerInitials }}</span>
@@ -169,10 +169,19 @@
       </div>
     </div>
   </div>
+  <transition name="toast">
+
+  <div v-if="toast.show" class="toast" :class="`toast-${toast.type}`">
+
+    {{ toast.message }}
+
+  </div>
+
+</transition>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 
 const API_BASE_URL = 'http://localhost:3000'
@@ -183,6 +192,23 @@ const orders = ref([])
 const loading = ref(false)
 const error = ref(null)
 
+const toast = reactive({ show: false, message: '', type: 'success' })
+
+let toastTimer = null
+
+const showToast = (message, type = 'success') => {
+
+  if (toastTimer) clearTimeout(toastTimer)
+
+  toast.message = message
+
+  toast.type = type
+
+  toast.show = true
+
+  toastTimer = setTimeout(() => { toast.show = false }, 3000)
+
+}
 // --- Fetch All Orders from API ---
 const fetchOrders = async () => {
   loading.value = true
@@ -230,11 +256,19 @@ const fetchOrders = async () => {
 }
 
 // --- Load orders on mount ---
+let pollInterval = null
 onMounted(() => {
   fetchOrders()
+
+  pollInterval = setInterval(fetchOrders, 10000)
   
 })
 
+onUnmounted(() => {
+
+  if (pollInterval) clearInterval(pollInterval)
+
+})
 const filteredOrders = computed(() => {
   let result = orders.value
   if (status.value !== 'All Statuses') {
@@ -271,6 +305,13 @@ const updateStatus = async (order, newStatus) => {
     await axios.patch(`${API_BASE_URL}/orders/${order.id}/status`, {
       status: newStatus
     })
+    const local = orders.value.find(o => o.id === order.id)
+
+    if (local) local.status = newStatus
+
+    if (selectedOrder.value?.id === order.id)
+
+      selectedOrder.value.status = newStatus
     await fetchOrders()
 
       if (selectedOrder.value?.id === order.id) {
