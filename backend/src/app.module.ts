@@ -9,7 +9,6 @@ import { ProductModule } from './product/product.module';
 import { ProviderApplicationsModule } from './provider-application/provider-application.module';
 import { CartModule } from './cart/cart.module';
 import { FavoriteModule } from './favorite/favorite.module';
-import { Customer } from './customer/customer.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
@@ -17,6 +16,7 @@ import { AddressModule } from './address/address.module';
 import { AppService } from './app.service';
 import { MailModule } from './mail/mail.module';
 import { OrdersModule } from './users/orders.module';
+import { ReviewModule } from './review/review.module';
 
 @Module({
   imports: [
@@ -43,8 +43,8 @@ import { OrdersModule } from './users/orders.module';
     FavoriteModule,
     AddressModule,
     MailModule,
-    Customer,
     OrdersModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],

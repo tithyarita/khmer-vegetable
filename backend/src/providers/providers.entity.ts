@@ -13,6 +13,9 @@ import { ProviderApplication } from '../provider-application/provider-applicatio
 import { Admin } from '../admin/admin.entity';
 import { Product } from '../product/product.entity';
 import { orders } from '../users/orders.entity';
+import { Review } from '../review/review.entity';
+import { ProviderBank } from './provider_bank.entity';
+
 @Entity('providers')
 export class Provider {
   @PrimaryColumn({ name: 'user_id' })
@@ -42,9 +45,6 @@ export class Provider {
   @Column({ name: 'id_number', nullable: true })
   id_number?: string;
 
-  @Column({ type: 'simple-json', nullable: true })
-  banks?: { name: string; account: string; qr: string }[];
-
   @Column({ name: 'qr_image', nullable: true })
   qr_image?: string;
 
@@ -56,6 +56,14 @@ export class Provider {
 
   @CreateDateColumn({ name: 'created_at' })
   created_at!: Date;
+
+  @Column({ name: 'application_id', nullable: true })
+  application_id?: number;
+
+  @Column({ name: 'created_by_admin', nullable: true })
+  created_by_admin?: number;
+
+  // ── Relations ──────────────────────────────────────────────────────────────
 
   @OneToOne(() => users, (user) => user.provider)
   @JoinColumn({ name: 'user_id' })
@@ -78,4 +86,13 @@ export class Provider {
 
   @OneToMany(() => orders, (order) => order.provider)
   orders!: orders[];
+
+  @OneToMany(() => ProviderBank, (bank) => bank.provider, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  banks!: ProviderBank[];
+
+  @OneToMany(() => Review, (review) => review.provider)
+  reviews!: Review[];
 }

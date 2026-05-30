@@ -7,21 +7,23 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
+
 import { Provider } from '../providers/providers.entity';
 import { Customer } from '../customer/customer.entity';
 import { orderItems } from './order-items.entity';
 
 export enum OrderStatus {
   PENDING = 'pending',
-  // SHIPPED = 'shipped',
   DELIVERING = 'delivering',
   COMPLETED = 'completed',
 }
+
 export enum PaymentStatus {
   PENDING = 'pending',
   PAID = 'paid',
-  REJECTED = 'rejected',
+  FAILED = 'failed',
 }
+
 @Entity('orders')
 export class orders {
   @PrimaryGeneratedColumn()
@@ -36,37 +38,13 @@ export class orders {
   @Column()
   provider_id!: number;
 
+  /* --------------------------------
+      RELATIONSHIPS
+  -------------------------------- */
+
   @ManyToOne(() => Provider, { eager: true })
   @JoinColumn({ name: 'provider_id' })
   provider!: Provider;
-
-  @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
-  status!: OrderStatus;
-
-  @Column('decimal')
-  total!: number;
-
-  @CreateDateColumn({ type: 'timestamp', nullable: true })
-  created_at!: Date;
-
-  @Column({ nullable: true })
-  completed_at!: Date;
-
-  @Column({ default: 1 })
-  item!: number;
-
-  @Column({ nullable: true })
-  payment_method!: string;
-
-  @Column({ nullable: true })
-  payment_proof!: string;
-
-  @Column({
-    type: 'enum',
-    enum: PaymentStatus,
-    default: PaymentStatus.PENDING,
-  })
-  payment_status!: PaymentStatus;
 
   @ManyToOne(() => Customer, (customer) => customer.orders)
   @JoinColumn({ name: 'customer_id' })
@@ -74,4 +52,84 @@ export class orders {
 
   @OneToMany(() => orderItems, (item) => item.order, { cascade: true })
   order_items!: orderItems[];
+
+  /* --------------------------------
+      ORDER
+  -------------------------------- */
+
+  @Column({
+    type: 'enum',
+    enum: OrderStatus,
+    default: OrderStatus.PENDING,
+  })
+  status!: OrderStatus;
+
+  @Column('decimal')
+  total!: number;
+
+  @Column({ default: 1 })
+  item!: number;
+
+  @CreateDateColumn({
+    type: 'timestamp',
+    nullable: true,
+  })
+  created_at!: Date;
+
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+  })
+  completed_at!: Date;
+
+  /* --------------------------------
+      PAYMENT
+  -------------------------------- */
+
+  @Column({
+    nullable: true,
+  })
+  payment_method!: string;
+
+  // uploaded screenshot image
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  payment_proof!: string;
+
+  // amount customer paid
+  @Column({
+    type: 'decimal',
+    default: 0,
+  })
+  payment_amount!: number;
+
+  // transaction number
+  @Column({
+    nullable: true,
+  })
+  transaction_id!: string;
+
+  // payment date
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+  })
+  paid_at!: Date;
+
+  // provider verification
+  @Column({
+    type: 'enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING,
+  })
+  payment_status!: PaymentStatus;
+
+  // provider note
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  payment_note!: string;
 }
