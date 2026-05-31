@@ -14,20 +14,13 @@ import { ProviderApplication } from '../provider-application/provider-applicatio
 import { Admin } from '../admin/admin.entity';
 import { Product } from '../product/product.entity';
 import { orders } from '../users/orders.entity';
-<<<<<<< HEAD
 import { Review } from '../review/review.entity';
 import { ProviderBank } from './provider_bank.entity';
-=======
->>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
 
 @Entity('providers')
 export class Provider {
   @PrimaryColumn({ name: 'user_id' })
   user_id!: number;
-
-  @OneToOne(() => users, (user) => user.provider)
-  @JoinColumn({ name: 'user_id' })
-  user!: users;
 
   @Column({ nullable: true })
   provider_name?: string;
@@ -53,14 +46,7 @@ export class Provider {
   @Column({ nullable: true })
   id_number?: string;
 
-<<<<<<< HEAD
   @Column({ name: 'qr_image', nullable: true })
-=======
-  @Column({ type: 'simple-json', nullable: true })
-  banks?: { name: string; account: string; qr: string }[];
-
-  @Column({ nullable: true })
->>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
   qr_image?: string;
 
   @Column({ type: 'varchar', nullable: true })
@@ -72,7 +58,6 @@ export class Provider {
   @CreateDateColumn()
   created_at!: Date;
 
-<<<<<<< HEAD
   @Column({ name: 'application_id', nullable: true })
   application_id?: number;
 
@@ -85,8 +70,6 @@ export class Provider {
   @JoinColumn({ name: 'user_id' })
   user!: users;
 
-=======
->>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
   @OneToOne(() => ProviderApplication, (app) => app.provider, {
     nullable: true,
   })
@@ -96,6 +79,7 @@ export class Provider {
   @ManyToOne(() => Admin, (admin) => admin.created_providers, {
     nullable: true,
   })
+  @JoinColumn({ name: 'created_by_admin' })
   createdByAdmin?: Admin;
 
   @OneToMany(() => Product, (product) => product.provider)
@@ -103,7 +87,6 @@ export class Provider {
 
   @OneToMany(() => orders, (order) => order.provider)
   orders!: orders[];
-<<<<<<< HEAD
 
   @OneToMany(() => ProviderBank, (bank) => bank.provider, {
     cascade: true,
@@ -114,6 +97,3 @@ export class Provider {
   @OneToMany(() => Review, (review) => review.provider)
   reviews!: Review[];
 }
-=======
-}
->>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c

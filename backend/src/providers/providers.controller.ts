@@ -16,9 +16,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Provider } from './providers.entity';
 import { ProviderBank, BankType } from './provider_bank.entity';
-
 import { ProvidersService } from './provider.service';
-
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -60,6 +58,8 @@ export class ProvidersController {
 
     @InjectRepository(ProviderBank)
     private readonly bankRepo: Repository<ProviderBank>,
+
+    private readonly providerService: ProvidersService,
   ) {}
 
   // ========================================
@@ -83,6 +83,7 @@ export class ProvidersController {
   ): Promise<Provider | null> {
     const userId = Number(id);
     const { banks, ...profileData } = body;
+
     if (Object.keys(profileData).length > 0) {
       const { provider_name, farm_name, location, story, id_number } =
         profileData;
@@ -94,7 +95,6 @@ export class ProvidersController {
 
     if (Array.isArray(banks)) {
       try {
-        // ← ADD
         await this.bankRepo.delete({ provider_id: userId });
 
         const bankEntities = banks.map((b) => {
@@ -114,10 +114,9 @@ export class ProvidersController {
 
         await this.bankRepo.save(bankEntities);
       } catch (err) {
-        // ← ADD
-        console.error('BANK SAVE ERROR:', err); // ← ADD
-        throw err; // ← ADD
-      } // ← ADD
+        console.error('BANK SAVE ERROR:', err);
+        throw err;
+      }
     }
 
     return this.providerRepo.findOne({
@@ -129,9 +128,6 @@ export class ProvidersController {
   // ========================================
   // UPLOAD AVATAR
   // ========================================
-  constructor(private readonly providerService: ProvidersService) {}
-
-  // AVATAR
   @Put(':id/avatar')
   @UseInterceptors(
     FileInterceptor('avatar', {
@@ -149,17 +145,17 @@ export class ProvidersController {
     @UploadedFile() file: MulterFile | undefined,
   ): Promise<{ avatar: string } | { message: string }> {
     if (!file) return { message: 'No file uploaded' };
-
     const imagePath = `/images/avatar/${file.filename}`;
     await this.providerRepo.update(
       { user_id: Number(id) },
       { avatar: imagePath },
     );
-
     return { avatar: `http://localhost:3000${imagePath}` };
   }
 
-  // FARM IMAGE
+  // ========================================
+  // UPLOAD FARM IMAGE
+  // ========================================
   @Put(':id/farm-image')
   @UseInterceptors(
     FileInterceptor('farm', {
@@ -177,17 +173,17 @@ export class ProvidersController {
     @UploadedFile() file: MulterFile | undefined,
   ): Promise<{ farm_image: string } | { message: string }> {
     if (!file) return { message: 'No file uploaded' };
-
     const imagePath = `/images/farm/${file.filename}`;
     await this.providerRepo.update(
       { user_id: Number(id) },
       { farm_image: imagePath },
     );
-
     return { farm_image: `http://localhost:3000${imagePath}` };
   }
 
-  // BANK QR
+  // ========================================
+  // UPLOAD BANK QR
+  // ========================================
   @Put(':id/bank-qr')
   @UseInterceptors(
     FileInterceptor('qr', {
@@ -209,7 +205,6 @@ export class ProvidersController {
 
     const imagePath = `/images/qr/${file.filename}`;
     const providerId = Number(id);
-
     const reqBody = req.body as { bank_index?: string };
     const bankIndex = Number(reqBody.bank_index);
 

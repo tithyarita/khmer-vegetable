@@ -15,18 +15,14 @@ import { AppController } from './app.controller';
 import { AddressModule } from './address/address.module';
 import { AppService } from './app.service';
 import { MailModule } from './mail/mail.module';
-<<<<<<< HEAD
 import { OrdersModule } from './users/orders.module';
 import { ReviewModule } from './review/review.module';
-=======
 import { ReportModule } from './report/report.module';
->>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
-<<<<<<< HEAD
       type: 'mysql',
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
@@ -34,19 +30,8 @@ import { ReportModule } from './report/report.module';
       password: process.env.DB_PASS || '123',
       database: process.env.DB_NAME || 'khmer_vegetable_market',
       autoLoadEntities: true,
-      synchronize: true, // set to false in production
+      synchronize: true,
     }),
-=======
-    type: 'mysql',
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
-    username: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'root',
-    database: process.env.DB_NAME || 'vegetable',
-    autoLoadEntities: true,
-    synchronize: true,
-  }),
->>>>>>> f17bc122b0513db18c3dfe6f40d3e0f7955e389c
     AuthModule,
     UsersModule,
     StaffModule,

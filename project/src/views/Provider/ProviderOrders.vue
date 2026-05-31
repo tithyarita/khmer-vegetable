@@ -253,8 +253,8 @@
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import SideBar from "@/components/provider_com/sideBar.vue"
-import PageHeader from "@/components/common/PageHeader.vue"
 import { useUserStore } from '@/stores/userStore'
+import PageHeader from '@/components/provider_com/pageHeader.vue'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 const userStore = useUserStore()
@@ -1033,15 +1033,11 @@ const formatFullDate = (date) => {
   font-weight: 600;
   color: white;
   z-index: 9999;
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
-
-.toast-icon { width: 18px; height: 18px; flex-shrink: 0; }
 .toast-success { background: #4CAF50; }
-.toast-error   { background: #F44336; }
+.toast-error { background: #F44336; }
+.toast-enter-active, .toast-leave-active { transition: all 0.2s; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(20px); }
 
 /* Transitions */
 .modal-enter-active, .modal-leave-active { transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); }

@@ -11,7 +11,7 @@ import { Provider } from '../providers/providers.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Report,   // ✅ THIS IS REQUIRED (fixes your error)
+      Report, // ✅ THIS IS REQUIRED (fixes your error)
       orders,
       Provider,
     ]),
