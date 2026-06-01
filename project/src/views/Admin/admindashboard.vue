@@ -19,6 +19,7 @@
         trendLabel="vs last month"
         :trendUp="true"
       />
+      // Dark variant for emphasis
       <SummaryCard
         label="Monthly Orders"
         value="8,104"

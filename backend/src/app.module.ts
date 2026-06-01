@@ -17,6 +17,9 @@ import { AppController } from './app.controller';
 import { AddressModule } from './address/address.module';
 import { AppService } from './app.service';
 import { MailModule } from './mail/mail.module';
+import { OrdersModule } from './users/orders.module';
+import { ReviewModule } from './review/review.module';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -26,10 +29,10 @@ import { MailModule } from './mail/mail.module';
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
       username: process.env.DB_USER || 'root',
-      password: process.env.DB_PASS || '110704',
+      password: process.env.DB_PASS || 'root',
       database: process.env.DB_NAME || 'khmer_vegetable_market',
       autoLoadEntities: true,
-      synchronize: true, // set to false in production
+      synchronize: true,
     }),
     AuthModule,
     UsersModule,
@@ -39,12 +42,14 @@ import { MailModule } from './mail/mail.module';
     ApplicationsModule,
     ProductModule,
     ProviderApplicationsModule,
+    ReportModule,
     CartModule,
     FavoriteModule,
     ReviewModule,
     AddressModule,
     MailModule,
-    Customer,
+    OrdersModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],

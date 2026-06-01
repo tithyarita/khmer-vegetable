@@ -1,19 +1,14 @@
 <template>
   <div class="provider-orders">
     <div class="orders-container">
-      <!-- Sidebar -->
       <div class="sidebar-wrapper">
         <SideBar />
       </div>
 
-      <!-- Main Content -->
       <div class="main-content">
-        <!-- Header -->
         <PageHeader title="Provider Orders" />
 
-        <!-- Content Wrapper -->
-        <div class="content-wrapper">
-          <!-- Stats Cards -->
+        <div class="content-wrapper">  
           <div class="stats-grid">
             <div
               v-for="card in statCards"
@@ -32,9 +27,10 @@
             </div>
           </div>
 
-          <!-- Orders Section -->
-          <div class="orders-section">
-            <!-- Section Header -->
+          <div v-if="loading" class="state-box">Loading orders...</div>
+          <div v-else-if="error" class="state-box error-box">{{ error }}</div>
+
+          <div v-else class="orders-section">
             <div class="section-header">
               <div class="header-left">
                 <h2 class="section-title">{{ sectionTitle }}</h2>
@@ -51,7 +47,6 @@
               </button>
             </div>
 
-            <!-- Search Bar -->
             <div class="search-bar">
               <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
@@ -62,14 +57,8 @@
                 type="text"
                 placeholder="Search order ID, customer name..."
                 class="search-input"
-                @input="handleSearch"
               />
-              <button
-                v-if="searchQuery"
-                class="clear-search-btn"
-                @click="clearSearch"
-                aria-label="Clear search"
-              >
+              <button v-if="searchQuery" class="clear-search-btn" @click="searchQuery = ''" aria-label="Clear search">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -77,7 +66,6 @@
               </button>
             </div>
 
-            <!-- Orders Table -->
             <div class="table-container">
               <table class="orders-table">
                 <thead>
@@ -109,7 +97,7 @@
                   </tr>
                   <tr
                     v-for="order in filteredOrders"
-                    :key="order.id"
+                    :key="order.orderId"
                     class="order-row"
                     :class="`status-${order.status}`"
                   >
@@ -119,29 +107,37 @@
                     <td class="col-customer">
                       <div class="customer-info">
                         <span class="customer-name">{{ order.customerName }}</span>
-                        <span v-if="order.customerIdRaw === 9" class="customer-id">{{ order.customerId }}</span>
+                        <span class="customer-id">{{ order.customerId }}</span>
                       </div>
                     </td>
                     <td class="col-items">
                       <span class="item-count">{{ order.item }}</span>
                     </td>
                     <td class="col-total">
-                      <span class="price">${{ order.total }}</span>
+                      <span class="price">${{ order.total.toFixed(2) }}</span>
                     </td>
                     <td class="col-date">
                       {{ formatDate(order.createdAt) }}
                     </td>
                     <td class="col-status">
-                      <span class="status-badge" :class="`badge-${order.status}`">
-                        {{ getStatusLabel(order.status) }}
-                      </span>
+                      <button
+                        v-if="order.status === 'pending'"
+                        class="btn btn-pending"
+                        @click="updateStatus(order, 'delivering')"
+                      >
+                        Pending
+                      </button>
+                      <button
+                        v-else-if="order.status === 'delivering'"
+                        class="btn btn-delivering"
+                        @click="updateStatus(order, 'completed')"
+                      >
+                        Delivering
+                      </button>
+                      <span v-else class="done-text">✓ Completed</span>
                     </td>
                     <td class="col-action">
-                      <button
-                        class="btn-view-detail"
-                        @click="openDetailModal(order)"
-                        title="View order details"
-                      >
+                      <button class="btn-view-detail" @click="openDetailModal(order)" title="View order details">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                           <circle cx="12" cy="12" r="3"></circle>
@@ -158,11 +154,9 @@
       </div>
     </div>
 
-    <!-- Detail Modal -->
     <transition name="modal">
-      <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetailModal">
+      <div v-if="showDetailModal && selectedOrder" class="modal-overlay" @click.self="closeDetailModal">
         <div class="modal-content" @click.stop>
-          <!-- Modal Header -->
           <div class="modal-header">
             <div class="modal-title-section">
               <h2 class="modal-title">Order Details</h2>
@@ -176,24 +170,21 @@
             </button>
           </div>
 
-          <!-- Modal Body -->
           <div class="modal-body">
-            <!-- Customer Info Card -->
             <div class="info-card card-customer">
               <h3 class="card-title">Customer Information</h3>
               <div class="info-grid">
-                  <div class="info-item">
-                    <span class="info-label">Name</span>
-                    <span class="info-value">{{ selectedOrder.customerName }}</span>
-                  </div>
-                  <div v-if="selectedOrder.customerIdRaw === 9" class="info-item">
-                    <span class="info-label">Customer ID</span>
-                    <span class="info-value">{{ selectedOrder.customerId }}</span>
-                  </div>
+                <div class="info-item">
+                  <span class="info-label">Name</span>
+                  <span class="info-value">{{ selectedOrder.customerName }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Customer ID</span>
+                  <span class="info-value">{{ selectedOrder.customerId }}</span>
+                </div>
               </div>
             </div>
 
-            <!-- Order Info Card -->
             <div class="info-card card-order">
               <h3 class="card-title">Order Information</h3>
               <div class="info-grid">
@@ -202,50 +193,39 @@
                   <span class="info-value">{{ formatFullDate(selectedOrder.createdAt) }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Completed At</span>
-                  <span class="info-value">{{ selectedOrder.completedAt ? formatFullDate(selectedOrder.completedAt) : 'Pending' }}</span>
+                  <span class="info-label">Payment Method</span>
+                  <span class="info-value" style="text-transform: uppercase; font-weight: 700; color: #1e3a8a;">
+                    {{ selectedOrder.paymentMethod }}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <!-- Products Card -->
-            <div class="info-card card-products">
-              <h3 class="card-title">Products</h3>
-              <div class="products-list">
-                <div
-                  v-for="(item, index) in selectedOrder.items"
-                  :key="index"
-                  class="product-item"
-                >
-                  <div class="product-image">
-                    <span class="product-emoji">{{ item.image }}</span>
-                  </div>
-                  <div class="product-details">
-                    <div class="product-header">
-                      <span class="product-id">{{ item.productId }}</span>
-                      <span class="product-price">${{ item.price }}</span>
-                    </div>
-                    <div class="product-specs">
-                      <span class="spec">{{ item.quantity }}</span>
-                    </div>
-                  </div>
+            <div v-if="selectedOrder.paymentMethod === 'bank'" class="info-card card-receipt">
+              <h3 class="card-title">Customer Remittance Receipt</h3>
+              <div class="receipt-wrapper">
+                <div v-if="selectedOrder.receiptUrl" class="receipt-container">
+                  <img 
+                    :src="selectedOrder.receiptUrl.startsWith('http') ? selectedOrder.receiptUrl : `${API_BASE_URL}${selectedOrder.receiptUrl}`" 
+                    class="receipt-preview-img" 
+                    alt="Customer Payment Receipt"
+                    @click="openReceipt(selectedOrder.receiptUrl)"
+                  />
+                  <p class="receipt-hint">💡 Click image to open file layout full size</p>
+                </div>
+                <div v-else class="no-receipt-error">
+                  <span>⚠️ No receipt image attached by customer.</span>
                 </div>
               </div>
             </div>
 
-            <!-- Summary Card (no tax) -->
             <div class="info-card summary-card">
-              <div class="summary-row">
-                <span class="summary-label">Subtotal</span>
-                <span class="summary-value">${{ calculateSubtotal() }}</span>
-              </div>
               <div class="summary-row total">
                 <span class="summary-label">Total</span>
-                <span class="summary-value">${{ selectedOrder.total }}</span>
+                <span class="summary-value">${{ selectedOrder.total.toFixed(2) }}</span>
               </div>
             </div>
 
-            <!-- Status display only — no action buttons -->
             <div class="modal-status-bar">
               <span class="status-label">Status</span>
               <span class="status-badge" :class="`badge-${selectedOrder.status}`">
@@ -257,7 +237,6 @@
       </div>
     </transition>
 
-    <!-- Toast Notification -->
     <transition name="toast">
       <div v-if="toast.show" class="toast" :class="`toast-${toast.type}`">
         <svg class="toast-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -271,17 +250,18 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import SideBar from "@/components/provider_com/sideBar.vue"
-import PageHeader from "@/components/provider_com/PageHeader.vue"
 import { useUserStore } from '@/stores/userStore'
+import PageHeader from '@/components/provider_com/pageHeader.vue'
 
-const API_BASE_URL = 'http://localhost:3000'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 const userStore = useUserStore()
 
 const getProviderId = () => {
   const user = userStore.user || JSON.parse(localStorage.getItem('user') || 'null')
+  console.log('USER FROM STORE:', user)
   return Number(user?.id ?? user?.providerId ?? user?.provider_id ?? 0) || null
 }
 
@@ -295,7 +275,18 @@ const showDetailModal = ref(false)
 const selectedOrder = ref(null)
 const sortOrder = ref('desc')
 
-// --- Fetch Orders from API ---
+// --- Toast ---
+const toast = reactive({ show: false, message: '', type: 'success' })
+let toastTimer = null
+const showToast = (message, type = 'success') => {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.message = message
+  toast.type = type
+  toast.show = true
+  toastTimer = setTimeout(() => { toast.show = false }, 3000)
+}
+
+// --- Fetch Orders ---
 const fetchOrders = async () => {
   loading.value = true
   error.value = null
@@ -309,11 +300,10 @@ const fetchOrders = async () => {
 
   try {
     const response = await axios.get(`${API_BASE_URL}/orders/provider/${providerId}`)
-    
-    // Transform API response to match component structure
     orders.value = response.data.map(order => {
       const customerRawId = order.customer?.id ?? order.customer_id
       return {
+        orderId: order.id,
         id: order.order_code || `#O${order.id}`,
         customerIdRaw: customerRawId,
         customerId: `#C${customerRawId}`,
@@ -322,13 +312,13 @@ const fetchOrders = async () => {
         total: parseFloat(order.total),
         createdAt: new Date(order.created_at),
         completedAt: order.completed_at ? new Date(order.completed_at) : null,
-        items: [], // Will be populated when order_items API is connected
-        item: order.item ?? 1, // Use nullish coalescing to preserve 0 values
-        orderId: order.id // Keep original ID for updates
+        items: [],
+        item: order.item ?? 1,
+        // ✅ Map database fields correctly for payment verification
+        paymentMethod: order.payment_method || order.paymentMethod || 'bank',
+        receiptUrl: order.receipt_url || order.receipt || order.payment_receipt || null
       }
     })
-    
-    console.log('Orders loaded:', orders.value)
   } catch (err) {
     error.value = err.message || 'Failed to load orders'
     console.error('Error fetching orders:', err)
@@ -337,12 +327,23 @@ const fetchOrders = async () => {
     loading.value = false
   }
 }
+let pollInterval = null
 
-// --- Load orders on mount ---
 onMounted(() => {
+
   fetchOrders()
+
+  pollInterval = setInterval(fetchOrders, 10000)
+
 })
 
+onUnmounted(() => {
+
+  if (pollInterval) clearInterval(pollInterval)
+
+})
+
+// --- Sort / Filter ---
 const toggleSort = () => {
   sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
 }
@@ -351,7 +352,7 @@ const setFilter = (key) => {
   activeFilter.value = key
 }
 
-// --- Computed Counts ---
+// --- Counts ---
 const counts = computed(() => ({
   all: orders.value.length,
   pending: orders.value.filter(o => o.status === 'pending').length,
@@ -360,13 +361,12 @@ const counts = computed(() => ({
 }))
 
 const statCards = computed(() => [
-  { key: 'all', icon: '📦', label: 'Total Orders', count: counts.value.all, color: '#4CAF50' },
-  { key: 'pending', icon: '⏳', label: 'Pending', count: counts.value.pending, color: '#FF9800' },
-  { key: 'delivering', icon: '🚚', label: 'Delivering', count: counts.value.delivering, color: '#2196F3' },
-  { key: 'completed', icon: '✓', label: 'Completed', count: counts.value.completed, color: '#8BC34A' },
+  { key: 'all',        icon: '📦', label: 'Total Orders', count: counts.value.all,        color: '#4CAF50' },
+  { key: 'pending',    icon: '⏳', label: 'Pending',       count: counts.value.pending,    color: '#FF9800' },
+  { key: 'delivering', icon: '🚚', label: 'Delivering',    count: counts.value.delivering, color: '#2196F3' },
+  { key: 'completed',  icon: '✓',  label: 'Completed',     count: counts.value.completed,  color: '#8BC34A' },
 ])
 
-// --- Filter Orders ---
 const filteredOrders = computed(() => {
   let result = orders.value
 
@@ -383,35 +383,49 @@ const filteredOrders = computed(() => {
     )
   }
 
-  result = [...result].sort((a, b) => {
+  return [...result].sort((a, b) => {
     const diff = a.createdAt - b.createdAt
     return sortOrder.value === 'desc' ? -diff : diff
   })
-
-  return result
 })
 
-const sectionTitle = computed(() => {
-  const map = {
-    all: 'All Orders',
-    pending: 'Pending Orders',
-    delivering: 'Delivering Orders',
-    completed: 'Completed Orders',
-  }
-  return map[activeFilter.value] || 'All Orders'
-})
+const sectionTitle = computed(() => ({
+  all: 'All Orders', pending: 'Pending Orders',
+  delivering: 'Delivering Orders', completed: 'Completed Orders',
+})[activeFilter.value] || 'All Orders')
 
-// --- Status Labels ---
-const getStatusLabel = (status) => {
-  const labels = {
-    pending: 'Pending',
-    delivering: 'Delivering',
-    completed: 'Completed',
+// --- Status Label ---
+const getStatusLabel = (status) => ({
+  pending: 'Pending', delivering: 'Delivering', completed: 'Completed'
+})[status] || status
+
+// --- Update Status ---
+const updateStatus = async (order, status) => {
+  try {
+    console.log('Updating order:', order.orderId, status)
+
+    await axios.patch(
+      `${API_BASE_URL}/orders/${order.orderId}/status`,
+      { status }
+    )
+
+    const local = orders.value.find(o => o.orderId === order.orderId)
+
+    if (local) local.status = status
+
+    if (selectedOrder.value?.orderId === order.orderId)
+
+      selectedOrder.value.status = status
+
+    await fetchOrders()
+    showToast('Order status updated successfully')
+  } catch (error) {
+    console.error('UPDATE ERROR:', error.response?.data || error.message)
+    showToast('Failed to update order status', 'error')
   }
-  return labels[status] || status
 }
 
-// --- Modal Functions ---
+// --- Modal Controls ---
 const openDetailModal = (order) => {
   selectedOrder.value = { ...order }
   showDetailModal.value = true
@@ -421,48 +435,31 @@ const closeDetailModal = () => {
   showDetailModal.value = false
   selectedOrder.value = null
 }
+const openReceipt = (url) => {
 
-const calculateSubtotal = () => {
-  if (!selectedOrder.value) return 0
-  return selectedOrder.value.items.reduce((sum, item) => sum + item.price, 0)
-}
+  const full = url.startsWith('http')
 
-// --- Search Functions ---
-const handleSearch = () => {}
+    ? url
 
-const clearSearch = () => {
-  searchQuery.value = ''
-}
+    : `${API_BASE_URL}${url}`
 
-// --- Toast Notification ---
-const toast = reactive({ show: false, message: '', type: 'success' })
-let toastTimer = null
+  window.open(full, '_blank')
 
-const showToast = (message, type = 'success') => {
-  if (toastTimer) clearTimeout(toastTimer)
-  toast.message = message
-  toast.type = type
-  toast.show = true
-  toastTimer = setTimeout(() => { toast.show = false }, 3000)
 }
 
 // --- Date Formatting ---
 const formatDate = (date) => {
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
+  if (!date) return 'N/A'
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric'
   })
 }
 
 const formatFullDate = (date) => {
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+  if (!date) return 'N/A'
+  return new Date(date).toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long',
+    day: 'numeric', hour: '2-digit', minute: '2-digit'
   })
 }
 </script>
@@ -483,7 +480,6 @@ const formatFullDate = (date) => {
   --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.12);
 }
 
-/* ===== LAYOUT ===== */
 .provider-orders {
   background: var(--color-bg-light);
   width: 100%;
@@ -513,9 +509,7 @@ const formatFullDate = (date) => {
   flex-direction: column;
 }
 
-:deep(.page-header) {
-  flex-shrink: 0;
-}
+:deep(.page-header) { flex-shrink: 0; }
 
 .content-wrapper {
   padding: 24px 28px;
@@ -525,7 +519,21 @@ const formatFullDate = (date) => {
   flex: 1;
 }
 
-/* ===== STATS GRID ===== */
+/* State boxes */
+.state-box {
+  text-align: center;
+  padding: 3rem;
+  background: var(--color-bg-white);
+  border-radius: 12px;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+}
+.error-box {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Stats */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -590,7 +598,7 @@ const formatFullDate = (date) => {
   letter-spacing: 0.2px;
 }
 
-/* ===== ORDERS SECTION ===== */
+/* Orders section */
 .orders-section {
   background: var(--color-bg-white);
   border-radius: 12px;
@@ -605,6 +613,28 @@ const formatFullDate = (date) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.result-count {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-light);
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-weight: 500;
 }
 
 .sort-btn {
@@ -630,48 +660,12 @@ const formatFullDate = (date) => {
   background: #f0f9f0;
 }
 
-.sort-btn svg:first-child {
-  width: 14px;
-  height: 14px;
-}
+.sort-btn svg:first-child { width: 14px; height: 14px; }
+.sort-arrow { width: 14px; height: 14px; transition: transform 0.2s ease; }
+.sort-arrow.flipped { transform: rotate(180deg); }
 
-.sort-arrow {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.2s ease;
-}
-
-.sort-arrow.flipped {
-  transform: rotate(180deg);
-}
-
-.header-left {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-}
-
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
-}
-
-.result-count {
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-  background: var(--color-bg-light);
-  padding: 4px 10px;
-  border-radius: 16px;
-  font-weight: 500;
-}
-
-/* ===== SEARCH BAR ===== */
-.search-bar {
-  position: relative;
-}
-
+/* Search */
+.search-bar { position: relative; }
 .search-icon {
   position: absolute;
   left: 12px;
@@ -692,12 +686,10 @@ const formatFullDate = (date) => {
   transition: all 0.2s;
   background: var(--color-bg-white);
   font-family: 'DM Sans', sans-serif;
+  box-sizing: border-box;
 }
 
-.search-input::placeholder {
-  color: #bbb;
-}
-
+.search-input::placeholder { color: #bbb; }
 .search-input:focus {
   outline: none;
   border-color: var(--color-primary);
@@ -715,7 +707,6 @@ const formatFullDate = (date) => {
   background: transparent;
   color: #999;
   cursor: pointer;
-  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -723,18 +714,10 @@ const formatFullDate = (date) => {
   padding: 0;
 }
 
-.clear-search-btn:hover {
-  color: var(--color-text-primary);
-  background: var(--color-bg-light);
-}
+.clear-search-btn:hover { color: var(--color-text-primary); background: var(--color-bg-light); }
+.clear-search-btn svg { width: 16px; height: 16px; }
 
-.clear-search-btn svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 2;
-}
-
-/* ===== TABLE ===== */
+/* Table */
 .table-container {
   overflow-x: auto;
   border: 1px solid var(--color-border);
@@ -764,16 +747,13 @@ const formatFullDate = (date) => {
   letter-spacing: 0.2px;
 }
 
-.orders-table th:first-child { text-align: left; }
-.orders-table th:nth-child(2) { text-align: left; }
-
-.orders-table th:nth-child(1) { width: 14.28%; }
-.orders-table th:nth-child(2) { width: 14.28%; }
-.orders-table th:nth-child(3) { width: 14.28%; }
-.orders-table th:nth-child(4) { width: 14.28%; }
-.orders-table th:nth-child(5) { width: 14.28%; }
-.orders-table th:nth-child(6) { width: 14.28%; }
-.orders-table th:nth-child(7) { width: 14.28%; }
+.orders-table th:nth-child(1) { width: 14.28%; text-align: left; }
+.orders-table th:nth-child(2) { width: 14.28%; text-align: left; }
+.orders-table th:nth-child(3) { width: 10%; }
+.orders-table th:nth-child(4) { width: 12%; }
+.orders-table th:nth-child(5) { width: 16%; }
+.orders-table th:nth-child(6) { width: 14%; }
+.orders-table th:nth-child(7) { width: 12%; }
 
 .order-row {
   border-bottom: 1px solid var(--color-border);
@@ -782,25 +762,20 @@ const formatFullDate = (date) => {
 }
 
 .order-row:hover { background: var(--color-bg-light); }
-.order-row.status-pending { border-left-color: var(--color-pending); }
+.order-row.status-pending    { border-left-color: var(--color-pending); }
 .order-row.status-delivering { border-left-color: var(--color-delivering); }
-.order-row.status-completed { border-left-color: var(--color-completed); }
+.order-row.status-completed  { border-left-color: var(--color-completed); }
 
-.order-row td {
-  padding: 12px;
-  vertical-align: middle;
-  color: var(--color-text-primary);
-}
-
+.order-row td { padding: 12px; vertical-align: middle; color: var(--color-text-primary); }
 .col-order-id { text-align: left; }
 .col-customer { text-align: left; }
-.col-items { text-align: center; }
-.col-total { text-align: center; }
-.col-date { text-align: center; }
-.col-status { text-align: center; }
-.col-action { text-align: center; }
+.col-items    { text-align: center; }
+.col-total    { text-align: center; }
+.col-date     { text-align: center; }
+.col-status   { text-align: center; }
+.col-action   { text-align: center; }
 
-.col-order-id .id-badge {
+.id-badge {
   display: inline-block;
   padding: 5px 8px;
   background: var(--color-bg-light);
@@ -812,26 +787,11 @@ const formatFullDate = (date) => {
   white-space: nowrap;
 }
 
-.col-customer .customer-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+.customer-info { display: flex; flex-direction: column; gap: 2px; }
+.customer-name { font-weight: 500; color: var(--color-text-primary); font-size: 0.9rem; }
+.customer-id { font-size: 0.7rem; color: var(--color-text-secondary); }
 
-.customer-name {
-  display: block;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-}
-
-.customer-id {
-  display: block;
-  font-size: 0.7rem;
-  color: var(--color-text-secondary);
-}
-
-.col-items .item-count {
+.item-count {
   display: inline-block;
   padding: 4px 10px;
   background: #e3f2fd;
@@ -839,36 +799,29 @@ const formatFullDate = (date) => {
   border-radius: 12px;
   font-weight: 600;
   font-size: 0.8rem;
-  text-align: center;
   min-width: 35px;
+  text-align: center;
 }
 
-.col-total .price {
+.price { font-weight: 600; color: var(--color-primary); font-size: 0.95rem; }
+.col-date { color: var(--color-text-secondary); font-size: 0.85rem; white-space: nowrap; }
+
+/* Status buttons */
+.btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-primary);
-  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.col-date {
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 5px 10px;
-  border-radius: 14px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.2px;
-  white-space: nowrap;
-}
-
-.badge-pending   { background: #fff3e0; color: #e65100; }
-.badge-delivering { background: #e3f2fd; color: #1565c0; }
-.badge-completed  { background: #e8f5e9; color: #2e7d32; }
+.btn-pending { background: #FF9800; color: white; }
+.btn-pending:hover { background: #F57C00; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3); }
+.btn-delivering { background: #2196F3; color: white; }
+.btn-delivering:hover { background: #1976D2; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3); }
+.done-text { font-size: 0.75rem; font-weight: 700; color: #4CAF50; }
 
 .btn-view-detail {
   display: inline-flex;
@@ -890,48 +843,17 @@ const formatFullDate = (date) => {
   box-shadow: 0 2px 6px rgba(33, 150, 243, 0.2);
 }
 
-.btn-view-detail:hover {
-  background: #1976D2;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
-}
+.btn-view-detail:hover { background: #1976D2; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3); }
+.btn-view-detail svg { width: 13px; height: 13px; }
 
-.btn-view-detail svg {
-  width: 13px;
-  height: 13px;
-}
+/* Empty state */
+.empty-row td { padding: 0; border: none; }
+.empty-state { padding: 60px 20px; text-align: center; color: var(--color-text-secondary); }
+.empty-state svg { width: 56px; height: 56px; margin-bottom: 16px; opacity: 0.5; }
+.empty-state h3 { font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin: 8px 0 4px; }
+.empty-state p { font-size: 0.85rem; margin: 0; }
 
-.empty-row td {
-  padding: 0;
-  border: none;
-}
-
-.empty-state {
-  padding: 60px 20px;
-  text-align: center;
-  color: var(--color-text-secondary);
-}
-
-.empty-state svg {
-  width: 56px;
-  height: 56px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.empty-state h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 8px 0 4px;
-}
-
-.empty-state p {
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-/* ===== MODAL ===== */
+/* Modal Styles */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -956,45 +878,22 @@ const formatFullDate = (date) => {
 }
 
 @keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ===== MODAL HEADER ===== */
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   padding: 20px 24px;
   border-bottom: 1px solid #e8eaed;
-  background: #ffffff;
   border-radius: 14px 14px 0 0;
 }
 
-.modal-title-section {
-  flex: 1;
-}
-
-.modal-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0 0 3px 0;
-}
-
-.modal-subtitle {
-  font-size: 0.8rem;
-  color: #999;
-  margin: 0;
-  font-family: 'Courier New', monospace;
-  font-weight: 600;
-}
+.modal-title-section { flex: 1; }
+.modal-title { font-size: 1.2rem; font-weight: 700; color: var(--color-text-primary); margin: 0 0 3px 0; }
+.modal-subtitle { font-size: 0.8rem; color: #999; margin: 0; font-family: 'Courier New', monospace; font-weight: 600; }
 
 .modal-close-btn {
   width: 32px;
@@ -1012,17 +911,9 @@ const formatFullDate = (date) => {
   flex-shrink: 0;
 }
 
-.modal-close-btn:hover {
-  background: #ebebeb;
-  color: #1a1a1a;
-}
+.modal-close-btn:hover { background: #ebebeb; color: #1a1a1a; }
+.modal-close-btn svg { width: 16px; height: 16px; }
 
-.modal-close-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* ===== MODAL BODY ===== */
 .modal-body {
   background: #f8f9fb;
   padding: 20px 24px 24px;
@@ -1032,7 +923,6 @@ const formatFullDate = (date) => {
   border-radius: 0 0 14px 14px;
 }
 
-/* ===== INFO CARDS ===== */
 .info-card {
   background: #ffffff;
   border-radius: 10px;
@@ -1043,7 +933,7 @@ const formatFullDate = (date) => {
 
 .card-customer { border-left-color: #4CAF50; }
 .card-order    { border-left-color: #2196F3; }
-.card-products { border-left-color: #FF9800; }
+.card-receipt  { border-left-color: #1e3a8a; }
 
 .card-title {
   font-size: 0.72rem;
@@ -1054,154 +944,68 @@ const formatFullDate = (date) => {
   margin: 0 0 12px 0;
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.info-item { display: flex; flex-direction: column; gap: 3px; }
+.info-label { font-size: 0.68rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
+.info-value { font-size: 0.9rem; color: var(--color-text-primary); font-weight: 500; }
 
-.info-item {
+/* ✅ Receipt CSS Elements */
+.receipt-wrapper {
+  margin-top: 4px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  width: 100%;
 }
 
-.info-label {
-  font-size: 0.68rem;
-  color: #aaa;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  font-weight: 600;
-}
-
-.info-value {
-  font-size: 0.9rem;
-  color: var(--color-text-primary);
-  font-weight: 500;
-}
-
-/* ===== PRODUCTS ===== */
-.products-list {
+.receipt-container {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
 
-.product-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
-  background: #f8f9fb;
+.receipt-preview-img {
+  max-width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  cursor: pointer;
+  background: #fff;
+  transition: transform 0.2s ease;
+}
+
+.receipt-preview-img:hover {
+  transform: scale(1.02);
+}
+
+.receipt-hint {
+  font-size: 11px;
+  color: #64748b;
+  margin: 0;
+}
+
+.no-receipt-error {
+  padding: 12px;
+  background: #fff1f2;
+  border: 1px dashed #fecdd3;
+  color: #be123c;
+  font-size: 13px;
   border-radius: 8px;
-  border: 1px solid #e8eaed;
+  text-align: center;
 }
 
-.product-image {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border: 1px solid #e8eaed;
-}
+/* Summary */
+.summary-card { background: #ffffff; border-left: none !important; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; }
+.summary-row.total { border-top: 1.5px solid #e8eaed; padding-top: 12px; }
+.summary-label { color: var(--color-text-secondary); font-weight: 500; font-size: 0.88rem; }
+.summary-row.total .summary-label { font-weight: 700; color: var(--color-text-primary); font-size: 0.95rem; }
+.summary-value { font-weight: 600; color: var(--color-text-primary); font-size: 0.9rem; }
+.summary-row.total .summary-value { font-weight: 700; color: var(--color-primary); font-size: 1rem; }
 
-.product-emoji {
-  font-size: 1.4rem;
-}
-
-.product-details {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.product-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.product-id {
-  font-weight: 600;
-  color: var(--color-text-primary);
-  font-family: 'Courier New', monospace;
-  font-size: 0.78rem;
-}
-
-.product-price {
-  font-weight: 700;
-  color: var(--color-primary);
-  font-size: 0.9rem;
-}
-
-.product-specs {
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
-}
-
-.spec {
-  display: inline-block;
-  padding: 2px 6px;
-  background: #ffffff;
-  border-radius: 3px;
-  font-weight: 500;
-  border: 1px solid #e8eaed;
-}
-
-/* ===== SUMMARY ===== */
-.summary-card {
-  background: #ffffff;
-  border-left: none !important;
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 9px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.summary-row:last-child {
-  border-bottom: none;
-  padding-top: 12px;
-}
-
-.summary-row.total {
-  padding: 12px 0 0;
-  border-top: 1.5px solid #e8eaed;
-}
-
-.summary-label {
-  color: var(--color-text-secondary);
-  font-weight: 500;
-  font-size: 0.88rem;
-}
-
-.summary-row.total .summary-label {
-  font-weight: 700;
-  color: var(--color-text-primary);
-  font-size: 0.95rem;
-}
-
-.summary-value {
-  font-weight: 600;
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-}
-
-.summary-row.total .summary-value {
-  font-weight: 700;
-  color: var(--color-primary);
-  font-size: 1rem;
-}
-
-/* ===== STATUS BAR (read-only, no buttons) ===== */
+/* Status bar */
 .modal-status-bar {
   display: flex;
   align-items: center;
@@ -1212,15 +1016,13 @@ const formatFullDate = (date) => {
   border: 1px solid #e8eaed;
 }
 
-.status-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #aaa;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
+.status-label { font-size: 0.72rem; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
+.status-badge { display: inline-block; padding: 5px 12px; border-radius: 14px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+.badge-pending    { background: #fff3e0; color: #e65100; }
+.badge-delivering { background: #e3f2fd; color: #1565c0; }
+.badge-completed  { background: #e8f5e9; color: #2e7d32; }
 
-/* ===== TOAST ===== */
+/* Toast */
 .toast {
   position: fixed;
   bottom: 24px;
@@ -1231,58 +1033,27 @@ const formatFullDate = (date) => {
   font-weight: 600;
   color: white;
   z-index: 9999;
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
+.toast-success { background: #4CAF50; }
+.toast-error { background: #F44336; }
+.toast-enter-active, .toast-leave-active { transition: all 0.2s; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(20px); }
 
-.toast-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
+/* Transitions */
+.modal-enter-active, .modal-leave-active { transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.97); }
+.toast-enter-active, .toast-leave-active { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(20px) translateX(100px); }
 
-.toast-success { background: var(--color-completed); }
-.toast-error   { background: #F44336; }
-.toast-warning { background: var(--color-pending); }
-
-/* ===== TRANSITIONS ===== */
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-  transform: scale(0.97);
-}
-
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateY(20px) translateX(100px);
-}
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 1024px) {
-  .content-wrapper { padding: 20px 24px; }
-  .orders-section { padding: 20px; }
-}
-
+/* Responsive */
+@media (max-width: 1024px) { .content-wrapper { padding: 20px 24px; } .orders-section  { padding: 20px; } }
 @media (max-width: 768px) {
   .sidebar-wrapper { display: none; }
   .content-wrapper { padding: 16px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .stat-card { padding: 12px; }
+  .stat-card  { padding: 12px; }
   .stat-number { font-size: 1.2rem; }
-  .section-header { flex-direction: column; align-items: flex-start; }
+  .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
   .orders-table th, .orders-table td { padding: 10px; }
   .btn-view-detail { padding: 5px 8px; font-size: 0.65rem; }
   .modal-content { max-height: 95vh; }
@@ -1292,13 +1063,13 @@ const formatFullDate = (date) => {
 @media (max-width: 480px) {
   .content-wrapper { padding: 12px; gap: 16px; }
   .stats-grid { grid-template-columns: 1fr; gap: 10px; }
-  .stat-card { padding: 10px; }
-  .stat-icon { width: 40px; height: 40px; font-size: 1.2rem; }
+  .stat-card  { padding: 10px; }
+  .stat-icon  { width: 40px; height: 40px; font-size: 1.2rem; }
   .orders-table { font-size: 0.8rem; }
   .orders-table th, .orders-table td { padding: 8px; }
-  .btn-view-detail { padding: 4px 6px; font-size: 0.6rem; }
+  .btn-view-detail { padding: 4px 6px; font-size: 0.6amp; }
   .modal-content { max-width: 95vw; }
   .modal-header { padding: 14px 16px; }
-  .modal-body { padding: 14px 16px 18px; gap: 10px; }
+  .modal-body   { padding: 14px 16px 18px; gap: 10px; }
 }
 </style>

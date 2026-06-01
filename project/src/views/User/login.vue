@@ -118,7 +118,7 @@ async function handleLogin() {
   if (!validate()) { triggerShake(); return }
   loading.value = true
   try {
-    const { data } = await axios.post('http://localhost:3000/auth/login', { email: email.value, password: password.value })
+    const { data } = await axios.post(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/auth/login`, { email: email.value, password: password.value })
     const user = data?.user; const token = data?.token || data?.access_token
     if (!user || !token) throw new Error('Invalid login response')
     let role = user.role

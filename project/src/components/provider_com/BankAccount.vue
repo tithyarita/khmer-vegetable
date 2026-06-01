@@ -3,7 +3,7 @@ import { ref, watch } from "vue"
 import { useProviderStore } from "@/stores/providerStore"
 import axios from "axios"
 
-const BASE = "http://localhost:3000"
+const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 const store = useProviderStore()
 
@@ -40,6 +40,7 @@ const syncBanks = () => {
   localBanks.value =
     (store.provider.banks ?? []).map((b) => ({
       ...b,
+      type: b.type || 'aba',
       qr: fullUrl(b.qr),
     }))
 }
@@ -52,6 +53,16 @@ watch(
   { deep: true }
 )
 
+// ADD BANK
+function addBank() {
+  localBanks.value.push({
+    name: '',
+    account: '',
+    qr: '',
+    type: 'aba',
+    holder_name: '',
+  })
+}
 // ===================================
 // EDIT MODE
 // ===================================
@@ -66,39 +77,48 @@ function cancelEdit() {
   bankEditing.value = false
 }
 
-function addBank() {
-  localBanks.value.push({
-    name: "",
-    account: "",
-    qr: "",
-  })
-}
-
-function removeBank(index) {
-  localBanks.value.splice(index, 1)
-}
-
 // ===================================
 // SAVE BANKS
 // ===================================
 
 async function saveBanks() {
+  console.log('localBanks:', JSON.stringify(localBanks.value))
+
+  const invalid = localBanks.value.some(b => {
+    if (!b.type) return true
+    if (!b.account) return true
+    if (!b.holder_name) return true
+    return false
+  })
+
+  console.log('invalid:', invalid)
+
+  if (invalid) {
+    alert("Please fill in all required fields (type, account number, holder name)")
+    return
+  }
+
+  const banksToSave = localBanks.value.map(b => ({
+    ...b,
+    qr: b.qr ? b.qr.replace(BASE, '') : null,
+  }))
+
+  console.log('banksToSave:', JSON.stringify(banksToSave)) // ADD THIS
+
   try {
-    await store.updateProvider({
-      banks: localBanks.value,
-    })
-
+    await store.updateProvider({ banks: banksToSave })
     bankEditing.value = false
-
     alert("Bank accounts updated!")
   } catch (err) {
-    console.error(err)
-
-    alert(
-      "Failed to save banks: " +
-      (err.response?.data?.message || err.message)
-    )
+    console.error('Full error:', err)
+    console.error('Response data:', err.response?.data)   // ← ADD
+    console.error('Response status:', err.response?.status) // ← ADD
+    console.error('Response headers:', err.response?.headers) // ← ADD
+    alert("Save failed: " + JSON.stringify(err.response?.data)) // ← CHANGE
   }
+}
+function removeBank(index) {
+  localBanks.value.splice(index, 1)
 }
 
 // ===================================
@@ -189,16 +209,52 @@ async function handleQrUpload(e, index) {
         class="bank-add-row"
       >
         <div class="bank-fields">
+
           <div class="form-field">
-            <label>Bank Name</label>
-            <input v-model="bank.name" type="text" placeholder="e.g. ABA Bank" />
+            <label>Payment Type</label>
+
+            <select v-model="bank.type">
+              <option value="aba">ABA QR Payment</option>
+              <option value="visa">Visa Card</option>
+              <option value="mastercard">Master Card</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label>
+              {{ bank.type === 'aba' ? 'Account Number' : 'Card Number' }}
+            </label>
+            <input
+              v-model="bank.account"
+              type="text"
+              :placeholder="bank.type === 'aba' ? 'e.g. 001-234-567' : 'e.g. 4111 1111 1111 1111'"
+            />
+          </div>
+          
+          <div class="form-field">
+            <label>Bank / Card Name</label>
+            <input
+              v-model="bank.name"
+              type="text"
+              placeholder="e.g. ABA Bank, Visa"
+            />
           </div>
           <div class="form-field">
-            <label>Account Number</label>
-            <input v-model="bank.account" type="text" placeholder="e.g. 001-234-567" />
+            <label>Holder Name</label>
+
+            <input
+              v-model="bank.holder_name"
+              type="text"
+              placeholder="John Doe"
+            />
           </div>
-          <div class="form-field full">
+
+          <div
+            v-if="bank.type === 'aba'"
+            class="form-field full"
+          >
             <label>QR Code Image</label>
+
             <div class="qr-upload-row">
               <input
                 :ref="el => qrInputRefs[i] = el"
@@ -207,21 +263,27 @@ async function handleQrUpload(e, index) {
                 style="display: none"
                 @change="e => handleQrUpload(e, i)"
               />
+            
               <div v-if="bank.qr" class="qr-preview-wrap">
                 <img
                   :src="bank.qr"
                   alt="QR Preview"
                   class="qr-preview-img"
-                  @error="e => e.target.style.display = 'none'"
                 />
-                <button class="qr-change-btn" @click="qrInputRefs[i]?.click()">
+              
+                <button
+                  class="qr-change-btn"
+                  @click="qrInputRefs[i]?.click()"
+                >
                   Change QR
                 </button>
               </div>
-              <button v-else class="qr-upload-btn" @click="qrInputRefs[i]?.click()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-                </svg>
+            
+              <button
+                v-else
+                class="qr-upload-btn"
+                @click="qrInputRefs[i]?.click()"
+              >
                 Upload QR Image
               </button>
             </div>
@@ -255,7 +317,14 @@ async function handleQrUpload(e, index) {
   color: #2e7d32;
   margin: 0 0 18px;
 }
-
+select {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  background: #fafafa;
+  outline: none;
+}
 .empty-text { font-size: 13px; color: #9ca3af; margin-bottom: 16px; }
 
 /* VIEW MODE */

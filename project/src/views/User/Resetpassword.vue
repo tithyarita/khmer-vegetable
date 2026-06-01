@@ -89,7 +89,7 @@ async function handleReset() {
   error.value = ''
 
   try {
-    await axios.post('http://localhost:3000/auth/reset-password', {
+    await axios.post(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/auth/reset-password`, {
       token,
       password: password.value,
     })

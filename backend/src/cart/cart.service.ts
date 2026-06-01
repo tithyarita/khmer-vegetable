@@ -19,12 +19,18 @@ export class CartService {
   async getUserCart(userId: number): Promise<Cart[]> {
     return this.cartRepository.find({
       where: { user: { id: userId } },
-      relations: ['user', 'product'],
+      relations: ['user', 'product', 'product.provider'],
     });
   }
 
-  async addToCart(userId: number, productId: number, quantity: number): Promise<Cart> {
-    const product = await this.productRepository.findOne({ where: { id: productId } });
+  async addToCart(
+    userId: number,
+    productId: number,
+    quantity: number,
+  ): Promise<Cart> {
+    const product = await this.productRepository.findOne({
+      where: { id: productId },
+    });
     if (!product) {
       throw new Error('Product not found');
     }
@@ -49,7 +55,11 @@ export class CartService {
     }
   }
 
-  async updateCartItem(userId: number, productId: number, quantity: number): Promise<any> {
+  async updateCartItem(
+    userId: number,
+    productId: number,
+    quantity: number,
+  ): Promise<any> {
     const cartItem = await this.cartRepository.findOne({
       where: { user: { id: userId }, product: { id: productId } },
       relations: ['user', 'product'],
@@ -85,7 +95,10 @@ export class CartService {
   async getCartSummary(userId: number): Promise<any> {
     const cartItems = await this.getUserCart(userId);
     const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-    const totalPrice = cartItems.reduce((sum, item) => sum + (item.quantity * (item.unit_price as any)), 0);
+    const totalPrice = cartItems.reduce(
+      (sum, item) => sum + item.quantity * (item.unit_price as any),
+      0,
+    );
 
     return {
       items: cartItems,

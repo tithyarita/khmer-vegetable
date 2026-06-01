@@ -59,6 +59,8 @@
           </div>
           <div class="summary-card">
             <div class="summary-title">Items in Cart</div>
+
+            <div class="summary-value">{{ userStore.cart.length }} <span class="summary-change">items waiting</span></div>
             <div class="summary-value">{{ cartStore.cartCount }} <span class="summary-change">items waiting</span></div>
           </div>
         </section>
@@ -193,7 +195,7 @@ async function saveProfile() {
   savingProfile.value = true
   try {
     // Replace with your actual backend endpoint
-    const res = await axios.put(`http://localhost:3000/users/${user.id}`, editForm.value, {
+    const res = await axios.put(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.id}`, editForm.value, {
       headers: { Authorization: `Bearer ${userStore.token}` }
     })
     // Update user in store
@@ -209,7 +211,7 @@ onMounted(async () => {
   if (user && user.id) {
     try {
       // Replace with your actual backend endpoint
-      const res = await axios.get(`http://localhost:3000/users/${user.id}/orders`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.id}/orders`, {
         headers: { Authorization: `Bearer ${userStore.token}` }
       })
       orders.value = res.data
