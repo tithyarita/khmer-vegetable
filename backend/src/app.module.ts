@@ -18,7 +18,6 @@ import { AddressModule } from './address/address.module';
 import { AppService } from './app.service';
 import { MailModule } from './mail/mail.module';
 import { OrdersModule } from './users/orders.module';
-import { ReviewModule } from './review/review.module';
 import { ReportModule } from './report/report.module';
 
 @Module({

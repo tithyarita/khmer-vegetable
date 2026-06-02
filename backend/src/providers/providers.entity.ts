@@ -94,6 +94,4 @@ export class Provider {
   })
   banks!: ProviderBank[];
 
-  @OneToMany(() => Review, (review) => review.provider)
-  reviews!: Review[];
 }
