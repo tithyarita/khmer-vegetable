@@ -12,15 +12,13 @@
       </div>
     </div>
 
-    <!-- SUMMARY (NOW DYNAMIC) -->
+
     <div class="summary-row">
       <div class="summary-card">
         <div class="icon-box"><span>📦</span></div>
         <div>
           <div class="summary-label">TOTAL ORDERS</div>
-          <div class="summary-value">
-            {{ totalOrders }}
-          </div>
+          <div class="summary-value">2,482 <span class="summary-change">+12%</span></div>
         </div>
       </div>
 
@@ -28,9 +26,7 @@
         <div class="icon-box"><span>⏳</span></div>
         <div>
           <div class="summary-label">PENDING ORDERS</div>
-          <div class="summary-value pending">
-            {{ pendingOrders }}
-          </div>
+          <div class="summary-value pending">128 <span class="summary-pending">Queueing</span></div>
         </div>
       </div>
 
@@ -38,9 +34,7 @@
         <div class="icon-box"><span>✅</span></div>
         <div>
           <div class="summary-label">COMPLETED</div>
-          <div class="summary-value">
-            {{ completedOrders }}
-          </div>
+          <div class="summary-value">2,240 <span class="summary-sub">90.2%</span></div>
         </div>
       </div>
 
@@ -48,38 +42,32 @@
         <div class="icon-box"><span>💰</span></div>
         <div>
           <div class="summary-label">TOTAL REVENUE</div>
-          <div class="summary-value">
-            ${{ totalRevenue.toFixed(2) }}
-          </div>
+          <div class="summary-value">$124,500</div>
         </div>
       </div>
     </div>
-
-    <!-- FILTER -->
     <div class="filter-bar">
       <select v-model="status" class="status-filter">
         <option>All Statuses</option>
-        <option>pending</option>
-        <option>completed</option>
-        <option>shipped</option>
-        <option>delivering</option>
+        <option>Delivering</option>
+        <option>Pending</option>
+        <option>Confirmed</option>
+        <!-- <option>Shipped</option> -->
+        <!-- <option>Cancelled</option> -->
       </select>
-
-      <button class="clear-filter-btn" @click="clearFilter">
-        Clear Filters
-      </button>
+      <input type="text" class="date-filter" placeholder="Oct 01, 2023 - Oct 31, 2023" />
+      <button class="clear-filter-btn">Clear Filters</button>
     </div>
-
-    <!-- TABLE -->
     <div class="main-content">
       <div v-if="loading" class="loading-state">
         <p>Loading orders...</p>
       </div>
-
       <div v-else-if="error" class="error-state">
-        <p>{{ error }}</p>
+        <p>Error: {{ error }}</p>
       </div>
-
+      <div v-else-if="orders.length === 0" class="empty-state">
+        <p>No orders found</p>
+      </div>
       <div v-else class="table-section">
         <table class="orders-table">
           <thead>
@@ -91,120 +79,254 @@
               <th>STATUS</th>
             </tr>
           </thead>
-
           <tbody>
-            <tr
-              v-for="order in paginatedOrders"
-              :key="order.id"
-              @click="selectOrder(order)"
-              :class="{ selected: selectedOrder?.id === order.id }"
-            >
-              <td>#ORD-{{ order.id }}</td>
-              <td>{{ order.customer }}</td>
+            <tr v-for="order in paginatedOrders" :key="order.id" :class="{selected: order.id === selectedOrder?.id}" @click="selectOrder(order)">
+              <td><span class="order-id">#ORD-{{ order.id }}</span></td>
+              <td>
+                <div class="customer-cell">
+                  <span class="customer-avatar" :style="{background: order.customerColor}">{{ order.customerInitials }}</span>
+                  <div>
+                    <span>{{ order.customer }}</span>
+                    <span v-if="order.customerRawId === 9" class="customer-id">#C{{ order.customerRawId }}</span>
+                  </div>
+                </div>
+              </td>
               <td>{{ order.provider }}</td>
-              <td>${{ order.total }}</td>
-              <td>{{ order.status }}</td>
+              <td>{{ order.price }}</td>
+              <td class="col-status" @click.stop>
+                <!-- STEP 1: pending → delivering -->
+                <button
+                  v-if="order.status === 'pending'"
+                  class="btn btn-pending"
+                  @click="updateStatus(order, 'delivering')"
+                >
+                  Pending
+                </button>
+              
+                <!-- STEP 2: delivering → completed -->
+                <button
+                  v-else-if="order.status === 'delivering'"
+                  class="btn btn-delivering"
+                  @click="updateStatus(order, 'completed')"
+                >
+                  Delivering
+                </button>
+              
+                <!-- STEP 3: completed - no more clicks -->
+                <span v-else class="done-text">✓ Completed</span>
+              </td>
             </tr>
           </tbody>
         </table>
+        <div class="pagination-row">
+          <span>SHOWING {{ (page - 1) * pageSize + 1 }}-{{ Math.min(page * pageSize, filteredOrders.length) }} OF {{ filteredOrders.length }}</span>
+          <div class="pagination">
+            <button :disabled="page === 1" @click="page--">&lt;</button>
+            <button v-for="p in totalPages" :key="p" :class="{active: p === page}" @click="page = p">{{ p }}</button>
+            <button :disabled="page === totalPages" @click="page++">&gt;</button>
+          </div>
+        </div>
+      </div>
+      <div class="details-section" v-if="selectedOrder">
+        <div class="details-card">
+          <div class="details-header">
+            <span class="details-order-id">#ORD-{{ selectedOrder.id }}</span>
+            <span class="details-date">{{ formatDate(selectedOrder.createdAt) }}</span>
+            <span class="details-status" :class="selectedOrder.status">{{ selectedOrder.status.toUpperCase() }}</span>
+          </div>
+          <div class="details-customer">
+            <span class="customer-avatar" :style="{background: selectedOrder.customerColor}">{{ selectedOrder.customerInitials }}</span>
+            <div>
+              <div class="customer-name">{{ selectedOrder.customer }}</div>
+              <div v-if="selectedOrder.customerRawId === 9" class="customer-id">#C{{ selectedOrder.customerRawId }}</div>
+              <div class="customer-phone">+1 555-0123</div>
+              <div class="customer-address">123 Maple St, Harvest Village</div>
+            </div>
+          </div>
+          <div class="details-provider">
+            <span class="provider-label">FARM PROVIDER</span>
+            <span class="provider-name">{{ selectedOrder.provider }}</span>
+          </div>
+          <div class="details-items">
+            <div class="item-row" v-for="item in selectedOrder.items" :key="item.name">
+              <span>{{ item.name }}</span>
+              <span>{{ item.qty }} x {{ item.price }}</span>
+              <span class="item-total">${{ (item.qty * parseFloat(item.price.replace('$',''))).toFixed(2) }}</span>
+            </div>
+          </div>
+          <div class="details-total-row">
+            <span>Total</span>
+            <span class="details-total">${{ selectedOrder.items.reduce((sum, item) => sum + item.qty * parseFloat(item.price.replace('$','')), 0).toFixed(2) }}</span>
+          </div>
+          <div class="details-timeline">
+            <div class="timeline-label">JOURNEY TIMELINE</div>
+            <ul>
+              <li><b>Ordered</b> <span>Oct 24 - 2:45 PM</span></li>
+              <li><b>Shipped</b> <span>Oct 25 - 9:00 AM</span></li>
+              <li class="delivered"><b>Delivered</b> <span>Oct 26 - 4:30 PM</span></li>
+            </ul>
+          </div>
+          <div class="details-actions">
+            <button class="print-btn">Print</button>
+            <button class="cancel-btn">Cancel</button>
+          </div>
+        </div>
+
       </div>
     </div>
+    <transition name="toast">
+      <div v-if="toast.show" class="toast" :class="`toast-${toast.type}`">
+        {{ toast.message }}
+      </div>
+    </transition>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 
-const API = 'http://localhost:3000'
-
+const API_BASE_URL = 'http://localhost:3000'
+const status = ref('All Statuses')
+const page = ref(1)
+const pageSize = 10
 const orders = ref([])
 const loading = ref(false)
 const error = ref(null)
 
-const status = ref('All Statuses')
-const selectedOrder = ref(null)
+const toast = reactive({ show: false, message: '', type: 'success' });
 
-/* -----------------------
-   FETCH ORDERS
-------------------------*/
+let toastTimer = null
+
+const showToast = (message, type = 'success') => {
+
+  if (toastTimer) clearTimeout(toastTimer)
+
+  toast.message = message
+
+  toast.type = type
+
+  toast.show = true
+
+  toastTimer = setTimeout(() => { toast.show = false }, 3000)
+
+}
+// --- Fetch All Orders from API ---
 const fetchOrders = async () => {
   loading.value = true
+  error.value = null
   try {
-    const res = await axios.get(`${API}/orders`)
+    const response = await axios.get(`${API_BASE_URL}/orders`)
+    console.log('RAW ORDERS:', response.data)  // ← ADD THIS
+    
+    // Transform API response to match component structure
+    orders.value = response.data.map(order => {
+      const customerRawId = order.customer?.id ?? order.customer_id
+      const customerName = order.customer?.name || `Customer ${order.customer_id}`
+      const initials = (customerName || '')
+        .split(' ')
+        .map(part => part.charAt(0))
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || `C${customerRawId}`
 
-    orders.value = res.data.map(o => ({
-      id: o.id,
-      customer: o.customer?.name || 'Unknown',
-      provider: o.provider?.provider_name || 'Unknown',
-      total: Number(o.total || 0),
-      status: o.status
-    }))
-  } catch (e) {
-    error.value = 'Failed to load orders'
+      return {
+        id: order.id,
+        customerRawId,
+        customer: customerName,
+        customerInitials: initials,
+        customerColor: '#e0e7ff',
+        provider: order.provider?.provider_name || `Provider ${order.provider_id}`,
+        price: `$${parseFloat(order.total).toFixed(2)}`,
+        // status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
+        status: order.status, 
+        statusClass: order.status.toLowerCase(),
+        items: [], // Will be populated when order_items API is connected
+        item: order.item || 1,
+        orderCode: order.order_code,
+        createdAt: new Date(order.created_at),
+        completedAt: order.completed_at ? new Date(order.completed_at) : null
+      }
+    })
+    
+    console.log('Orders loaded:', orders.value)
+  } catch (err) {
+    error.value = err.message || 'Failed to load orders'
+    console.error('Error fetching orders:', err)
   } finally {
     loading.value = false
   }
 }
 
-/* -----------------------
-   FILTERED ORDERS
-------------------------*/
-const filteredOrders = computed(() => {
-  if (status.value === 'All Statuses') return orders.value
-  return orders.value.filter(o => o.status === status.value)
+// --- Load orders on mount ---
+let pollInterval = null
+onMounted(() => {
+  fetchOrders()
+
+  pollInterval = setInterval(fetchOrders, 10000)
+  
 })
 
-/* -----------------------
-   SUMMARY CALCULATIONS
-------------------------*/
-const totalOrders = computed(() => filteredOrders.value.length)
+onUnmounted(() => {
 
-const pendingOrders = computed(() =>
-  filteredOrders.value.filter(o => o.status === 'pending').length
-)
+  if (pollInterval) clearInterval(pollInterval)
 
-const completedOrders = computed(() =>
-  filteredOrders.value.filter(o => o.status === 'completed').length
-)
+})
+const filteredOrders = computed(() => {
+  let result = orders.value
+  if (status.value !== 'All Statuses') {
+    result = result.filter(o => o.status === status.value)
+  }
+  return result
+})
 
-const totalRevenue = computed(() =>
-  filteredOrders.value.reduce((sum, o) => sum + o.total, 0)
-)
-
-/* -----------------------
-   PAGINATION
-------------------------*/
-const page = ref(1)
-const pageSize = 10
-
+const totalPages = computed(() => Math.ceil(filteredOrders.value.length / pageSize))
 const paginatedOrders = computed(() => {
   const start = (page.value - 1) * pageSize
   return filteredOrders.value.slice(start, start + pageSize)
 })
 
-/* -----------------------
-   ACTIONS
-------------------------*/
-const selectOrder = (order) => {
+const selectedOrder = ref(null)
+function selectOrder(order) {
   selectedOrder.value = order
 }
 
-const clearFilter = () => {
-  status.value = 'All Statuses'
+const formatDate = (date) => {
+  if (!date) return 'N/A'
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
+// In updateStatus function
+const updateStatus = async (order, newStatus) => {
+  try {
+    console.log('Updating order:', order.id, 'to status:', newStatus)
+    await axios.patch(`${API_BASE_URL}/orders/${order.id}/status`, {
+      status: newStatus
+    })
+    const local = orders.value.find(o => o.id === order.id)
 
-/* -----------------------
-   WATCH FILTER
-------------------------*/
-watch(status, () => {
-  page.value = 1
-})
+    if (local) local.status = newStatus
 
-/* -----------------------
-   INIT
-------------------------*/
-onMounted(fetchOrders)
+    if (selectedOrder.value?.id === order.id)
+
+      selectedOrder.value.status = newStatus
+    await fetchOrders()
+
+      if (selectedOrder.value?.id === order.id) {
+        selectedOrder.value.status = newStatus
+      }
+    showToast('Status updated successfully', 'success')
+  } catch (err) {
+    console.error('Update failed:', err.response?.data || err.message)
+    showToast('Failed to update status', 'error')
+  }
+}
 </script>
 
 <style scoped>
@@ -399,6 +521,43 @@ onMounted(fetchOrders)
   font-weight: 700;
   color: #222;
   margin-right: 0.5rem;
+}
+.btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-pending {
+  background: #FF9800;
+  color: white;
+}
+
+.btn-pending:hover {
+  background: #F57C00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
+}
+
+.btn-delivering {
+  background: #2196F3;
+  color: white;
+}
+
+.btn-delivering:hover {
+  background: #1976D2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+}
+
+.done-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4CAF50;
 }
 .status-badge {
   display: inline-block;
@@ -601,5 +760,20 @@ onMounted(fetchOrders)
 .error-state {
   background: #fee2e2;
   color: #dc2626;
+}
+.status-select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: white;
+}
+
+.status-select:focus {
+  border-color: #14532d;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(20,83,45,0.15);
 }
 </style>

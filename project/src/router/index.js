@@ -124,6 +124,7 @@ const routes = [
   // AUTH
   { path: '/user/login', component: () => import('../views/User/login.vue') },
   { path: '/user/register', component: () => import('../views/User/resgister.vue') },
+  { path: '/user/forgot-password', component: () => import('../views/User/Forgotpassword.vue') },
   { path: '/user/forgot-password', component: () => import('../views/User/Fogotpassword.vue') },
   { path: '/user/verify-otp', component: () => import('../views/User/VertifyOtp.vue') },
   { path: '/user/reset-password', component: () => import('../views/User/Resetpassword.vue') },
@@ -148,6 +149,11 @@ router.beforeEach((to, from) => {
   const user = JSON.parse(localStorage.getItem('user'))
   const token = localStorage.getItem('token')
   const role = user?.role?.trim()?.toLowerCase()
+
+  // NOT LOGGED IN
+  if ((to.path.startsWith('/admin') || to.path.startsWith('/provider')) && !token) {
+    return `/user/login?redirect=${to.fullPath}`
+  }
 
  // NOT LOGGED IN
   if (

@@ -14,15 +14,13 @@ import { ProviderApplication } from '../provider-application/provider-applicatio
 import { Admin } from '../admin/admin.entity';
 import { Product } from '../product/product.entity';
 import { orders } from '../users/orders.entity';
+import { Review } from '../review/review.entity';
+import { ProviderBank } from './provider_bank.entity';
 
 @Entity('providers')
 export class Provider {
   @PrimaryColumn({ name: 'user_id' })
   user_id!: number;
-
-  @OneToOne(() => users, (user) => user.provider)
-  @JoinColumn({ name: 'user_id' })
-  user!: users;
 
   @Column({ nullable: true })
   provider_name?: string;
@@ -48,10 +46,7 @@ export class Provider {
   @Column({ nullable: true })
   id_number?: string;
 
-  @Column({ type: 'simple-json', nullable: true })
-  banks?: { name: string; account: string; qr: string }[];
-
-  @Column({ nullable: true })
+  @Column({ name: 'qr_image', nullable: true })
   qr_image?: string;
 
   @Column({ type: 'varchar', nullable: true })
@@ -63,6 +58,18 @@ export class Provider {
   @CreateDateColumn()
   created_at!: Date;
 
+  @Column({ name: 'application_id', nullable: true })
+  application_id?: number;
+
+  @Column({ name: 'created_by_admin', nullable: true })
+  created_by_admin?: number;
+
+  // ── Relations ──────────────────────────────────────────────────────────────
+
+  @OneToOne(() => users, (user) => user.provider)
+  @JoinColumn({ name: 'user_id' })
+  user!: users;
+
   @OneToOne(() => ProviderApplication, (app) => app.provider, {
     nullable: true,
   })
@@ -72,6 +79,7 @@ export class Provider {
   @ManyToOne(() => Admin, (admin) => admin.created_providers, {
     nullable: true,
   })
+  @JoinColumn({ name: 'created_by_admin' })
   createdByAdmin?: Admin;
 
   @OneToMany(() => Product, (product) => product.provider)
@@ -79,4 +87,11 @@ export class Provider {
 
   @OneToMany(() => orders, (order) => order.provider)
   orders!: orders[];
+
+  @OneToMany(() => ProviderBank, (bank) => bank.provider, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  banks!: ProviderBank[];
+
 }

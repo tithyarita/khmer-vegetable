@@ -9,16 +9,16 @@ import {
   IsArray,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { OrderStatus } from '../orders.entity';
+import { OrderStatus, PaymentStatus } from '../orders.entity';
 
 export class CreateOrderItemDto {
   @IsNumber()
   @IsNotEmpty()
-  product_id: number;
+  product_id!: number;
 
   @IsNumber()
   @IsNotEmpty()
-  quantity: number;
+  quantity!: number;
 }
 
 export class CreateOrderDto {
@@ -28,7 +28,7 @@ export class CreateOrderDto {
 
   @IsNumber()
   @IsNotEmpty()
-  customer_id: number;
+  customer_id!: number;
 
   @IsNumber()
   @IsOptional()
@@ -51,6 +51,18 @@ export class CreateOrderDto {
   @Type(() => CreateOrderItemDto)
   @IsOptional()
   items?: CreateOrderItemDto[];
+
+  @IsString()
+  @IsOptional()
+  payment_method!: string;
+
+  @IsEnum(PaymentStatus)
+  @IsOptional()
+  payment_status!: PaymentStatus;
+
+  @IsString()
+  @IsOptional()
+  payment_proof?: string;
 }
 
 export class UpdateOrderDto {

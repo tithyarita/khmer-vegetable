@@ -13,7 +13,11 @@ import { DashboardGateway } from '../realtime/dashboard.gateway';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
+<<<<<<< HEAD
       Report,
+=======
+      Report, // ✅ THIS IS REQUIRED (fixes your error)
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
       orders,
       Provider,
     ]),

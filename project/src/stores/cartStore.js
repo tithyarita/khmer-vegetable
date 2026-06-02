@@ -77,20 +77,23 @@ export const useCartStore = defineStore('cart', () => {
 
     try {
       const response = await api.get(`/cart/${userId}`)
+      console.log('RAW CART FROM BACKEND:', response.data)  // ← ADD THIS
+      console.log('RAW CART:', JSON.stringify(response.data[0]))  // ← ADD THIS
       const backendCart = response.data || []
 
       // Map backend cart items to frontend format
       cartItems.value = backendCart.map(item => ({
-        id: item.product_id || item.productId,
-        name: item.product_name || item.name,
-        price: Number(item.price || item.unitPrice || 0),
-        unitPrice: Number(item.price || item.unitPrice || 0),
-        originalPrice: Number(item.originalPrice || item.price || 0),
-        image: item.image || item.imageUrl,
-        category: item.category,
-        unit: item.unit || 'item',
-        providerId: Number(item.provider_id || item.providerId || 0),
-        providerName: item.provider_name || item.providerName || 'Unknown',
+        id: item.product?.id,
+        name: item.product?.name,
+        price: Number(item.unit_price || item.product?.price || 0),
+        unitPrice: Number(item.unit_price || item.product?.price || 0),
+        originalPrice: Number(item.product?.price || 0),
+        image: item.product?.imageUrl || item.product?.image,
+        category: item.product?.category,
+        unit: item.product?.unit || 'item',
+        providerId: Number(item.product?.provider?.user_id || 0),   // ← use nested provider
+        provider_id: Number(item.product?.provider?.user_id || 0),  // ← use nested provider
+        providerName: item.product?.provider?.provider_name || 'Unknown',
         quantity: Number(item.quantity || 1)
       }))
 

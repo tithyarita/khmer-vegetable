@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+<<<<<<< HEAD
 import {
   DataSource,
   DeepPartial,
@@ -15,11 +16,17 @@ import {
 } from 'typeorm';
 import { orders, OrderStatus } from './orders.entity';
 import { ReportService } from '../report/report.service';
+=======
+import { In, Repository } from 'typeorm';
+
+import { orders, OrderStatus, PaymentStatus } from './orders.entity';
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
 import {
   CreateOrderDto,
   CreateOrderItemDto,
   UpdateOrderDto,
 } from './dto/orders.dto';
+
 import { orderItems } from './order-items.entity';
 import { Product } from '../product/product.entity';
 import { Customer, CustomerStatus } from '../customer/customer.entity';
@@ -34,22 +41,30 @@ export class OrdersService {
   constructor(
     @InjectRepository(orders)
     private readonly ordersRepository: Repository<orders>,
+
     @InjectRepository(orderItems)
     private readonly orderItemsRepository: Repository<orderItems>,
+
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
+
     @InjectRepository(users)
     private readonly usersRepository: Repository<users>,
     private readonly dataSource: DataSource,
     private readonly reportService: ReportService,
   ) {}
 
-  private generateOrderCode() {
+  // =========================
+  // GENERATE ORDER CODE
+  // =========================
+  private generateOrderCode(): string {
     return `ORD-${Date.now().toString(36).toUpperCase()}`;
   }
 
+<<<<<<< HEAD
   private resolveStockStatus(stock: number) {
     if (stock <= 0) {
       return 'Out of Stock';
@@ -87,37 +102,60 @@ export class OrdersService {
       : this.usersRepository;
 
     const existingCustomer = await customerRepository.findOne({
+=======
+  // =========================
+  // ENSURE CUSTOMER PROFILE
+  // =========================
+  private async ensureCustomerProfile(customerId: number): Promise<number> {
+    const existing = await this.customerRepository.findOne({
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
       where: { user_id: customerId },
     });
+    if (existing) return existing.user_id;
 
+<<<<<<< HEAD
     if (existingCustomer) {
       return existingCustomer.user_id;
     }
 
     const user = await usersRepository.findOne({ where: { id: customerId } });
+=======
+    const user = await this.usersRepository.findOne({
+      where: { id: customerId },
+    });
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
     if (!user) {
       throw new BadRequestException(
         'Invalid customer id. Please log in again.',
       );
     }
 
-    const createdCustomer = this.customerRepository.create({
+    const created = this.customerRepository.create({
       user_id: user.id,
       name: user.name || 'Unknown',
       phone: user.phone || 'Unknown',
       status: CustomerStatus.ACTIVE,
     });
+    await this.customerRepository.save(created);
 
+<<<<<<< HEAD
     await customerRepository.save(createdCustomer);
     return createdCustomer.user_id;
+=======
+    return created.user_id;
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
   }
 
+  // =========================
+  // SAVE ORDER FOR PROVIDER
+  // =========================
   private async saveOrderForProvider(
     customerId: number,
     providerId: number,
     items: CreateOrderItemDto[],
     orderCode?: string,
     status: OrderStatus = OrderStatus.PENDING,
+<<<<<<< HEAD
   ) {
     return this.dataSource.transaction(async (manager) => {
       const orderRepository = manager.getRepository(orders);
@@ -128,6 +166,19 @@ export class OrdersService {
         customerId,
         manager,
       );
+=======
+    payment_method?: string,
+    payment_status?: PaymentStatus,
+    payment_proof?: string,
+  ): Promise<orders | null> {
+    const resolvedCustomerId = await this.ensureCustomerProfile(customerId);
+    const productIds = items.map((i) => i.product_id);
+
+    const products = await this.productRepository.find({
+      where: { id: In(productIds) },
+      relations: ['provider'],
+    });
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
 
       const normalizedItemsMap = new Map<number, number>();
       for (const item of items) {
@@ -138,12 +189,27 @@ export class OrdersService {
           );
         }
 
+<<<<<<< HEAD
         normalizedItemsMap.set(
           item.product_id,
           (normalizedItemsMap.get(item.product_id) || 0) + quantity,
+=======
+    const productsById = new Map(products.map((p) => [p.id, p]));
+    const resolvedProviderId = products[0].provider?.user_id;
+
+    if (!resolvedProviderId) {
+      throw new BadRequestException('Product provider is missing');
+    }
+
+    for (const product of products) {
+      if (product.provider?.user_id !== resolvedProviderId) {
+        throw new BadRequestException(
+          'Checkout can only contain products from one provider at a time',
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
         );
       }
 
+<<<<<<< HEAD
       const normalizedItems = Array.from(normalizedItemsMap.entries()).map(
         ([product_id, quantity]) => ({ product_id, quantity }),
       );
@@ -152,8 +218,46 @@ export class OrdersService {
       const products = await productRepository.find({
         where: { id: In(productIds) },
         relations: ['provider'],
+=======
+    if (providerId && providerId !== resolvedProviderId) {
+      throw new BadRequestException(
+        'Provider does not match the selected products',
+      );
+    }
+
+    const total = items.reduce((sum, item) => {
+      const product = productsById.get(item.product_id);
+      return product
+        ? sum + Number(product.price) * Number(item.quantity)
+        : sum;
+    }, 0);
+
+    const order = this.ordersRepository.create({
+      order_code: orderCode || this.generateOrderCode(),
+      customer_id: resolvedCustomerId,
+      provider_id: resolvedProviderId,
+      status,
+      total,
+      item: items.reduce((sum, i) => sum + Number(i.quantity), 0),
+      payment_method: payment_method || 'cash',
+      payment_status: payment_status ?? PaymentStatus.PENDING,
+      payment_proof: payment_proof || undefined,
+      completed_at: status === OrderStatus.COMPLETED ? new Date() : undefined,
+    });
+
+    const saved = await this.ordersRepository.save(order);
+
+    const itemEntities = items.map((item) => {
+      const product = productsById.get(item.product_id);
+      return this.orderItemsRepository.create({
+        order_id: saved.id,
+        product_id: item.product_id,
+        quantity: String(item.quantity),
+        price: Number(product?.price ?? 0),
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
       });
 
+<<<<<<< HEAD
       if (products.length !== productIds.length) {
         throw new NotFoundException('One or more products were not found');
       }
@@ -270,36 +374,48 @@ export class OrdersService {
           'order_items.product',
         ],
       });
+=======
+    await this.orderItemsRepository.save(itemEntities);
+
+    return this.ordersRepository.findOne({
+      where: { id: saved.id },
+      relations: ['provider', 'customer', 'order_items', 'order_items.product'],
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
     });
   }
 
-  // Create a new order
-  async create(createOrderDto: CreateOrderDto) {
+  // =========================
+  // CREATE ORDER
+  // =========================
+  async create(createOrderDto: CreateOrderDto, paymentProofPath?: string) {
     try {
+      const finalProof = paymentProofPath || createOrderDto.payment_proof;
+
       if (createOrderDto.items?.length) {
-        const createdOrder = await this.saveOrderForProvider(
-          createOrderDto.customer_id,
-          createOrderDto.provider_id ?? 0,
+        const created = await this.saveOrderForProvider(
+          Number(createOrderDto.customer_id),
+          createOrderDto.provider_id ? Number(createOrderDto.provider_id) : 0,
           createOrderDto.items,
           createOrderDto.order_code,
-          createOrderDto.status ?? OrderStatus.PENDING,
+          createOrderDto.status,
+          createOrderDto.payment_method,
+          createOrderDto.payment_status,
+          finalProof,
         );
-
-        return {
-          message: 'Order created successfully!',
-          data: createdOrder,
-        };
+        return { message: 'Order created successfully!', data: created };
       }
 
       const resolvedCustomerId = await this.ensureCustomerProfile(
-        createOrderDto.customer_id,
+        Number(createOrderDto.customer_id),
       );
 
       const order = this.ordersRepository.create({
         ...createOrderDto,
         customer_id: resolvedCustomerId,
-        status: createOrderDto.status as OrderStatus,
+        payment_proof: finalProof || undefined,
+        payment_status: createOrderDto.payment_status ?? PaymentStatus.PENDING,
       });
+<<<<<<< HEAD
       const savedOrder = await this.ordersRepository.save(order);
 
       try {
@@ -330,40 +446,49 @@ export class OrdersService {
       if (error instanceof HttpException) {
         throw error;
       }
+=======
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
 
+      const saved = await this.ordersRepository.save(order);
+      return { message: 'Order created successfully!', data: saved };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         error instanceof Error ? error.message : 'Error creating order',
       );
     }
   }
 
-  // Get all orders
-  async findAll() {
+  // =========================
+  // FIND ALL
+  // =========================
+  async findAll(): Promise<orders[]> {
     return this.ordersRepository.find({
       relations: ['provider', 'customer', 'order_items', 'order_items.product'],
     });
   }
 
-  // Get order by ID
-  async findOne(id: number) {
-    const order = await this.ordersRepository.findOne({
+  // =========================
+  // FIND ONE
+  // =========================
+  async findOne(id: number): Promise<orders | null> {
+    return this.ordersRepository.findOne({
       where: { id },
       relations: ['provider', 'customer', 'order_items', 'order_items.product'],
     });
-    if (!order) {
-      return { message: 'Order not found.' };
-    }
-    return order;
   }
 
-  // Get orders by provider ID
-  async findByProvider(providerId: number) {
+  // =========================
+  // FIND BY PROVIDER
+  // =========================
+  async findByProvider(providerId: number): Promise<orders[]> {
     return this.ordersRepository.find({
       where: { provider_id: providerId },
       relations: ['provider', 'customer', 'order_items', 'order_items.product'],
     });
   }
 
+<<<<<<< HEAD
   // Provider revenue summary
   async getProviderRevenue(providerId: number) {
     const providerOrders = await this.ordersRepository.find({
@@ -462,12 +587,19 @@ export class OrdersService {
 
   // Get orders by customer ID
   async findByCustomer(customerId: number) {
+=======
+  // =========================
+  // FIND BY CUSTOMER
+  // =========================
+  async findByCustomer(customerId: number): Promise<orders[]> {
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
     return this.ordersRepository.find({
       where: { customer_id: customerId },
       relations: ['provider', 'customer', 'order_items', 'order_items.product'],
     });
   }
 
+<<<<<<< HEAD
   async getTopSellingProducts(
     period: 'week' | 'month' = 'week',
     providerId?: number,
@@ -564,12 +696,20 @@ export class OrdersService {
 
   // Update order
   async update(id: number, updateOrderDto: UpdateOrderDto) {
+=======
+  // =========================
+  // UPDATE ORDER
+  // =========================
+  async update(
+    id: number,
+    updateOrderDto: UpdateOrderDto,
+  ): Promise<{ message: string; data: orders }> {
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
     const order = await this.ordersRepository.findOne({ where: { id } });
-    if (!order) {
-      return { message: 'Order not found.' };
-    }
+    if (!order) throw new NotFoundException('Order not found');
 
     Object.assign(order, updateOrderDto);
+<<<<<<< HEAD
     if (
       updateOrderDto.status === OrderStatus.DELIVERING &&
       !order.completed_at
@@ -577,23 +717,90 @@ export class OrdersService {
       order.completed_at = new Date();
     }
     const saved = await this.ordersRepository.save(order);
+=======
+    await this.ordersRepository.save(order);
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
+
+    return { message: 'Order updated successfully!', data: order };
+  }
+
+  // =========================
+  // UPDATE STATUS
+  // =========================
+  async updateStatus(
+    id: number,
+    status: OrderStatus,
+  ): Promise<{ message: string; data: orders }> {
+    const order = await this.ordersRepository.findOne({ where: { id } });
+    if (!order) throw new NotFoundException('Order not found');
+
+    order.status = status;
+    if (status === OrderStatus.COMPLETED) {
+      order.completed_at = new Date();
+    }
+
+    await this.ordersRepository.save(order);
+    return { message: 'Order status updated!', data: order };
+  }
+
+  // =========================
+  // DELETE ORDER
+  // =========================
+  async remove(id: number): Promise<{ message: string }> {
+    await this.ordersRepository.delete(id);
+    return { message: 'Order deleted successfully!' };
+  }
+
+  // =========================
+  // UPLOAD PAYMENT PROOF
+  // =========================
+  async uploadPaymentProof(
+    orderId: number,
+    filename: string,
+  ): Promise<{ message: string; payment_proof: string }> {
+    const order = await this.ordersRepository.findOne({
+      where: { id: orderId },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+
+    const proofPath = `/images/payment-proofs/${filename}`;
+    await this.ordersRepository.update(
+      { id: orderId },
+      { payment_proof: proofPath },
+    );
 
     return {
+<<<<<<< HEAD
       message: 'Order updated successfully!',
       data: saved,
+=======
+      message: 'Payment proof uploaded successfully!',
+      payment_proof: `http://localhost:3000${proofPath}`,
+>>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
     };
   }
 
-  // Delete order
-  async remove(id: number) {
-    const order = await this.ordersRepository.findOne({ where: { id } });
-    if (!order) {
-      return { message: 'Order not found.' };
-    }
+  // =========================
+  // GET PROVIDER REVENUE
+  // =========================
+  async getProviderRevenue(providerId: number): Promise<{
+    provider_id: number;
+    completed_orders_count: number;
+    total_revenue: number;
+  }> {
+    const completedOrders = await this.ordersRepository.find({
+      where: { provider_id: providerId, status: OrderStatus.COMPLETED },
+    });
 
-    await this.ordersRepository.delete(id);
+    const totalRevenue = completedOrders.reduce(
+      (sum, order) => sum + Number(order.total || 0),
+      0,
+    );
+
     return {
-      message: 'Order deleted successfully!',
+      provider_id: providerId,
+      completed_orders_count: completedOrders.length,
+      total_revenue: totalRevenue,
     };
   }
 }

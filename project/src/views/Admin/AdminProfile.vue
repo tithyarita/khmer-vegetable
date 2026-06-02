@@ -211,7 +211,7 @@ export default {
         }
 
         const res = await axios.put(
-          `http://localhost:3000/users/${this.admin.id}`,
+          `${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${this.admin.id}`,
           formData,
           {
             headers: {

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from "vue"
+import { onMounted, computed } from "vue"
 import { useProviderStore } from "@/stores/providerStore"
 
 import SideBar from '../../components/provider_com/sideBar.vue'
@@ -7,18 +7,35 @@ import PageHeader from '../../components/provider_com/pageHeader.vue'
 import ProfileCard  from "../../components/provider_com/ProfileCard.vue"
 import FormProvider from "../../components/provider_com/ProviderForm.vue"
 import BankAccount  from "../../components/provider_com/BankAccount.vue"
+
+// 1. Import your newly created Customer Feedback component
+import CustomerFeedback from "../../components/provider_com/CustomerFeedback.vue"
+
 const store       = useProviderStore()
 const currentUser = JSON.parse(localStorage.getItem("user"))
 
-const stats = [
-  { title: "Active Services", value: 12,       icon: "ri-briefcase-line"           },
-  { title: "Bookings",        value: 89,       icon: "ri-calendar-check-line"      },
-  { title: "Revenue",         value: "$4,320", icon: "ri-money-dollar-circle-line" },
-  { title: "Rating",          value: "4.9 ★",  icon: "ri-star-smile-line"          },
-]
+// 2. Calculate dynamic average rating from your backend feedbacks array
+const dynamicRating = computed(() => {
+  if (!store.feedbacks || store.feedbacks.length === 0) {
+    return "0.0 ★"
+  }
+  const totalStars = store.feedbacks.reduce((sum, item) => sum + item.rating_stars, 0)
+  const average = totalStars / store.feedbacks.length
+  return `${average.toFixed(1)} ★`
+})
+
+// 3. Keep stats dynamic by turning it into a computed property
+const stats = computed(() => [
+  { title: "Active Services", value: 12,        icon: "ri-briefcase-line"           },
+  { title: "Bookings",        value: 89,        icon: "ri-calendar-check-line"      },
+  { title: "Revenue",         value: "$4,320",  icon: "ri-money-dollar-circle-line" },
+  // Linked directly to your real database feedback rating
+  { title: "Rating",          value: dynamicRating.value,  icon: "ri-star-smile-line" },
+])
 
 onMounted(async () => {
   if (!currentUser) return
+  // This automatically loads both the provider data and their feedbacks
   await store.loadProvider(currentUser.id)
 })
 </script>
@@ -26,25 +43,17 @@ onMounted(async () => {
 <template>
   <div class="provider-page">
 
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <SideBar />
     </aside>
 
-    <!-- MAIN -->
     <main class="main-content">
       <PageHeader title="Provider Profile" />
 
-      <!-- ═══════════════════════════
-           PROFILE CARD (avatar + farm)
-      ═══════════════════════════ -->
       <section class="section-pad">
         <ProfileCard />
       </section>
 
-      <!-- ═══════════════════════════
-           STATS
-      ═══════════════════════════ -->
       <section class="stats-grid section-pad">
         <div v-for="(item, i) in stats" :key="i" class="stats-card">
           <div class="stats-icon">
@@ -55,19 +64,16 @@ onMounted(async () => {
         </div>
       </section>
 
-      <!-- ═══════════════════════════
-           FORM + BANK ACCOUNTS
-      ═══════════════════════════ -->
       <section class="content-grid section-pad">
 
-        <!-- LEFT — Profile Form -->
         <div class="left-column">
           <FormProvider />
         </div>
 
-        <!-- RIGHT — Bank Accounts -->
         <div class="right-column">
           <BankAccount />
+          
+          <CustomerFeedback />
         </div>
 
       </section>
@@ -191,7 +197,6 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-
   .sidebar {
     display: none;
   }

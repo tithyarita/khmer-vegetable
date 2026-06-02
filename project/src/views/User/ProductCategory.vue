@@ -3,21 +3,37 @@
     <NavigationBar />
 
     <div class="category-content">
+
+      <!-- Breadcrumb -->
       <nav class="breadcrumb">
-        <router-link to="/">{{ t('home') }}</router-link>
+        <router-link to="/">
+          {{ t('home') }}
+        </router-link>
+
         <span class="sep">›</span>
-        <span class="cur">{{ categoryIcon }} {{ categoryName }}</span>
+
+        <span class="cur">
+          {{ categoryIcon }} {{ categoryName }}
+        </span>
       </nav>
 
+      <!-- Header -->
       <div class="header">
+
         <div>
           <h1>{{ categoryName }}</h1>
+
           <p class="subtitle">
-            {{ t('foundItems') }} <em>{{ filteredProducts.length }}</em> {{ t('items') }}
+            {{ t('foundItems') }}
+            <em>{{ filteredProducts.length }}</em>
+            {{ t('items') }}
           </p>
         </div>
 
+        <!-- Controls -->
         <div class="header-controls">
+
+          <!-- Search -->
           <div class="search-box">
             <input
               v-model="searchQuery"
@@ -26,30 +42,48 @@
             />
           </div>
 
-          <div class="view-toggle">
-            <button :class="['view-btn', { active: view === 'grid' }]" @click="view = 'grid'">
-              {{ t('grid') }}
-            </button>
-            <button :class="['view-btn', { active: view === 'list' }]" @click="view = 'list'">
-              {{ t('list') }}
-            </button>
-          </div>
+          <!-- Sort -->
+          <select
+            class="sort-select"
+            v-model="sortBy"
+          >
+            <option value="featured">
+              {{ t('featured') }}
+            </option>
 
-          <select class="sort-select" v-model="sortBy">
-            <option value="featured">{{ t('featured') }}</option>
-            <option value="price-asc">{{ t('priceLowHigh') }}</option>
-            <option value="price-desc">{{ t('priceHighLow') }}</option>
+            <option value="price-asc">
+              {{ t('priceLowHigh') }}
+            </option>
+
+            <option value="price-desc">
+              {{ t('priceHighLow') }}
+            </option>
           </select>
+
         </div>
       </div>
 
+      <!-- Mobile filter toggle -->
+      <button class="filter-toggle" @click="showSidebar = !showSidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/>
+        </svg>
+        {{ t('filter') }}
+      </button>
+
+      <!-- Main -->
       <div class="main-content">
-        <aside class="sidebar">
+
+        <!-- Sidebar -->
+        <aside class="sidebar" :class="{ open: showSidebar }">
+          <div class="sidebar-backdrop" @click="showSidebar = false" />
 
           <div class="sidebar-section">
+
             <h3>{{ t('category') }}</h3>
 
             <div class="category-list">
+
               <div
                 v-for="cat in allCategories"
                 :key="cat.value"
@@ -57,13 +91,21 @@
                 :class="{ active: activeCategory === cat.value }"
                 @click="toggleCategory(cat.value)"
               >
-                <span class="cat-icon">{{ cat.icon }}</span>
-                <span class="cat-name">{{ cat.name }}</span>
+                <span class="cat-icon">
+                  {{ cat.icon }}
+                </span>
+
+                <span class="cat-name">
+                  {{ cat.name }}
+                </span>
               </div>
+
             </div>
           </div>
 
+          <!-- Price -->
           <div class="sidebar-section">
+
             <h3>{{ t('price') }}</h3>
 
             <input
@@ -75,18 +117,26 @@
             />
 
             <div class="price-range">
-              {{ t('range') }}: <strong>$0 – ${{ maxPrice }}</strong>
+              {{ t('range') }}:
+              <strong>$0 - ${{ maxPrice }}</strong>
             </div>
 
-            <button class="filter-btn" @click="applyFilter">
+            <button
+              class="filter-btn"
+              @click="applyFilter"
+            >
               {{ t('filter') }}
             </button>
+
           </div>
 
+          <!-- Tags -->
           <div class="sidebar-section">
+
             <h3>{{ t('popularTags') }}</h3>
 
             <div class="tags">
+
               <span
                 v-for="tag in tags"
                 :key="tag"
@@ -96,53 +146,64 @@
               >
                 {{ tag }}
               </span>
+
             </div>
           </div>
 
         </aside>
 
+        <!-- Products -->
         <div class="products-section">
 
-          <div v-if="loading" class="no-results">
+          <div
+            v-if="loading"
+            class="no-results"
+          >
             {{ t('loading') }}
           </div>
 
-          <div v-else class="products-grid" :class="{ 'list-view': view === 'list' }">
+          <Card
+            v-else
+            :products="paginatedProducts"
+          />
 
-            <div
-              v-for="(product, index) in paginatedProducts"
-              :key="product.id + '-' + index"
-              class="product-card"
-              @click="goToProduct(product.id)"
-            >
-
-              <div class="card-image">
-                <img :src="product.image" :alt="product.name" />
-              </div>
-
-              <div class="card-body">
-                <p class="category-label">{{ product.category }}</p>
-                <h3 class="product-name">{{ product.name }}</h3>
-
-                <p class="provider-owner">
-                  {{ t('provider') }}: {{ product.providerName || t('unknown') }}
-                </p>
-
-                <div class="price-row">
-                  <span class="price">${{ product.price }}</span>
-
-                  <button class="btn-add" @click.stop="addToCart(product)">
-                    {{ t('add') }}
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
+          <!-- Empty -->
+          <div
+            v-if="!loading && paginatedProducts.length === 0"
+            class="no-results"
+          >
+            {{ t('noProducts') }}
           </div>
 
-          <div v-if="!loading && paginatedProducts.length === 0" class="no-results">
-            {{ t('noProducts') }}
+          <!-- Pagination -->
+          <div
+            class="pagination"
+            v-if="totalPages > 1"
+          >
+
+            <button
+              @click="prevPage"
+              :disabled="page === 1"
+            >
+              ‹
+            </button>
+
+            <button
+              v-for="n in totalPages"
+              :key="n"
+              :class="['page-btn', { active: page === n }]"
+              @click="goToPage(n)"
+            >
+              {{ n }}
+            </button>
+
+            <button
+              @click="nextPage"
+              :disabled="page === totalPages"
+            >
+              ›
+            </button>
+
           </div>
 
         </div>
@@ -157,8 +218,8 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductStore } from '../../stores/productStore'
-import { useCartStore } from '../../stores/cartStore'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
+import Card from '../../components/Customer/Card.vue'
 import Footer from '../../components/Customer/Footer.vue'
 import { useLanguageStore } from '@/stores/languageStore.js'
 import { messages } from '@/lang/index.js'
@@ -167,12 +228,11 @@ const languageStore = useLanguageStore()
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
-const cartStore = useCartStore()
 
 const t = (key) =>
   messages?.[languageStore.language]?.[key] || key
 
-const view = ref('grid')
+const showSidebar = ref(false)
 const sortBy = ref('featured')
 const maxPrice = ref(150)
 const appliedMaxPrice = ref(150)
@@ -199,6 +259,7 @@ const categoryMap = {
   vegetables: 'Vegetables',
   greens: 'Leafy Greens',
   tubers: 'Tubers',
+  'root veg': 'Root Veg',
   'root-veg': 'Root Veg',
   cruciferous: 'Cruciferous',
   fruits: 'Fruits',
@@ -210,11 +271,16 @@ const categoryType = computed(() =>
 )
 
 const categoryName = computed(() =>
-  categoryMap[categoryType.value] || route.params.type || 'Products'
+  categoryMap[categoryType.value] ||
+  route.params.type ||
+  'Products'
 )
 
 const categoryIcon = computed(() => {
-  const cat = allCategories.find(c => c.value === categoryType.value)
+  const cat = allCategories.find(
+    c => c.value === categoryType.value
+  )
+
   return cat?.icon || ''
 })
 
@@ -222,48 +288,95 @@ const filteredProducts = computed(() => {
   let list = productStore.products.filter(p => {
     const cat = (p.category || '').toLowerCase()
 
+    const catMatch =
+      !categoryType.value ||
+      cat === categoryType.value ||
+      cat === categoryName.value.toLowerCase()
+
+    const priceMatch =
+      parseFloat(p.price || 0) <= appliedMaxPrice.value
+
+    const categoryFilterMatch =
+      !activeCategory.value ||
+      cat === activeCategory.value
+
+    const tagMatch =
+      !activeTag.value ||
+      (p.name || '')
+        .toLowerCase()
+        .includes(activeTag.value.toLowerCase())
+
+    const searchMatch =
+      !searchQuery.value ||
+      (p.name || '')
+        .toLowerCase()
+        .includes(searchQuery.value.toLowerCase())
+
     return (
-      (!categoryType.value || cat === categoryType.value) &&
-      parseFloat(p.price || 0) <= appliedMaxPrice.value &&
-      (!activeCategory.value || cat === activeCategory.value) &&
-      (!activeTag.value ||
-        (p.name || '').toLowerCase().includes(activeTag.value.toLowerCase())) &&
-      (!searchQuery.value ||
-        (p.name || '').toLowerCase().includes(searchQuery.value.toLowerCase()))
+      catMatch &&
+      priceMatch &&
+      categoryFilterMatch &&
+      tagMatch &&
+      searchMatch
     )
   })
 
   if (sortBy.value === 'price-asc') {
-    list.sort((a, b) => a.price - b.price)
+    list.sort(
+      (a, b) =>
+        parseFloat(a.price || 0) -
+        parseFloat(b.price || 0)
+    )
   }
+
   if (sortBy.value === 'price-desc') {
-    list.sort((a, b) => b.price - a.price)
+    list.sort(
+      (a, b) =>
+        parseFloat(b.price || 0) -
+        parseFloat(a.price || 0)
+    )
   }
 
   return list
 })
 
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(filteredProducts.value.length / perPage.value))
+  Math.max(
+    1,
+    Math.ceil(
+      filteredProducts.value.length / perPage.value
+    )
+  )
 )
 
 const paginatedProducts = computed(() => {
   const start = (page.value - 1) * perPage.value
-  return filteredProducts.value.slice(start, start + perPage.value)
+
+  return filteredProducts.value.slice(
+    start,
+    start + perPage.value
+  )
 })
 
-watch([sortBy, activeTag, appliedMaxPrice], () => {
-  page.value = 1
-})
+watch(
+  [sortBy, activeTag, appliedMaxPrice],
+  () => {
+    page.value = 1
+  }
+)
 
-watch(() => route.params.type, () => {
-  page.value = 1
-  activeCategory.value = null
-  activeTag.value = null
-})
+watch(
+  () => route.params.type,
+  () => {
+    page.value = 1
+    activeCategory.value = null
+    activeTag.value = null
+  }
+)
 
 onMounted(async () => {
   loading.value = true
+
   try {
     await productStore.fetchAllProducts()
   } finally {
@@ -272,12 +385,20 @@ onMounted(async () => {
 })
 
 function toggleCategory(value) {
-  activeCategory.value = activeCategory.value === value ? null : value
+  activeCategory.value =
+    activeCategory.value === value
+      ? null
+      : value
+
   page.value = 1
 }
 
 function toggleTag(tag) {
-  activeTag.value = activeTag.value === tag ? null : tag
+  activeTag.value =
+    activeTag.value === tag
+      ? null
+      : tag
+
   page.value = 1
 }
 
@@ -285,14 +406,25 @@ function applyFilter() {
   appliedMaxPrice.value = maxPrice.value
 }
 
-function goToProduct(id) {
-  router.push({ name: 'ProductDetailUser', params: { id } })
+function prevPage() {
+  if (page.value > 1) {
+    page.value--
+  }
 }
 
-function addToCart(product) {
-  cartStore.addToCart(product)
+function nextPage() {
+  if (page.value < totalPages.value) {
+    page.value++
+  }
+}
+
+function goToPage(n) {
+  page.value = n
 }
 </script>
+
+
+
 <style scoped>
 .category-page {
   --gd: #1a3d28; --gm: #2d6a3f; --ga: #3a8f52; --gl: #e6f4eb; --gp: #f3faf5;
@@ -309,6 +441,7 @@ function addToCart(product) {
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px 20px 60px;
+  font-family: 'DM Sans', sans-serif;
   color: var(--t1);
 }
 
@@ -341,6 +474,7 @@ h1 {
   font-weight: 700;
   margin: 0;
   color: var(--t1);
+  font-family: 'Playfair Display', serif;
 }
 
 .subtitle { color: var(--t3); margin-top: 4px; }
@@ -367,36 +501,19 @@ h1 {
   background: none;
   outline: none;
   padding: 9px 0;
+  font-family: 'DM Sans', sans-serif;
   font-size: 13px;
   color: #16261e;
   width: 180px;
 }
 .search-box input::placeholder { color: #8aa898; }
 
-.view-toggle {
-  display: flex;
-  border: 1.5px solid var(--bd);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.view-btn {
-  padding: 8px 18px;
-  background: var(--wh);
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--t3);
-  transition: var(--tr);
-}
-
-.view-btn.active { background: var(--gm); color: white; }
-
 .sort-select {
   padding: 8px 14px;
   border-radius: 8px;
   border: 1.5px solid var(--bd);
   background: var(--wh);
+  font-family: 'DM Sans', sans-serif;
   color: var(--t2);
 }
 
@@ -460,94 +577,6 @@ h1 {
 
 .products-section { width: 100%; }
 
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 20px;
-}
-
-.products-grid.list-view { grid-template-columns: 1fr; }
-
-.product-card {
-  background: var(--wh);
-  border-radius: var(--r);
-  padding: 14px;
-  box-shadow: var(--ss);
-  transition: var(--tr);
-  border: 1px solid var(--bd);
-  cursor: pointer;
-}
-
-.product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--sm);
-}
-
-.card-image {
-  width: 100%;
-  height: 180px;
-  overflow: hidden;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  position: relative;
-}
-
-.card-image img { width: 100%; height: 100%; object-fit: cover; }
-
-.badge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: white;
-}
-
-.badge-hot { background: #e85a2d; }
-.badge-sale { background: #f5a623; }
-.badge-new { background: #3a8f52; }
-.badge-discount { left: auto; right: 8px; background: #c0392b; }
-
-.product-card h3 { font-size: 15px; margin: 6px 0; color: var(--t1); }
-.category-label { font-size: 12px; color: var(--t3); margin: 0; }
-
-.provider-owner {
-  margin: 2px 0 10px;
-  font-size: 12px;
-  color: var(--t2);
-}
-
-.price-row { display: flex; justify-content: space-between; align-items: center; }
-.prices { display: flex; align-items: center; gap: 6px; }
-.price { font-weight: 700; color: var(--gd); font-size: 16px; }
-.original-price { text-decoration: line-through; color: var(--t3); font-size: 12px; }
-
-.btn-add {
-  padding: 6px 14px;
-  border-radius: 8px;
-  border: none;
-  background: var(--gm);
-  color: white;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 600;
-  font-size: 13px;
-  transition: var(--tr);
-}
-.btn-add:hover { background: var(--gd); }
-.plus { margin-right: 2px; }
-
-.products-grid.list-view .product-card {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
-.products-grid.list-view .card-image { width: 150px; height: 120px; flex-shrink: 0; }
-.products-grid.list-view h3 { font-size: 16px; }
-
 .pagination {
   display: flex;
   justify-content: center;
@@ -572,10 +601,83 @@ h1 {
 
 .no-results { text-align: center; padding: 60px; color: var(--t3); }
 
+.filter-toggle {
+  display: none;
+}
+
 @media (max-width: 992px) {
   .main-content { grid-template-columns: 1fr; }
+
+  .header { flex-direction: column; align-items: flex-start; }
+
+  .header-controls { width: 100%; flex-wrap: wrap; }
+
+  .search-box { flex: 1; min-width: 0; }
+  .search-box input { width: 100%; }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -300px;
+    width: 280px;
+    height: 100vh;
+    z-index: 200;
+    background: #fff;
+    padding: 20px;
+    overflow-y: auto;
+    transition: left 0.25s ease;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+  }
+
+  .sidebar.open { left: 0; }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: -1;
+  }
+
+  .sidebar.open .sidebar-backdrop { display: block; }
+
+  .filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    margin-bottom: 16px;
+    border: 1.5px solid var(--bd);
+    border-radius: 10px;
+    background: var(--wh);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--t2);
+    transition: var(--tr);
+  }
+
+  .filter-toggle:hover { border-color: var(--ga); color: var(--gm); }
+
+  .pagination button { width: 32px; height: 32px; font-size: 13px; }
 }
+
 @media (max-width: 600px) {
-  .products-grid { grid-template-columns: repeat(2, 1fr); }
+  .category-content { padding: 16px 12px 40px; }
+
+  h1 { font-size: 22px; }
+
+  .header-controls { gap: 6px; }
+
+  .sort-select { padding: 6px 10px; font-size: 12px; }
+
+  .pagination { gap: 4px; }
+
+  .pagination button { width: 28px; height: 28px; font-size: 11px; }
+
+  .breadcrumb { font-size: 11px; margin-bottom: 14px; }
 }
+
+
 </style>
