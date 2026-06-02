@@ -16,18 +16,32 @@
         </div>
 
         <div class="nav-right">
-          <div class="location">
+          <div class="location" :class="{ located: locationStore.activeLocation }" @click="showLocationModal = true" ref="locationRef">
             <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
-              <path d="M10 2a6 6 0 0 1 6 6c0 4-6 10-6 10S4 12 4 8a6 6 0 0 1 6-6z" stroke="#555" stroke-width="1.5"/>
-              <circle cx="10" cy="8" r="2" stroke="#555" stroke-width="1.5"/>
+              <path d="M10 2a6 6 0 0 1 6 6c0 4-6 10-6 10S4 12 4 8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5"/>
+              <circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
+              <circle v-if="locationStore.activeLocation" cx="10" cy="8" r="4" fill="#2D7A3A" opacity="0.3" class="pulse-dot"/>
             </svg>
-            <span>{{ location }}</span>
+            <span class="location-text">{{ locationStore.activeLocation?.name || locationStore.activeLocation?.address || location }}</span>
+            <span v-if="locationStore.activeLocation" class="you-are-here">You are here</span>
           </div>
+          <LocationModal v-if="showLocationModal" @close="showLocationModal = false" />
 
           <!-- Guest: show Login / Register -->
           <template v-if="!isLoggedIn">
-            <button class="btn-login" @click="goToLogin">Login</button>
-            <button class="btn-register" @click="goToRegister">Register</button>
+            <button class="btn-login" @click="goToLogin">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+              <span class="btn-text">Login</span>
+            </button>
+            <button class="btn-register" @click="goToRegister">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/>
+              </svg>
+              <span class="btn-text">Register</span>
+            </button>
           </template>
 
           <!-- Logged-in: show profile avatar with dropdown -->
@@ -96,12 +110,17 @@
     <div class="navbar-bottom">
       <hr>
       <div class="container">
-        <ul class="categories">
+        <button class="menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <ul class="categories" :class="{ open: mobileMenuOpen }">
           <li
             v-for="(cat, index) in categories"
             :key="cat.label + index"
             :class="{ active: active === cat.label }"
-            @click="setCategory(cat)"
+            @click="setCategory(cat); mobileMenuOpen = false"
           >
             {{ cat.label }}
           </li>
@@ -136,14 +155,17 @@
 
 <script>
 import SreachDropdown from './Searchdropdown.vue'
+import LocationModal from './LocationModal.vue'
 import { useCartStore } from '../../stores/cartStore'
 import { useSearchStore } from '../../stores/searchStore'
 import { useUserStore } from '../../stores/userStore'
+import { useLocationStore } from '../../stores/locationStore'
 
 export default {
   name: 'NavigationBar',
   components: {
     SreachDropdown,
+    LocationModal,
     CategoryIcon: {
       props: ['icon'],
       template: `
@@ -189,13 +211,16 @@ export default {
     const cartStore = useCartStore()
     const searchStore = useSearchStore()
     const userStore = useUserStore()
-    return { cartStore, searchStore, userStore }
+    const locationStore = useLocationStore()
+    return { cartStore, searchStore, userStore, locationStore }
   },
   data() {
     return {
       query: '',
       showDropdown: false,
       location: 'Phnom Penh, Cambodia',
+      showLocationModal: false,
+      mobileMenuOpen: false,
       active: 'Home',
       isFavorited: false,
       profileMenuOpen: false,
@@ -401,6 +426,41 @@ export default {
   display: flex;
   align-items: center;
   gap: 5px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 20px;
+  transition: background 0.2s, color 0.2s;
+  color: #555;
+  position: relative;
+}
+
+.location:hover {
+  background: #e6f4ea;
+  color: #2D7A3A;
+}
+
+.location.located {
+  color: #2D7A3A;
+  background: #e6f4ea;
+}
+
+.you-are-here {
+  font-size: 10px;
+  font-weight: 600;
+  color: #2D7A3A;
+  background: #d0ecda;
+  padding: 1px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.pulse-dot {
+  animation: pulseLocation 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseLocation {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
 }
 
 .btn-login {
@@ -663,18 +723,152 @@ export default {
 
 @media (max-width: 768px) {
   .navbar-top .container {
-    flex-wrap: wrap;
-    gap: 10px;
+    flex-wrap: nowrap;
+    gap: 4px;
   }
+
+  .logo-text img {
+    width: 80px;
+  }
+
   .search {
-    width: 100%;
-    margin: 10px 0;
+    flex: 1;
+    min-width: 0;
+    margin: 0 4px;
   }
+
+  .search input {
+    height: 34px;
+    font-size: 12px;
+    padding: 0 0.6rem 0 1.8rem;
+  }
+
+  .search-icon {
+    left: 6px;
+    width: 13px;
+    height: 13px;
+  }
+
+  .location-text,
+  .you-are-here {
+    display: none;
+  }
+
+  .location {
+    padding: 6px 8px;
+  }
+
+  .location svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .btn-text {
+    display: none;
+  }
+
+  .btn-login svg,
+  .btn-register svg {
+    display: block;
+  }
+
+  .btn-login,
+  .btn-register {
+    padding: 6px 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    min-height: 34px;
+  }
+
+  .btn-login {
+    color: #2D7A3A;
+    background: #e6f4ea;
+  }
+
+  .btn-register {
+    background: #1a5c27;
+    color: #fff;
+  }
+
+  .navbar-bottom .container {
+    position: relative;
+  }
+
+  .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: #e6f4ea;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #2D7A3A;
+    transition: background 0.2s;
+  }
+
+  .menu-toggle:hover {
+    background: #d0ecda;
+  }
+
   .categories {
-    overflow-x: auto;
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    flex-direction: column;
+    border: 1px solid #e5e7eb;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    z-index: 99;
+    padding: 8px 0;
   }
+
+  .categories.open {
+    display: flex;
+  }
+
+  .categories li {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+  }
+
+  .categories li:last-child {
+    border-bottom: none;
+  }
+
+  .categories li.active {
+    color: #2D7A3A;
+    font-weight: 700;
+    background: #f6fbf7;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .nav-actions {
+    gap: 8px;
+  }
+
+  .nav-actions .favorite,
+  .nav-actions .cart {
+    width: 34px;
+    height: 34px;
+  }
+
   .profile-dropdown {
     right: -8px;
+  }
+}
+
+@media (min-width: 769px) {
+  .menu-toggle {
+    display: none;
   }
 }
 </style>

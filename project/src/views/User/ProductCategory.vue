@@ -42,25 +42,6 @@
             />
           </div>
 
-          <!-- View -->
-          <div class="view-toggle">
-
-            <button
-              :class="['view-btn', { active: view === 'grid' }]"
-              @click="view = 'grid'"
-            >
-              {{ t('grid') }}
-            </button>
-
-            <button
-              :class="['view-btn', { active: view === 'list' }]"
-              @click="view = 'list'"
-            >
-              {{ t('list') }}
-            </button>
-
-          </div>
-
           <!-- Sort -->
           <select
             class="sort-select"
@@ -82,11 +63,20 @@
         </div>
       </div>
 
+      <!-- Mobile filter toggle -->
+      <button class="filter-toggle" @click="showSidebar = !showSidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/>
+        </svg>
+        {{ t('filter') }}
+      </button>
+
       <!-- Main -->
       <div class="main-content">
 
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" :class="{ open: showSidebar }">
+          <div class="sidebar-backdrop" @click="showSidebar = false" />
 
           <div class="sidebar-section">
 
@@ -172,59 +162,10 @@
             {{ t('loading') }}
           </div>
 
-          <div
+          <Card
             v-else
-            class="products-grid"
-            :class="{ 'list-view': view === 'list' }"
-          >
-
-            <div
-              v-for="product in paginatedProducts"
-              :key="product.id"
-              class="product-card"
-              @click="goToProduct(product.id)"
-            >
-
-              <div class="card-image">
-                <img
-                  :src="product.image"
-                  :alt="product.name"
-                />
-              </div>
-
-              <div class="card-body">
-
-                <p class="category-label">
-                  {{ product.category }}
-                </p>
-
-                <h3 class="product-name">
-                  {{ product.name }}
-                </h3>
-
-                <p class="provider-owner">
-                  {{ t('provider') }}:
-                  {{ product.providerName || t('unknown') }}
-                </p>
-
-                <div class="price-row">
-
-                  <span class="price">
-                    ${{ product.price }}
-                  </span>
-
-                  <button
-                    class="btn-add"
-                    @click.stop="addToCart(product)"
-                  >
-                    {{ t('add') }}
-                  </button>
-
-                </div>
-              </div>
-
-            </div>
-          </div>
+            :products="paginatedProducts"
+          />
 
           <!-- Empty -->
           <div
@@ -277,8 +218,8 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductStore } from '../../stores/productStore'
-import { useCartStore } from '../../stores/cartStore'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
+import Card from '../../components/Customer/Card.vue'
 import Footer from '../../components/Customer/Footer.vue'
 import { useLanguageStore } from '@/stores/languageStore.js'
 import { messages } from '@/lang/index.js'
@@ -287,12 +228,11 @@ const languageStore = useLanguageStore()
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
-const cartStore = useCartStore()
 
 const t = (key) =>
   messages?.[languageStore.language]?.[key] || key
 
-const view = ref('grid')
+const showSidebar = ref(false)
 const sortBy = ref('featured')
 const maxPrice = ref(150)
 const appliedMaxPrice = ref(150)
@@ -466,17 +406,6 @@ function applyFilter() {
   appliedMaxPrice.value = maxPrice.value
 }
 
-function goToProduct(id) {
-  router.push({
-    name: 'ProductDetailUser',
-    params: { id }
-  })
-}
-
-function addToCart(product) {
-  cartStore.addToCart(product)
-}
-
 function prevPage() {
   if (page.value > 1) {
     page.value--
@@ -579,26 +508,6 @@ h1 {
 }
 .search-box input::placeholder { color: #8aa898; }
 
-.view-toggle {
-  display: flex;
-  border: 1.5px solid var(--bd);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.view-btn {
-  padding: 8px 18px;
-  background: var(--wh);
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--t3);
-  font-family: 'DM Sans', sans-serif;
-  transition: var(--tr);
-}
-
-.view-btn.active { background: var(--gm); color: white; }
-
 .sort-select {
   padding: 8px 14px;
   border-radius: 8px;
@@ -668,94 +577,6 @@ h1 {
 
 .products-section { width: 100%; }
 
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 20px;
-}
-
-.products-grid.list-view { grid-template-columns: 1fr; }
-
-.product-card {
-  background: var(--wh);
-  border-radius: var(--r);
-  padding: 14px;
-  box-shadow: var(--ss);
-  transition: var(--tr);
-  border: 1px solid var(--bd);
-  cursor: pointer;
-}
-
-.product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--sm);
-}
-
-.card-image {
-  width: 100%;
-  height: 180px;
-  overflow: hidden;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  position: relative;
-}
-
-.card-image img { width: 100%; height: 100%; object-fit: cover; }
-
-.badge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: white;
-}
-
-.badge-hot { background: #e85a2d; }
-.badge-sale { background: #f5a623; }
-.badge-new { background: #3a8f52; }
-.badge-discount { left: auto; right: 8px; background: #c0392b; }
-
-.product-card h3 { font-size: 15px; margin: 6px 0; color: var(--t1); }
-.category-label { font-size: 12px; color: var(--t3); margin: 0; }
-
-.provider-owner {
-  margin: 2px 0 10px;
-  font-size: 12px;
-  color: var(--t2);
-}
-
-.price-row { display: flex; justify-content: space-between; align-items: center; }
-.prices { display: flex; align-items: center; gap: 6px; }
-.price { font-weight: 700; color: var(--gd); font-size: 16px; }
-.original-price { text-decoration: line-through; color: var(--t3); font-size: 12px; }
-
-.btn-add {
-  padding: 6px 14px;
-  border-radius: 8px;
-  border: none;
-  background: var(--gm);
-  color: white;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 600;
-  font-size: 13px;
-  transition: var(--tr);
-}
-.btn-add:hover { background: var(--gd); }
-.plus { margin-right: 2px; }
-
-.products-grid.list-view .product-card {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
-.products-grid.list-view .card-image { width: 150px; height: 120px; flex-shrink: 0; }
-.products-grid.list-view h3 { font-size: 16px; }
-
 .pagination {
   display: flex;
   justify-content: center;
@@ -780,10 +601,83 @@ h1 {
 
 .no-results { text-align: center; padding: 60px; color: var(--t3); }
 
+.filter-toggle {
+  display: none;
+}
+
 @media (max-width: 992px) {
   .main-content { grid-template-columns: 1fr; }
+
+  .header { flex-direction: column; align-items: flex-start; }
+
+  .header-controls { width: 100%; flex-wrap: wrap; }
+
+  .search-box { flex: 1; min-width: 0; }
+  .search-box input { width: 100%; }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -300px;
+    width: 280px;
+    height: 100vh;
+    z-index: 200;
+    background: #fff;
+    padding: 20px;
+    overflow-y: auto;
+    transition: left 0.25s ease;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+  }
+
+  .sidebar.open { left: 0; }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: -1;
+  }
+
+  .sidebar.open .sidebar-backdrop { display: block; }
+
+  .filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    margin-bottom: 16px;
+    border: 1.5px solid var(--bd);
+    border-radius: 10px;
+    background: var(--wh);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--t2);
+    transition: var(--tr);
+  }
+
+  .filter-toggle:hover { border-color: var(--ga); color: var(--gm); }
+
+  .pagination button { width: 32px; height: 32px; font-size: 13px; }
 }
+
 @media (max-width: 600px) {
-  .products-grid { grid-template-columns: repeat(2, 1fr); }
+  .category-content { padding: 16px 12px 40px; }
+
+  h1 { font-size: 22px; }
+
+  .header-controls { gap: 6px; }
+
+  .sort-select { padding: 6px 10px; font-size: 12px; }
+
+  .pagination { gap: 4px; }
+
+  .pagination button { width: 28px; height: 28px; font-size: 11px; }
+
+  .breadcrumb { font-size: 11px; margin-bottom: 14px; }
 }
+
+
 </style>

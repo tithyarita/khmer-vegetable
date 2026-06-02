@@ -84,6 +84,21 @@ export default {
 <style scoped>
 .sd-overlay { position: fixed; top:0; left:0; width:100%; height:100%; z-index:198; background:transparent; }
 .sd-dropdown { position:absolute; top:calc(100% + 6px); left:0; right:0; min-width:320px; background:#fff; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.10); z-index:199; overflow:hidden; max-height:400px; overflow-y:auto; }
+
+@media (max-width: 768px) {
+  .sd-dropdown {
+    position: fixed;
+    top: 60px;
+    left: 10px;
+    right: 10px;
+    min-width: 0;
+    max-height: 60vh;
+    border-radius: 14px;
+  }
+
+  .sd-farms { flex-wrap: wrap; gap: 8px; }
+  .sd-farm { min-width: 70px; }
+}
 .sd-section { padding:0.75rem 1rem 0.7rem; border-bottom:0.5px solid #f0ebe2; }
 .sd-section:last-child { border-bottom:none; }
 .sd-label { font-size:9px; font-weight:500; letter-spacing:0.08em; color:#aaa; text-transform:uppercase; margin-bottom:0.6rem; }
