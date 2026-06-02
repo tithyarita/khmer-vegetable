@@ -525,7 +525,6 @@ const applyProduct = (data) => {
 
   Object.assign(product, {
     id: data.id,
-<<<<<<< HEAD
     name: data.name || 'Untitled product',
     price,
     discount,
@@ -534,27 +533,6 @@ const applyProduct = (data) => {
     providerId: data.provider?.user_id || data.provider_id || data.providerId || null,
     providerName: data.provider?.provider_name || data.providerName || data.provider?.name || 'Unknown',
     weight: data.weight || `${Number(data.stock || 0)} in stock`,
-=======
-    name: data.name || 'Untitled Product',
-    price: Number(data.price || 0),
-    originalPrice: Number(
-      data.originalPrice || data.price || 0
-    ),
-    discount: Number(
-      data.discount || 0
-    ),
-    providerId:
-      data.provider?.user_id ||
-      data.providerId ||
-      null,
-    providerName:
-      data.provider?.provider_name ||
-      data.providerName ||
-      'Unknown',
-    weight:
-      data.weight ||
-      `${Number(data.stock || 0)} in stock`,
->>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
     description: data.description || '',
     culinaryBody:
       data.description ||
@@ -618,6 +596,7 @@ const loadReviews = async () => {
   } catch (err) {
     console.error('Failed to load reviews:', err)
   }
+}
 }
 
 watch(
