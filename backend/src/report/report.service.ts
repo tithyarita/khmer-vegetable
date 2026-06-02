@@ -277,4 +277,31 @@ export class ReportService {
       throw new InternalServerErrorException('Failed to load analytics');
     }
   }
+
+  // Recalculate and persist admin_profit for all stored reports
+  async recalculateAdminProfit() {
+    try {
+      const reports = await this.reportRepo.find();
+      const updated: Report[] = [];
+
+      for (const r of reports) {
+        const revenue = Number(r.total_revenue || 0);
+        const newAdmin = this.calculateAdminProfit(revenue);
+        if (Number(r.admin_profit || 0) !== newAdmin) {
+          r.admin_profit = newAdmin;
+          const saved = await this.reportRepo.save(r);
+          updated.push(saved);
+        }
+      }
+
+      return {
+        success: true,
+        updated_count: updated.length,
+        updated_reports: updated,
+      };
+    } catch (error) {
+      console.error('RECALCULATE ADMIN PROFIT ERROR:', error);
+      throw new InternalServerErrorException('Failed to recalculate admin profit');
+    }
+  }
 }

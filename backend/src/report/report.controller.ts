@@ -25,4 +25,9 @@ export class ReportController {
   async getAnalytics(@Param('period') period: string) {
     return this.reportService.findAnalytics(period);
   }
+
+  @Post('recalculate-admin-profit')
+  async recalculateAdminProfit() {
+    return this.reportService.recalculateAdminProfit();
+  }
 }
