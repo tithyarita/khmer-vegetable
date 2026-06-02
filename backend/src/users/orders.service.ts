@@ -6,8 +6,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, DeepPartial, EntityManager, In, Repository } from 'typeorm';
+import {
+  DataSource,
+  DeepPartial,
+  EntityManager,
+  In,
+  Repository,
+} from 'typeorm';
 import { orders, OrderStatus } from './orders.entity';
+import { ReportService } from '../report/report.service';
 import {
   CreateOrderDto,
   CreateOrderItemDto,
@@ -17,6 +24,10 @@ import { orderItems } from './order-items.entity';
 import { Product } from '../product/product.entity';
 import { Customer, CustomerStatus } from '../customer/customer.entity';
 import { users } from './users.entity';
+
+type ReportServiceWithUpdate = ReportService & {
+  updateForOrder(order: orders): Promise<unknown>;
+};
 
 @Injectable()
 export class OrdersService {
@@ -32,6 +43,7 @@ export class OrdersService {
     @InjectRepository(users)
     private readonly usersRepository: Repository<users>,
     private readonly dataSource: DataSource,
+    private readonly reportService: ReportService,
   ) {}
 
   private generateOrderCode() {
@@ -84,7 +96,9 @@ export class OrdersService {
 
     const user = await usersRepository.findOne({ where: { id: customerId } });
     if (!user) {
-      throw new BadRequestException('Invalid customer id. Please log in again.');
+      throw new BadRequestException(
+        'Invalid customer id. Please log in again.',
+      );
     }
 
     const createdCustomer = this.customerRepository.create({
@@ -119,7 +133,9 @@ export class OrdersService {
       for (const item of items) {
         const quantity = Number(item.quantity);
         if (!Number.isFinite(quantity) || quantity <= 0) {
-          throw new BadRequestException('Each item quantity must be greater than 0');
+          throw new BadRequestException(
+            'Each item quantity must be greater than 0',
+          );
         }
 
         normalizedItemsMap.set(
@@ -142,7 +158,9 @@ export class OrdersService {
         throw new NotFoundException('One or more products were not found');
       }
 
-      const productsById = new Map(products.map((product) => [product.id, product]));
+      const productsById = new Map(
+        products.map((product) => [product.id, product] as [number, Product]),
+      );
 
       const resolvedProviderId = products[0].provider?.user_id;
       if (!resolvedProviderId) {
@@ -158,7 +176,9 @@ export class OrdersService {
       }
 
       if (providerId && providerId !== resolvedProviderId) {
-        throw new BadRequestException('Provider does not match the selected products');
+        throw new BadRequestException(
+          'Provider does not match the selected products',
+        );
       }
 
       for (const item of normalizedItems) {
@@ -181,13 +201,20 @@ export class OrdersService {
         return sum + Number(product.price) * Number(item.quantity);
       }, 0);
 
+      // Calculate admin profit (platform commission). Default 3% of order total.
+      const adminProfit = Number((total * 0.03).toFixed(2));
+
       const order = orderRepository.create({
         order_code: orderCode || this.generateOrderCode(),
         customer_id: resolvedCustomerId,
         provider_id: resolvedProviderId,
         status,
         total,
-        item: normalizedItems.reduce((sum, item) => sum + Number(item.quantity), 0),
+        admin_profit: adminProfit,
+        item: normalizedItems.reduce(
+          (sum, item) => sum + Number(item.quantity),
+          0,
+        ),
         completed_at:
           status === OrderStatus.DELIVERING ? new Date() : undefined,
       } as DeepPartial<orders>);
@@ -214,9 +241,34 @@ export class OrdersService {
 
       await productRepository.save(products);
 
+      try {
+        const savedOrderWithRelations = await orderRepository.findOne({
+          where: { id: savedOrder.id },
+          relations: [
+            'provider',
+            'customer',
+            'order_items',
+            'order_items.product',
+          ],
+        });
+
+        if (savedOrderWithRelations) {
+          await (this.reportService as ReportServiceWithUpdate).updateForOrder(
+            savedOrderWithRelations,
+          );
+        }
+      } catch (err) {
+        console.error('Failed to update report for created order:', err);
+      }
+
       return orderRepository.findOne({
         where: { id: savedOrder.id },
-        relations: ['provider', 'customer', 'order_items', 'order_items.product'],
+        relations: [
+          'provider',
+          'customer',
+          'order_items',
+          'order_items.product',
+        ],
       });
     });
   }
@@ -249,6 +301,27 @@ export class OrdersService {
         status: createOrderDto.status as OrderStatus,
       });
       const savedOrder = await this.ordersRepository.save(order);
+
+      try {
+        const savedOrderWithRelations = await this.ordersRepository.findOne({
+          where: { id: savedOrder.id },
+          relations: [
+            'provider',
+            'customer',
+            'order_items',
+            'order_items.product',
+          ],
+        });
+
+        if (savedOrderWithRelations) {
+          await (this.reportService as ReportServiceWithUpdate).updateForOrder(
+            savedOrderWithRelations,
+          );
+        }
+      } catch (err) {
+        console.error('Failed to update report for created order:', err);
+      }
+
       return {
         message: 'Order created successfully!',
         data: savedOrder,
@@ -302,7 +375,20 @@ export class OrdersService {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthLabels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
 
     const monthlyRevenue = Array.from({ length: 12 }, (_, monthIndex) => {
       const monthTotal = providerOrders
@@ -484,14 +570,17 @@ export class OrdersService {
     }
 
     Object.assign(order, updateOrderDto);
-    if (updateOrderDto.status === OrderStatus.DELIVERING && !order.completed_at) {
+    if (
+      updateOrderDto.status === OrderStatus.DELIVERING &&
+      !order.completed_at
+    ) {
       order.completed_at = new Date();
     }
-    await this.ordersRepository.save(order);
+    const saved = await this.ordersRepository.save(order);
 
     return {
       message: 'Order updated successfully!',
-      data: order,
+      data: saved,
     };
   }
 
@@ -508,4 +597,3 @@ export class OrdersService {
     };
   }
 }
-

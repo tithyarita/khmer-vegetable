@@ -15,6 +15,7 @@ import { orderItems } from './order-items.entity';
 import { orderHistory } from './order-histories.entity';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { ReportModule } from '../report/report.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { OrdersService } from './orders.service';
       Staff,
       Provider,
     ]),
+    ReportModule,
   ],
   controllers: [UsersController, OrdersController],
   providers: [UsersService, OrdersService],

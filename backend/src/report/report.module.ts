@@ -3,20 +3,23 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ReportController } from './report.controller';
 import { ReportService } from './report.service';
+import { ReportScheduler } from './report.scheduler';
 
 import { Report } from './report.entity';
 import { orders } from '../users/orders.entity';
 import { Provider } from '../providers/providers.entity';
+import { DashboardGateway } from '../realtime/dashboard.gateway';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Report,   // ✅ THIS IS REQUIRED (fixes your error)
+      Report,
       orders,
       Provider,
     ]),
   ],
   controllers: [ReportController],
-  providers: [ReportService],
+  providers: [ReportService, ReportScheduler, DashboardGateway],
+  exports: [ReportService],
 })
 export class ReportModule {}

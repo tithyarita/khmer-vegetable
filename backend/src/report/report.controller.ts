@@ -1,21 +1,28 @@
-import { Controller, Get, Post, Query, Body } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param } from '@nestjs/common';
 import { ReportService } from './report.service';
 
 @Controller('reports')
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
-  @Get('dashboard')
-  dashboard(
-    @Query('period') period = 'month',
-    @Query('providerId') providerId?: number,
-    @Query('category') category?: string,
-  ) {
-    return this.reportService.dashboardReport(period, providerId, category);
+  // (optional manual trigger)
+  @Post('generate')
+  async generate(@Body() body: any) {
+    return { message: 'Use order trigger instead of generate' };
   }
 
-  @Post('generate')
-  async generateReport(@Body() body: any) {
-    return this.reportService.saveReports(body);
+  @Get()
+  async findAll() {
+    return this.reportService.findAll();
+  }
+
+  @Get('filtered/:period')
+  async findByPeriod(@Param('period') period: string) {
+    return this.reportService.findByPeriod(period);
+  }
+
+  @Get('analytics/:period')
+  async getAnalytics(@Param('period') period: string) {
+    return this.reportService.findAnalytics(period);
   }
 }

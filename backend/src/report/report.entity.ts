@@ -1,23 +1,40 @@
-// report.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
-@Entity()
+@Entity('reports')
 export class Report {
   @PrimaryGeneratedColumn()
-  id!: number;
+  report_id!: number;
 
-  @Column('decimal', { precision: 12, scale: 2 })
-  totalRevenue!: number;
+  @Column({ type: 'varchar', length: 50, nullable: true, unique: true })
+  report_code?: string;
 
-  @Column('decimal', { precision: 12, scale: 2 })
-  adminProfit!: number;
+  @Column()
+  provider_id!: number;
 
-  @Column({ type: 'enum', enum: ['day', 'week', 'month', 'year'] })
-  period!: string;
+  @Column()
+  provider_name!: string;
 
-  @Column({ type: 'date' })
-  periodDate!: Date;
+  // @Column({ nullable: true })
+  // order_id?: number;
 
-  @Column({ nullable: true })
-  providerUserId!: number;
+  @Column('int')
+  total_orders!: number;
+
+  @Column('decimal', { precision: 10, scale: 2 })
+  total_revenue!: number;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  admin_profit!: number;
+
+  @CreateDateColumn()
+  created_at!: Date;
+
+  @UpdateDateColumn()
+  updated_at!: Date;
 }
