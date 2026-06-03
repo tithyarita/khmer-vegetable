@@ -3,45 +3,41 @@
     <div class="chart-header">
       <div>
         <h3 class="chart-title">Revenue Trends</h3>
-        <p class="chart-sub">Net profit growth over the fiscal month.</p>
+        <p class="chart-sub">Admin profit growth analysis.</p>
       </div>
       <div class="legend">
         <span class="legend-item">
-          <span class="legend-dot legend-dot--current"></span> Current
-        </span>
-        <span class="legend-item">
-          <span class="legend-dot legend-dot--prev"></span> Previous
+          <span class="legend-dot legend-dot--current"></span> Admin Profit
         </span>
       </div>
     </div>
 
-    <svg viewBox="0 0 440 160" class="chart-svg" preserveAspectRatio="none">
+    <div v-if="!adminProfitData || adminProfitData.length === 0" class="no-data">
+      <p>No data available for the selected date range</p>
+    </div>
+
+    <svg v-else viewBox="0 0 440 160" class="chart-svg" preserveAspectRatio="none">
       <!-- Grid lines -->
       <line v-for="y in gridLines" :key="y" x1="0" :y1="y" x2="440" :y2="y"
         stroke="#f0f0f0" stroke-width="1" />
 
-      <!-- Filled area under current line -->
+      <!-- Filled area under profit line -->
       <path :d="areaPath" fill="url(#greenGrad)" opacity=".18" />
 
-      <!-- Previous period line (dashed) -->
-      <polyline :points="prevPoints" fill="none"
-        stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="5,4"
-        stroke-linejoin="round" stroke-linecap="round" />
-
-      <!-- Current line -->
-      <polyline :points="currPoints" fill="none"
+      <!-- Profit line -->
+      <polyline :points="profitPoints" fill="none"
         stroke="#2d6a4f" stroke-width="2.5"
         stroke-linejoin="round" stroke-linecap="round" />
 
       <!-- Dots -->
-      <circle v-for="(pt, i) in currentCoords" :key="i"
+      <circle v-for="(pt, i) in profitCoords" :key="i"
         :cx="pt.x" :cy="pt.y" r="3.5"
         fill="#2d6a4f" stroke="#fff" stroke-width="2" />
 
-      <!-- X-axis week labels -->
-      <text v-for="(wk, i) in weeks" :key="wk"
-        :x="20 + i * 132" y="156" text-anchor="middle"
-        font-size="9" fill="#9ca3af">{{ wk }}</text>
+      <!-- X-axis provider labels -->
+      <text v-for="(item, i) in displayLabels" :key="item"
+        :x="20 + i * labelSpacing" y="156" text-anchor="middle"
+        font-size="8" fill="#9ca3af">{{ item }}</text>
 
       <!-- Gradient def -->
       <defs>
@@ -57,28 +53,58 @@
 <script setup>
 import { computed } from 'vue'
 
-const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4']
+const props = defineProps({
+  adminProfitData: {
+    type: Array,
+    default: () => [],
+  },
+  dateRange: {
+    type: Object,
+    default: () => ({ start: '', end: '' }),
+  },
+})
+
 const gridLines = [30, 65, 100, 135]
 
-// Current period — a smooth wave that rises mid-month then drops
-const currentY = [130, 110, 80, 55, 45, 60, 85, 95, 70, 50, 40, 65, 90, 75, 55]
-// Previous period — flatter
-const prevY    = [120, 115, 105, 98, 95, 100, 105, 110, 100, 95, 90, 95, 100, 98, 95]
+// Calculate profit coordinates from data
+const profitCoords = computed(() => {
+  if (!props.adminProfitData || props.adminProfitData.length === 0) {
+    return []
+  }
 
-const currentCoords = currentY.map((y, i) => ({ x: 16 + i * 27, y }))
-const prevCoords    = prevY.map((y, i)    => ({ x: 16 + i * 27, y }))
+  const data = props.adminProfitData.slice(0, 15) // Limit to 15 items for readability
+  const maxProfit = Math.max(...data.map(d => Number(d.admin_profit || 0)), 1)
 
-const currPoints = computed(() => currentCoords.map(p => `${p.x},${p.y}`).join(' '))
-const prevPoints = computed(() => prevCoords.map(p => `${p.x},${p.y}`).join(' '))
+  return data.map((item, i) => {
+    const profit = Number(item.admin_profit || 0)
+    const y = 130 - (profit / maxProfit) * 85 // Scale to SVG height
+    return { x: 16 + i * 27, y: Math.max(y, 20) }
+  })
+})
 
-// Area path: line + close along bottom
+const profitPoints = computed(() =>
+  profitCoords.value.map(p => `${p.x},${p.y}`).join(' ')
+)
+
 const areaPath = computed(() => {
-  const pts = currentCoords
+  const pts = profitCoords.value
+  if (pts.length === 0) return ''
+
   const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
   const last = pts[pts.length - 1]
   const first = pts[0]
   return `${line} L${last.x},148 L${first.x},148 Z`
 })
+
+const displayLabels = computed(() =>
+  props.adminProfitData
+    .slice(0, 15)
+    .map(d => d.provider_name?.substring(0, 8) || 'N/A')
+)
+
+const labelSpacing = computed(() =>
+  Math.max(30, 440 / Math.max(displayLabels.value.length, 1))
+)
 </script>
 
 <style scoped>
@@ -102,7 +128,11 @@ const areaPath = computed(() => {
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #6b7280; }
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 .legend-dot--current { background: #2d6a4f; }
-.legend-dot--prev    { background: #d1d5db; }
 
 .chart-svg { width: 100%; height: 160px; }
+
+.no-data {
+  display: flex; align-items: center; justify-content: center;
+  height: 160px; color: #9ca3af; font-size: 12px;
+}
 </style>

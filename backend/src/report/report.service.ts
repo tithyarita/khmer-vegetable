@@ -1,13 +1,16 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual, LessThanOrEqual, And } from 'typeorm';
 import { Report } from './report.entity';
 import { orders as Orders } from '../users/orders.entity';
 import { Provider } from '../providers/providers.entity';
 import { DashboardGateway } from '../realtime/dashboard.gateway';
 
 @Injectable()
+@Injectable()
 export class ReportService {
+  private logger = new Logger('ReportService');
+
   constructor(
     @InjectRepository(Report)
     private readonly reportRepo: Repository<Report>,
@@ -425,6 +428,78 @@ export class ReportService {
     } catch (error) {
       console.error('RECALCULATE ADMIN PROFIT ERROR:', error);
       throw new InternalServerErrorException('Failed to recalculate admin profit');
+    }
+  }
+
+  // ===============================
+  // GET REPORTS BY DATE RANGE (FOR REVENUE TRENDS)
+  // ===============================
+  async findByDateRange(start: string, end: string) {
+    try {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      endDate.setHours(23, 59, 59, 999);
+
+      // Use TypeORM operators for date range
+      const reports = await this.reportRepo.find({
+        where: {
+          created_at: And(
+            MoreThanOrEqual(startDate),
+            LessThanOrEqual(endDate)
+          ),
+        },
+        order: { created_at: 'DESC' },
+      });
+
+      return reports;
+    } catch (error) {
+      this.logger.error('Error fetching reports by date range:', error.message);
+      return [];
+    }
+  }
+
+  // ===============================
+  // GET ORDERS DISTRIBUTION BY STATUS (FOR ORDER DISTRIBUTION CHART)
+  // ===============================
+  async getOrdersDistribution(start: string, end: string) {
+    try {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      endDate.setHours(23, 59, 59, 999);
+
+      const orders = await this.orderRepo.find({
+        order: { created_at: 'DESC' },
+      });
+
+      // Filter by date range in memory
+      const filtered = orders.filter(o => {
+        if (!o.created_at) return false;
+        const d = new Date(o.created_at);
+        return d >= startDate && d <= endDate;
+      });
+
+      // Count by status
+      const statusMap: { [key: string]: number } = {};
+
+      for (const order of filtered) {
+        const status = order.status || 'PENDING';
+        statusMap[status] = (statusMap[status] || 0) + 1;
+      }
+
+      const total = filtered.length;
+
+      // Convert to percentage
+      return {
+        total,
+        statuses: Object.entries(statusMap).map(([status, count]) => ({
+          status,
+          count,
+          percentage: total > 0 ? Number(((count / total) * 100).toFixed(1)) : 0,
+        })),
+      };
+    } catch (error) {
+      this.logger.error('Error fetching orders distribution:', error.message);
+      return { total: 0, statuses: [] };
     }
   }
 }

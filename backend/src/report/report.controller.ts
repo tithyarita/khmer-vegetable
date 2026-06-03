@@ -41,6 +41,22 @@ export class ReportController {
     return this.reportService.findAnalytics(period);
   }
 
+  @Get('date-range')
+  async findByDateRange(
+    @Query('start') start: string,
+    @Query('end') end: string,
+  ) {
+    return this.reportService.findByDateRange(start, end);
+  }
+
+  @Get('orders-distribution')
+  async getOrdersDistribution(
+    @Query('start') start: string,
+    @Query('end') end: string,
+  ) {
+    return this.reportService.getOrdersDistribution(start, end);
+  }
+
   @Post('recalculate-admin-profit')
   async recalculateAdminProfit() {
     return this.reportService.recalculateAdminProfit();
