@@ -115,4 +115,53 @@ export class MailService {
       this.logger.error(`Failed to send approval email to ${to}:`, err);
     }
   }
+  async sendVerificationCode(params: {
+    to: string;
+    code: string;
+  }): Promise<void> {
+    const { to, code } = params;
+
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8" />
+    <style>
+      body { font-family: Arial, sans-serif; background: #f5f7fb; margin: 0; }
+      .wrapper { max-width: 480px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+      .header { background: linear-gradient(135deg, #16a34a, #14532d); padding: 28px 32px; text-align: center; }
+      .header h1 { color: #fff; margin: 0; font-size: 20px; }
+      .body { padding: 32px; color: #374151; text-align: center; }
+      .code-box { background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 24px 0; letter-spacing: 8px; font-size: 36px; font-weight: 800; color: #14532d; font-family: monospace; }
+      .note { font-size: 13px; color: #6b7280; }
+      .footer { text-align: center; padding: 16px; font-size: 11px; color: #9ca3af; border-top: 1px solid #f3f4f6; }
+    </style>
+    </head>
+    <body>
+      <div class="wrapper">
+        <div class="header"><h1>🌿 Organic Editorial</h1></div>
+        <div class="body">
+          <p>Use this code to verify your email for the provider application:</p>
+          <div class="code-box">${code}</div>
+          <p class="note">This code expires in <strong>10 minutes</strong>.<br/>If you didn't request this, you can safely ignore this email.</p>
+        </div>
+        <div class="footer">© 2026 Digital Greenhouse System</div>
+      </div>
+    </body>
+    </html>
+  `;
+
+    try {
+      await this.transporter.sendMail({
+        from:
+          process.env.MAIL_FROM ?? 'Organic Editorial <no-reply@example.com>',
+        to,
+        subject: '🔐 Your verification code',
+        html,
+      });
+      this.logger.log(`Verification code sent to ${to}`);
+    } catch (err) {
+      this.logger.error(`Failed to send verification code to ${to}:`, err);
+      throw new Error('Failed to send verification email. Please try again.');
+    }
+  }
 }

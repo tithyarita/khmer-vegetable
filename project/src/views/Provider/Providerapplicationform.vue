@@ -75,15 +75,23 @@
             <div class="field-group">
               <label class="field-label">Contact Email <span class="req">*</span></label>
               <input class="field-input" :class="{ 'input-error': errors.contactEmail }"
-                type="email" placeholder="hello@yourfarm.com"
-                v-model="form.contactEmail" @blur="validateField('contactEmail')" />
+                type="email" v-model="form.contactEmail" readonly
+                style="background:#f3f4f6;cursor:not-allowed;" />
               <span v-if="errors.contactEmail" class="field-error">{{ errors.contactEmail }}</span>
             </div>
             <div class="field-group">
-              <label class="field-label">Phone Number</label>
-              <input class="field-input" type="tel" placeholder="+855 12 345 678"
-                v-model="form.phone" />
-            </div>
+              <label class="field-label">Phone Number <span class="req">*</span></label>
+              <input
+                class="field-input"
+                :class="{ 'input-error': errors.phone }"
+                type="tel"
+                placeholder="012345678"
+                v-model="form.phone"
+                @blur="validateField('phone')"
+                @input="form.phone = form.phone.replace(/\D/g, '')"
+              />
+              <span v-if="errors.phone" class="field-error">{{ errors.phone }}</span>
+           </div>
           </div>
         </div>
 
@@ -145,21 +153,25 @@
                 v-model="form.primaryVegetable" />
             </div>
             <div class="field-group">
-              <label class="field-label">Farm Category</label>
-              <div class="select-wrap">
-                <select class="field-select" v-model="form.farmCategory">
-                  <option value="" disabled>Select a category</option>
-                  <option value="organic-vegetables">Organic Vegetables</option>
-                  <option value="seasonal-fruits">Seasonal Fruits</option>
-                  <option value="dairy-cheese">Dairy & Cheese</option>
-                  <option value="honey-beeswax">Honey & Beeswax</option>
-                  <option value="herbs-microgreens">Herbs & Microgreens</option>
-                  <option value="root-vegetables">Root Vegetables & Tubers</option>
-                  <option value="other">Other</option>
-                </select>
-                <i class="bi bi-chevron-down select-arrow"></i>
-              </div>
-            </div>
+             <label class="field-label">Farm Category</label>
+             <div class="select-wrap">
+               <select class="field-select" v-model="form.farmCategory">
+                 <option value="" disabled>Select a category</option>
+           
+                 <option value="leafy-vegetables">Leafy Vegetables</option>
+                 <option value="fruit-vegetables">Fruit Vegetables</option>
+                 <option value="root-vegetables">Root Vegetables & Tubers</option>
+                 <option value="herbs-spices">Herbs & Spices</option>
+                 <option value="mushrooms">Mushrooms</option>
+                 <option value="organic-produce">Organic Produce</option>
+                 <option value="seasonal-products">Seasonal Products</option>
+                 <option value="seeds-seedlings">Seeds & Seedlings</option>
+                 <option value="mixed-farm-products">Mixed Farm Products</option>
+                 <option value="other">Other</option>
+               </select>
+               <i class="bi bi-chevron-down select-arrow"></i>
+             </div>
+           </div>
           </div>
         </div>
 
@@ -299,6 +311,7 @@
 
 <script>
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+const verifiedEmail = sessionStorage.getItem('app_verified_email') || '';
 
 export default {
   name: "ProviderApplicationForm",
@@ -310,11 +323,11 @@ export default {
       isDragging: false,
       idDocument: null,
       profilePhotoFile: null,
-      profilePhotoUrl: "https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=120&h=120&fit=crop&crop=face",
+      profilePhotoUrl: null,
       form: {
         businessName:     "",
         ownerName:        "",
-        contactEmail:     "",
+        contactEmail:     verifiedEmail,
         phone:            "",
         village:          "",
         commune:          "",
@@ -327,6 +340,13 @@ export default {
         businessName: "",
         ownerName:    "",
         contactEmail: "",
+        phone:        "",
+        village:      "",
+        commune:      "",
+        district:     "",
+        cityProvince: "",
+        primaryVegetable: "",
+        farmCategory: "",
       },
       angles: [
         { label: "ANGLE 1: OVERVIEW",       sublabel: "Wide landscape view of farm",      previewUrl: null, file: null },
@@ -339,17 +359,34 @@ export default {
   methods: {
     /* ── Validation ── */
     validateField(field) {
-      const val = this.form[field]?.trim();
-      if (field === 'businessName')  this.errors.businessName  = val ? '' : 'Business name is required.';
-      if (field === 'ownerName')     this.errors.ownerName     = val ? '' : 'Owner name is required.';
+      const val = this.form[field]?.trim()
+    
+      if (field === 'businessName')
+        this.errors.businessName = val ? '' : 'Business name is required.'
+    
+      if (field === 'ownerName')
+        this.errors.ownerName = val ? '' : 'Owner name is required.'
+    
       if (field === 'contactEmail') {
-        if (!val)                    this.errors.contactEmail  = 'Email is required.';
-        else if (!/\S+@\S+\.\S+/.test(val)) this.errors.contactEmail = 'Enter a valid email address.';
-        else                         this.errors.contactEmail  = '';
+        if (!val)                          this.errors.contactEmail = 'Email is required.'
+        else if (!/\S+@\S+\.\S+/.test(val)) this.errors.contactEmail = 'Enter a valid email.'
+        else                               this.errors.contactEmail = ''
+      }
+    
+      if (field === 'phone') {
+        if (!val) {
+          this.errors.phone = 'Phone number is required.'
+        } else if (!/^\d+$/.test(val)) {
+          this.errors.phone = 'Phone number must contain digits only — no letters or special characters.'
+        } else if (val.length < 9 || val.length > 15) {
+          this.errors.phone = 'Phone number must be between 9 and 15 digits.'
+        } else {
+          this.errors.phone = ''
+        }
       }
     },
     validateAll() {
-      ['businessName', 'ownerName', 'contactEmail'].forEach(f => this.validateField(f));
+      ['businessName', 'ownerName', 'contactEmail', 'phone'].forEach(f => this.validateField(f));
       return !Object.values(this.errors).some(Boolean);
     },
 

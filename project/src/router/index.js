@@ -121,6 +121,9 @@ const routes = [
   // PROVIDER APPLICATION
   { path: '/application-form', component: Providerapplicationform },
 
+  // OTP Verification for Application Form
+  { path: '/application-verify', component: () => import('../views/Provider/ApplicationVerify.vue') },
+
   // AUTH
   { path: '/user/login', component: () => import('../views/User/login.vue') },
   { path: '/user/register', component: () => import('../views/User/resgister.vue') },
@@ -182,6 +185,14 @@ router.beforeEach((to, from) => {
   if (to.path.startsWith('/provider')) {
     if (!user || role !== 'provider') {
       return `/user/login?redirect=${to.fullPath}`
+    }
+  }
+  
+  // APPLICATION FORM PROTECTION — must verify email first
+  if (to.path === '/application-form') {
+    const verified = sessionStorage.getItem('app_verified_email')
+    if (!verified) {
+      return '/application-verify'
     }
   }
 

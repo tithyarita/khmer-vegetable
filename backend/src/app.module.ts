@@ -19,6 +19,7 @@ import { MailModule } from './mail/mail.module';
 import { OrdersModule } from './users/orders.module';
 import { ReportModule } from './report/report.module';
 import {ReviewModule} from "./review/review.module";
+import { VerifyController } from './verify/verify.controller';
 
 @Module({
   imports: [
@@ -53,7 +54,7 @@ import {ReviewModule} from "./review/review.module";
     AddressModule,
     MailModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, VerifyController],
   providers: [AppService],
 })
 export class AppModule {}
