@@ -110,6 +110,15 @@ const cartStore = useCartStore()
 const productStore = useProductStore()
 const favoriteStore = useFavoriteStore()
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+const resolveImage = (path) => {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  if (path.startsWith('/')) return API_BASE_URL + path
+  return API_BASE_URL + '/uploads/' + path
+}
+
 const normalizeProduct = product => ({
   ...product,
   price: Number(product?.price ?? 0),
@@ -117,7 +126,7 @@ const normalizeProduct = product => ({
   rating: Number(product?.rating ?? 0),
   providerId: Number(product?.providerId ?? product?.provider_id ?? product?.provider?.user_id ?? 0) || null,
   providerName: product?.providerName || product?.provider?.provider_name || product?.provider?.name || 'Unknown',
-  image: product?.image || product?.imageUrl || '',
+  image: resolveImage(product?.image || product?.imageUrl || ''),
   stock: Number(product?.stock ?? 0),
 })
 
