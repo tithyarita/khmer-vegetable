@@ -25,10 +25,7 @@
     "@nestjs/platform-express": "^11.1.23",
     "@nestjs/platform-socket.io": "^11.1.24",
     "@nestjs/schedule": "^6.1.3",
-<<<<<<< HEAD
-=======
     "@nestjs/swagger": "^11.4.4",
->>>>>>> 92b45b2c7bfbd4119f26bd4c4bc53fbd585171a7
     "@nestjs/typeorm": "^11.0.1",
     "@nestjs/websockets": "^11.1.24",
     "bcryptjs": "^3.0.3",
