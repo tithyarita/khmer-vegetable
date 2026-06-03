@@ -7,11 +7,6 @@
       </div>
 
       <div class="header-actions">
-        <button class="btn-export" @click="manualGenerateReport">
-          <i class="bi bi-arrow-repeat me-1"></i>
-          Refresh Reports
-        </button>
-
         <button class="btn-export" @click="fetchReports">
           <i class="bi bi-download me-1"></i>
           Export PDF
@@ -206,6 +201,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
+import { io } from 'socket.io-client'
 
 import ReportMetricCard from '../../components/Admin/Reportmetriccard.vue'
 import RevenueTrendChart from '../../components/Admin/Revenuetrendchart.vue'
@@ -229,7 +225,7 @@ const showPopup = ref(false)
 const selectedReport = ref(null)
 const providerOrders = ref([])
 
-let interval = null
+let socket = null
 
 /**
  * =========================
@@ -255,15 +251,6 @@ const fetchReports = async (period = activePeriod.value) => {
   } finally {
     loading.value = false
   }
-}
-
-/**
- * =========================
- * REFRESH BUTTON
- * =========================
- */
-const manualGenerateReport = async () => {
-  await fetchReports(activePeriod.value)
 }
 
 /**
@@ -347,14 +334,19 @@ const totalProviders = computed(() => reports.value.length)
  * AUTO REFRESH (LIVE DATA)
  * =========================
  */
-const startAutoRefresh = () => {
-  interval = setInterval(() => {
+const connectSocket = () => {
+  socket = io(API)
+
+  socket.on('dashboard:update', () => {
     fetchReports(activePeriod.value)
-  }, 30000)
+  })
 }
 
-const stopAutoRefresh = () => {
-  if (interval) clearInterval(interval)
+const disconnectSocket = () => {
+  if (socket) {
+    socket.disconnect()
+    socket = null
+  }
 }
 
 /**
@@ -364,11 +356,11 @@ const stopAutoRefresh = () => {
  */
 onMounted(() => {
   fetchReports(activePeriod.value)
-  startAutoRefresh()
+  connectSocket()
 })
 
 onUnmounted(() => {
-  stopAutoRefresh()
+  disconnectSocket()
 })
 </script>
 

@@ -439,7 +439,7 @@ const loadProducts = async () => {
 
   try {
 
-    await productStore.fetchAllProducts()
+    await productStore.fetchProviderProducts()
 
   } catch (error) {
 

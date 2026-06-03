@@ -10,7 +10,6 @@ import { Product } from '../product/product.entity';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { orders } from './orders.entity';
-import { products } from './products.entity';
 import { orderItems } from './order-items.entity';
 import { orderHistory } from './order-histories.entity';
 import { OrdersController } from './orders.controller';
@@ -23,7 +22,6 @@ import { ReportModule } from '../report/report.module';
       users,
       orders,
       orderItems,
-      products,
       orderHistory,
       Product,
       Customer,

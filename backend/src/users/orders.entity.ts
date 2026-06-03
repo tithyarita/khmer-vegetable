@@ -38,43 +38,18 @@ export class orders {
   @Column()
   provider_id!: number;
 
-  /* --------------------------------
-      RELATIONSHIPS
-  -------------------------------- */
-
+  // RELATIONS
   @ManyToOne(() => Provider, { eager: true })
   @JoinColumn({ name: 'provider_id' })
   provider!: Provider;
 
-<<<<<<< HEAD
-  @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
-  status!: OrderStatus;
-
-  @Column('decimal')
-  total!: number;
-
-  @CreateDateColumn({ type: 'timestamp', nullable: true })
-  created_at!: Date;
-
-  @Column({ nullable: true })
-  completed_at!: Date;
-
-  @Column('double', { default: 1 })
-  item!: number;
-
-=======
->>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
   @ManyToOne(() => Customer, (customer) => customer.orders)
   @JoinColumn({ name: 'customer_id' })
   customer!: Customer;
-
-  @OneToMany(() => orderItems, (item) => item.order, { cascade: true })
+  @OneToMany(() => orderItems, (item) => item.order)
   order_items!: orderItems[];
 
-  /* --------------------------------
-      ORDER
-  -------------------------------- */
-
+  // ORDER INFO
   @Column({
     type: 'enum',
     enum: OrderStatus,
@@ -88,55 +63,28 @@ export class orders {
   @Column({ default: 1 })
   item!: number;
 
-  @CreateDateColumn({
-    type: 'timestamp',
-    nullable: true,
-  })
+  @CreateDateColumn()
   created_at!: Date;
 
-  @Column({
-    type: 'timestamp',
-    nullable: true,
-  })
+  @Column({ type: 'timestamp', nullable: true })
   completed_at!: Date;
 
-  /* --------------------------------
-      PAYMENT
-  -------------------------------- */
-
-  @Column({
-    nullable: true,
-  })
+  // PAYMENT
+  @Column({ nullable: true })
   payment_method!: string;
 
-  // uploaded screenshot image
-  @Column({
-    type: 'text',
-    nullable: true,
-  })
-  payment_proof!: string;
+  @Column({ type: 'text', nullable: true })
+  payment_proof!: string | null;
 
-  // amount customer paid
-  @Column({
-    type: 'decimal',
-    default: 0,
-  })
+  @Column({ type: 'decimal', default: 0 })
   payment_amount!: number;
 
-  // transaction number
-  @Column({
-    nullable: true,
-  })
+  @Column({ nullable: true })
   transaction_id!: string;
 
-  // payment date
-  @Column({
-    type: 'timestamp',
-    nullable: true,
-  })
+  @Column({ type: 'timestamp', nullable: true })
   paid_at!: Date;
 
-  // provider verification
   @Column({
     type: 'enum',
     enum: PaymentStatus,
@@ -144,10 +92,6 @@ export class orders {
   })
   payment_status!: PaymentStatus;
 
-  // provider note
-  @Column({
-    type: 'text',
-    nullable: true,
-  })
+  @Column({ type: 'text', nullable: true })
   payment_note!: string;
 }

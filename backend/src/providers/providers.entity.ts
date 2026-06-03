@@ -61,8 +61,8 @@ export class Provider {
   @Column({ name: 'application_id', nullable: true })
   application_id?: number;
 
-  @Column({ name: 'created_by_admin', nullable: true })
-  created_by_admin?: number;
+  @Column({ name: 'createdByAdminUserId', nullable: true })
+  createdByAdminUserId?: number;
 
   // ── Relations ──────────────────────────────────────────────────────────────
 
@@ -79,7 +79,7 @@ export class Provider {
   @ManyToOne(() => Admin, (admin) => admin.created_providers, {
     nullable: true,
   })
-  @JoinColumn({ name: 'created_by_admin' })
+  @JoinColumn({ name: 'createdByAdminUserId' })
   createdByAdmin?: Admin;
 
   @OneToMany(() => Product, (product) => product.provider)

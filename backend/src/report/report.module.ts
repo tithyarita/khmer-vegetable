@@ -11,19 +11,15 @@ import { Provider } from '../providers/providers.entity';
 import { DashboardGateway } from '../realtime/dashboard.gateway';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-<<<<<<< HEAD
-      Report,
-=======
-      Report, // ✅ THIS IS REQUIRED (fixes your error)
->>>>>>> 2fb6047838160a94c8fb43b16c0756965e350c44
-      orders,
-      Provider,
-    ]),
-  ],
-  controllers: [ReportController],
-  providers: [ReportService, ReportScheduler, DashboardGateway],
-  exports: [ReportService],
+imports: [
+TypeOrmModule.forFeature([
+Report,
+orders,
+Provider,
+]),
+],
+controllers: [ReportController],
+providers: [ReportService, ReportScheduler, DashboardGateway],
+exports: [ReportService],
 })
 export class ReportModule {}

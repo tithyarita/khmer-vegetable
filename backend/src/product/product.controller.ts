@@ -28,14 +28,36 @@ export class ProductController {
   // ================= GET ALL (FIXED) =================
   // Public GET all products
   @Get()
-  findAll() {
-    return this.productService.findAll();
+  async findAll() {
+    try {
+      return await this.productService.findAll();
+    } catch (error) {
+      console.error('Products fetch error:', error);
+      throw error;
+    }
+  }
+
+  // ================= GET PROVIDER PRODUCTS =================
+  @UseGuards(JwtAuthGuard)
+  @Get('provider')
+  async findProviderProducts(@Req() req: any) {
+    try {
+      return await this.productService.findByProvider(req.user.id);
+    } catch (error) {
+      console.error('Provider products fetch error:', error);
+      throw error;
+    }
   }
 
   // ================= GET ONE =================
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productService.findOne(Number(id))
+  async findOne(@Param('id') id: string) {
+    try {
+      return await this.productService.findOne(Number(id));
+    } catch (error) {
+      console.error('Product fetch error:', error);
+      throw error;
+    }
   }
 
   // ================= CREATE =================

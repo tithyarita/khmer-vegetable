@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
 import { ReportService } from './report.service';
 
 @Controller('reports')
@@ -8,7 +8,22 @@ export class ReportController {
   // (optional manual trigger)
   @Post('generate')
   async generate(@Body() body: any) {
-    return { message: 'Use order trigger instead of generate' };
+    const period = (body && body.period) || 'Monthly';
+    await this.reportService.generateReports(period);
+    return { success: true, period, message: `${period} reports generated` };
+  }
+
+  @Get('dashboard')
+  async getDashboard(@Query('period') period: string = 'month') {
+    // Map query period to service format
+    const periodMap: { [key: string]: string } = {
+      'day': 'Daily',
+      'week': 'Weekly',
+      'month': 'Monthly',
+      'year': 'Yearly',
+    };
+    const mappedPeriod = periodMap[period] || 'Monthly';
+    return this.reportService.findAnalytics(mappedPeriod);
   }
 
   @Get()

@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Report } from './report.entity';
 import { orders as Orders } from '../users/orders.entity';
+import { Provider } from '../providers/providers.entity';
+import { DashboardGateway } from '../realtime/dashboard.gateway';
 
 @Injectable()
 export class ReportService {
@@ -11,6 +13,9 @@ export class ReportService {
     private readonly reportRepo: Repository<Report>,
     @InjectRepository(Orders)
     private readonly orderRepo: Repository<Orders>,
+    @InjectRepository(Provider)
+    private readonly providerRepo: Repository<Provider>,
+    private readonly dashboardGateway: DashboardGateway,
   ) {}
 
   // ===============================
@@ -184,11 +189,37 @@ export class ReportService {
 
       report.admin_profit = this.calculateAdminProfit(report.total_revenue);
 
+      if (!report.provider_name || report.provider_name === 'Unknown') {
+        const provider = await this.providerRepo.findOne({
+          where: { user_id: order.provider_id },
+        });
+        if (provider?.provider_name) {
+          report.provider_name = provider.provider_name;
+        }
+      }
+
       const saved = await this.reportRepo.save(report);
 
       if (!saved.report_code) {
         saved.report_code = `#REP-${saved.report_id}`;
         await this.reportRepo.save(saved);
+      }
+
+      // emit full dashboard update
+      try {
+        const providerReports = await this.reportRepo.find({ order: { report_id: 'DESC' } });
+        const recentOrders = await this.orderRepo.find({ order: { id: 'DESC' }, take: 10 });
+        const totalRevenue = providerReports.reduce((s, r) => s + Number(r.total_revenue || 0), 0);
+        const totalOrders = providerReports.reduce((s, r) => s + Number(r.total_orders || 0), 0);
+        const totalAdmin = providerReports.reduce((s, r) => s + Number(r.admin_profit || 0), 0);
+
+        this.dashboardGateway.emitDashboardUpdate({
+          summary: { totalRevenue, adminProfit: totalAdmin, totalOrders, totalProviders: providerReports.length },
+          providerReports,
+          recentOrders,
+        });
+      } catch (err) {
+        console.error('Dashboard emit failed:', err);
       }
 
       return saved;
@@ -197,6 +228,98 @@ export class ReportService {
       throw new InternalServerErrorException(
         'Failed to update report for order',
       );
+    }
+  }
+
+  // ===============================
+  // DECREMENT REPORT ON ORDER DELETE
+  // ===============================
+  async decrementForOrder(order: Orders) {
+    try {
+      if (!order?.provider_id) return null;
+
+      const report = await this.reportRepo.findOne({ where: { provider_id: order.provider_id } });
+      if (!report) return null;
+
+      report.total_orders = Math.max(0, Number(report.total_orders) - 1);
+      report.total_revenue = Number((Number(report.total_revenue || 0) - Number(order.total || 0)).toFixed(2));
+      report.admin_profit = this.calculateAdminProfit(Number(report.total_revenue || 0));
+
+      const saved = await this.reportRepo.save(report);
+
+      try {
+        const providerReports = await this.reportRepo.find({ order: { report_id: 'DESC' } });
+        const recentOrders = await this.orderRepo.find({ order: { id: 'DESC' }, take: 10 });
+        const totalRevenue = providerReports.reduce((s, r) => s + Number(r.total_revenue || 0), 0);
+        const totalOrders = providerReports.reduce((s, r) => s + Number(r.total_orders || 0), 0);
+        const totalAdmin = providerReports.reduce((s, r) => s + Number(r.admin_profit || 0), 0);
+
+        this.dashboardGateway.emitDashboardUpdate({
+          summary: { totalRevenue, adminProfit: totalAdmin, totalOrders, totalProviders: providerReports.length },
+          providerReports,
+          recentOrders,
+        });
+      } catch (err) {
+        console.error('Dashboard emit failed:', err);
+      }
+
+      return saved;
+    } catch (error) {
+      console.error('DECREMENT ORDER REPORT ERROR:', error);
+      throw new InternalServerErrorException('Failed to decrement report for order');
+    }
+  }
+
+  // ===============================
+  // ADJUST REPORT ON ORDER UPDATE
+  // ===============================
+  async adjustForOrderUpdate(oldOrder: Orders, newOrder: Orders) {
+    try {
+      if (!oldOrder || !newOrder) return null;
+
+      // If provider changed, decrement old and increment new
+      if (oldOrder.provider_id !== newOrder.provider_id) {
+        await this.decrementForOrder(oldOrder);
+        return this.updateForOrder(newOrder);
+      }
+
+      // Same provider: adjust revenue difference
+      const report = await this.reportRepo.findOne({ where: { provider_id: newOrder.provider_id } });
+      if (!report) {
+        // create fresh report
+        return this.updateForOrder(newOrder);
+      }
+
+      const oldTotal = Number(oldOrder.total || 0);
+      const newTotal = Number(newOrder.total || 0);
+      const diff = Number((newTotal - oldTotal).toFixed(2));
+
+      report.total_revenue = Number((Number(report.total_revenue || 0) + diff).toFixed(2));
+      // total_orders unchanged
+      report.admin_profit = this.calculateAdminProfit(Number(report.total_revenue || 0));
+
+      const saved = await this.reportRepo.save(report);
+
+      try {
+        const providerReports = await this.reportRepo.find({ order: { report_id: 'DESC' } });
+        const recentOrders = await this.orderRepo.find({ order: { id: 'DESC' }, take: 10 });
+        const totalRevenue = providerReports.reduce((s, r) => s + Number(r.total_revenue || 0), 0);
+        const totalOrders = providerReports.reduce((s, r) => s + Number(r.total_orders || 0), 0);
+        const totalAdmin = providerReports.reduce((s, r) => s + Number(r.admin_profit || 0), 0);
+
+        this.dashboardGateway.emitDashboardUpdate({
+          summary: { totalRevenue, adminProfit: totalAdmin, totalOrders, totalProviders: providerReports.length },
+          providerReports,
+          recentOrders,
+        });
+      } catch (err) {
+        console.error('Dashboard emit failed:', err);
+      }
+
+      return saved;
+    } catch (error) {
+      console.error('ADJUST ORDER REPORT ERROR:', error);
+      throw new InternalServerErrorException('Failed to adjust report for order update');
     }
   }
 

@@ -58,46 +58,65 @@ export class ProductService {
     return this.productRepository.save(product)
   }
 
-  // ================= GET ALL (FIXED ISOLATION) =================
+  // ================= GET ALL =================
   async findAll(userId?: number, userRole?: string) {
-    let products;
-    if (!userId || !userRole) {
-      // Public access: return all products
-      products = await this.productRepository.find({ relations: ['provider'] });
-    } else {
-      const isAdmin = userRole === 'admin';
-      const isCustomer = userRole === 'customer';
-      // Customers and admins see all products; providers see only their own
-      products = await this.productRepository.find({
-        where: isAdmin || isCustomer
-          ? undefined
-          : { provider: { user_id: userId } },
+    try {
+      const products = await this.productRepository.find({
         relations: ['provider'],
+        order: {
+          id: 'DESC',
+        },
       });
-    }
 
-    // Debug logging
-    this.logger?.debug?.(`[findAll] userId=${userId} role=${userRole} products.length=${products.length}`);
-    const missingProviders = products.filter(p => !p.provider);
-    if (missingProviders.length > 0) {
-      this.logger?.warn?.(`[findAll] Products with missing provider: ${missingProviders.map(p => p.id).join(', ')}`);
+      this.logger.log(`[findAll] products count=${products.length}`);
+      return products;
+    } catch (error) {
+      this.logger.error(`[findAll] Error fetching products:`, error.message);
+      return [];
     }
+  }
 
-    return products;
+  // ================= GET BY PROVIDER =================
+  async findByProvider(providerId: number) {
+    try {
+      const products = await this.productRepository.find({
+        relations: ['provider'],
+        where: {
+          provider: { user_id: providerId },
+        },
+        order: {
+          id: 'DESC',
+        },
+      });
+
+      this.logger.log(`[findByProvider] providerId=${providerId} products count=${products.length}`);
+      return products;
+    } catch (error) {
+      this.logger.error(`[findByProvider] Error fetching provider products:`, error.message);
+      return [];
+    }
   }
 
   // ================= GET ONE =================
   async findOne(id: number) {
-    const product = await this.productRepository.findOne({
-      where: { id },
-      relations: ['provider'],
-    })
+    try {
+      const product = await this.productRepository.findOne({
+        where: { id },
+        relations: ['provider'],
+      });
 
-    if (!product) {
-      throw new NotFoundException('Product not found')
+      if (!product) {
+        throw new NotFoundException('Product not found');
+      }
+
+      return product;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(`[findOne] Error fetching product ${id}:`, error.message);
+      throw error;
     }
-
-    return product
   }
 
   // ================= UPDATE =================
