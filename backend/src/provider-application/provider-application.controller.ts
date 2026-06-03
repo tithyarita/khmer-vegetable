@@ -12,41 +12,14 @@ import {
   Query,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { v4 as uuid } from 'uuid';
+import { memoryStorage } from 'multer';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 
 import { ApplicationsService } from './provider-application.service';
 import { CreateApplicationDto } from './dto/provider-application.dto';
 import { ProviderApplication } from './provider-application.entity';
-
-/** Multer storage — saves files under uploads/applications/ */
-const storage = diskStorage({
-  destination: './uploads/applications',
-  filename: (_req, file, cb) => {
-    cb(null, `${uuid()}${extname(file.originalname)}`);
-  },
-});
-
-/** Allow only images + PDF */
-const fileFilter = (
-  _req: any,
-  file: Express.Multer.File,
-  cb: (error: Error | null, accept: boolean) => void,
-) => {
-  const allowed = /jpeg|jpg|png|pdf/;
-  const ok =
-    allowed.test(extname(file.originalname).toLowerCase()) &&
-    allowed.test(file.mimetype);
-  if (ok) cb(null, true);
-  else
-    cb(
-      new BadRequestException('Only JPG, PNG, and PDF files are allowed'),
-      false,
-    );
-};
+import { uploadToCloudinary } from '../cloudinary';
 
 @Controller('api/applications')
 export class ApplicationsController {
@@ -67,15 +40,13 @@ export class ApplicationsController {
         { name: 'farm_angle3', maxCount: 1 },
       ],
       {
-        storage,
-        fileFilter,
-        limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB per file
+        storage: memoryStorage(),
+        limits: { fileSize: 5 * 1024 * 1024 },
       },
     ),
   )
   async create(
     @Body() body: Record<string, string>,
-    // Fix error 1272: UploadedFiles decorator param typed with the multer namespace directly
     @UploadedFiles()
     files: {
       id_document?: Express.Multer.File[];
@@ -99,11 +70,21 @@ export class ApplicationsController {
       throw new BadRequestException(messages);
     }
 
-    const saved = await this.service.create(dto, files ?? {});
+    const uploadFile = async (f: Express.Multer.File[] | undefined, folder: string) =>
+      f?.[0] ? await uploadToCloudinary(f[0].buffer, folder) : undefined
+
+    const fileUrls = {
+      id_document_path: await uploadFile(files.id_document, 'applications/id_document'),
+      profile_photo_path: await uploadFile(files.profile_photo, 'applications/profile_photo'),
+      farm_angle1_path: await uploadFile(files.farm_angle1, 'applications/farm_angle1'),
+      farm_angle2_path: await uploadFile(files.farm_angle2, 'applications/farm_angle2'),
+      farm_angle3_path: await uploadFile(files.farm_angle3, 'applications/farm_angle3'),
+    }
+
+    const saved = await this.service.create(dto, fileUrls);
     return {
       message: 'Application submitted successfully',
       id: saved.id,
-      // Fix error 4053: reference the string value, not the enum type
       status: saved.application_status,
       submitted_at: saved.submitted_at,
     };

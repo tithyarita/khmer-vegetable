@@ -15,9 +15,9 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
 import { InjectRepository } from '@nestjs/typeorm';
+import { uploadToCloudinary } from '../cloudinary';
 import { Repository } from 'typeorm';
 import { users, UserRole } from './users.entity';
 import { orders } from './orders.entity';
@@ -38,22 +38,13 @@ export class UsersController {
   // =========================
   @Put(':id')
   @UseInterceptors(
-    FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, unique + extname(file.originalname));
-        },
-      }),
-    })
+    FileInterceptor('avatar', { storage: memoryStorage() }),
   )
   async updateUser(
     @Param('id') id: string,
     @Body() body: any,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    // Build update object manually to avoid type issues
     const update: any = {};
     if (body.name) update.name = body.name;
     if (body.email) update.email = body.email;
@@ -65,7 +56,7 @@ export class UsersController {
       update.password = await bcrypt.hash(body.password, 10);
     }
     if (file) {
-      update.avatar = `/images/${file.filename}`;
+      update.avatar = await uploadToCloudinary(file.buffer, 'users/avatars');
     }
     await this.usersRepository.update(id, update);
     return await this.usersRepository.findOne({ where: { id: Number(id) } });

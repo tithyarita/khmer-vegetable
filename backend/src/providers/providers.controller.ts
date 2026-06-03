@@ -18,9 +18,9 @@ import { Provider } from './providers.entity';
 import { ProviderBank, BankType } from './provider_bank.entity';
 import { ProvidersService } from './provider.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
 import type { Request } from 'express';
+import { uploadToCloudinary } from '../cloudinary';
 
 interface IncomingBankDto {
   type?: BankType;
@@ -130,27 +130,19 @@ export class ProvidersController {
   // ========================================
   @Put(':id/avatar')
   @UseInterceptors(
-    FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: './uploads/avatar',
-        filename: (_req, file, cb) => {
-          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, unique + extname(file.originalname));
-        },
-      }),
-    }),
+    FileInterceptor('avatar', { storage: memoryStorage() }),
   )
   async uploadAvatar(
     @Param('id') id: string,
-    @UploadedFile() file: MulterFile | undefined,
+    @UploadedFile() file: Express.Multer.File | undefined,
   ): Promise<{ avatar: string } | { message: string }> {
     if (!file) return { message: 'No file uploaded' };
-    const imagePath = `/images/avatar/${file.filename}`;
+    const avatar = await uploadToCloudinary(file.buffer, 'providers/avatars');
     await this.providerRepo.update(
       { user_id: Number(id) },
-      { avatar: imagePath },
+      { avatar },
     );
-    return { avatar: `http://localhost:3000${imagePath}` };
+    return { avatar };
   }
 
   // ========================================
@@ -158,27 +150,19 @@ export class ProvidersController {
   // ========================================
   @Put(':id/farm-image')
   @UseInterceptors(
-    FileInterceptor('farm', {
-      storage: diskStorage({
-        destination: './uploads/farm',
-        filename: (_req, file, cb) => {
-          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, unique + extname(file.originalname));
-        },
-      }),
-    }),
+    FileInterceptor('farm', { storage: memoryStorage() }),
   )
   async uploadFarmImage(
     @Param('id') id: string,
-    @UploadedFile() file: MulterFile | undefined,
+    @UploadedFile() file: Express.Multer.File | undefined,
   ): Promise<{ farm_image: string } | { message: string }> {
     if (!file) return { message: 'No file uploaded' };
-    const imagePath = `/images/farm/${file.filename}`;
+    const farm_image = await uploadToCloudinary(file.buffer, 'providers/farms');
     await this.providerRepo.update(
       { user_id: Number(id) },
-      { farm_image: imagePath },
+      { farm_image },
     );
-    return { farm_image: `http://localhost:3000${imagePath}` };
+    return { farm_image };
   }
 
   // ========================================
@@ -186,24 +170,16 @@ export class ProvidersController {
   // ========================================
   @Put(':id/bank-qr')
   @UseInterceptors(
-    FileInterceptor('qr', {
-      storage: diskStorage({
-        destination: './uploads/qr',
-        filename: (_req, file, cb) => {
-          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, unique + extname(file.originalname));
-        },
-      }),
-    }),
+    FileInterceptor('qr', { storage: memoryStorage() }),
   )
   async uploadBankQr(
     @Param('id') id: string,
-    @UploadedFile() file: MulterFile | undefined,
+    @UploadedFile() file: Express.Multer.File | undefined,
     @Req() req: Request,
   ): Promise<{ qr: string } | { message: string }> {
     if (!file) return { message: 'No QR uploaded' };
 
-    const imagePath = `/images/qr/${file.filename}`;
+    const qr = await uploadToCloudinary(file.buffer, 'providers/qr');
     const providerId = Number(id);
     const reqBody = req.body as { bank_index?: string };
     const bankIndex = Number(reqBody.bank_index);
@@ -221,15 +197,15 @@ export class ProvidersController {
         name: '',
         account: '',
         holder_name: '',
-        qr: imagePath,
+        qr,
       });
       await this.bankRepo.save(fallback);
     } else {
       const target = currentBanks[bankIndex];
-      await this.bankRepo.update(target.id, { qr: imagePath });
+      await this.bankRepo.update(target.id, { qr });
     }
 
-    return { qr: `http://localhost:3000${imagePath}` };
+    return { qr };
   }
 
   // ========================================

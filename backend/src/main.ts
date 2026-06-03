@@ -1,12 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
 import { ValidationPipe } from '@nestjs/common';
-import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create(AppModule);
 
 app.enableCors({
   origin: [
@@ -21,18 +18,12 @@ app.enableCors({
     new ValidationPipe({
       transform: true,
       whitelist: true,
-      forbidNonWhitelisted: false, // IMPORTANT
+      forbidNonWhitelisted: false,
     }),
   );
-
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/images',
-  });
 
   await app.listen(3000);
 
   console.log('Server is running on http://localhost:3000');
-
-  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 }
 bootstrap();
