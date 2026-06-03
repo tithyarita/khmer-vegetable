@@ -14,7 +14,7 @@ export async function uploadToCloudinary(
     const uploadStream = cloudinary.uploader.upload_stream(
       { folder, resource_type: 'auto' },
       (error, result) => {
-        if (error) reject(error)
+        if (error || !result) reject(error || new Error('Upload failed'))
         else resolve(result.secure_url)
       },
     )
