@@ -2,6 +2,11 @@
   <div class="dashboard-layout">
     <DashboardSidebar activeMenu="track" @navigate="onNavigate" />
     <main class="main-content">
+      <div class="topbar">
+        <button class="menu-toggle" @click="toggleSidebar" aria-label="Toggle menu">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
       <header class="page-header" v-if="orderTrackerStore.currentOrder">
         <div>
           <h1 class="page-title">Track Your Freshness</h1>
@@ -142,9 +147,15 @@
 
 <script setup>
 import DashboardSidebar from '../../components/Customer/sidebarUser.vue'
-import { ref, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
+import { ref, provide, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useOrderTrackerStore } from '../../stores/orderTrackerStore'
+
+const isSidebarOpen = ref(false)
+const closeSidebar = () => { isSidebarOpen.value = false }
+const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value }
+provide('isSidebarOpen', isSidebarOpen)
+provide('closeSidebar', closeSidebar)
 
 // ── Inline SVG icons ──────────────────────────────────────────────────────────
 const IconCheck = defineComponent({
@@ -638,10 +649,31 @@ const connectorState = (i) => {
 .action-btn--secondary:hover { background: #e8f5ee; border-color: #74c69d; color: #1a3d2b; }
 .action-btn svg { flex-shrink: 0; }
 
+.topbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #555;
+  cursor: pointer;
+  padding: 4px;
+}
+
 @media (max-width: 1100px) {
   .grid { grid-template-columns: 1fr 280px; gap: 16px; }
 }
 @media (max-width: 768px) {
+  .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
   .main-content { padding: 20px 16px 32px; }
   .breadcrumb { font-size: 11px; margin-bottom: 12px; }
   .page-title { font-size: 22px; }

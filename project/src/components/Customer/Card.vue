@@ -1,9 +1,9 @@
 <template>
-  <div class="product-grid">
+  <div :class="['product-' + viewMode]">
     <div
       v-for="product in displayProducts"
       :key="product.id"
-      class="product-card"
+      :class="['product-card', { 'list-card': viewMode === 'list' }]"
       @click="goToProductDetail(product.id)"
       style="cursor: pointer;"
     >
@@ -98,6 +98,10 @@ const props = defineProps({
   products: {
     type: Array,
     default: null,
+  },
+  viewMode: {
+    type: String,
+    default: 'grid',
   },
 })
 
@@ -358,6 +362,39 @@ onMounted(async () => {
 .plus {
   font-size: 14px;
   margin-right: 4px;
+}
+
+.product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.product-list .list-card {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  padding: 12px;
+}
+
+.product-list .list-card .card-image {
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.product-list .list-card .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0;
+}
+
+.product-list .list-card .card-footer {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 @media (max-width: 768px) {

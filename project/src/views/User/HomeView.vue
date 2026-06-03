@@ -33,7 +33,7 @@
         <Deals />
       </div>
     </section>
-    <Footer />
+     <Footer />
   </div>
 </template>
 
@@ -43,12 +43,13 @@ import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Farm from '../../components/Customer/FarmerCard.vue'
 import Card from '../../components/Customer/Card.vue'
 import Deals from '../../components/Customer/DealsCard.vue'
-import Footer from '../../components/Customer/Footer.vue'
 import FashDeal from './fashDeals.vue'
+import  Footer  from '../../components/Customer/Footer.vue'
 import TopSellingProducts from '../../components/Customer/TopSellingProducts.vue'
 import { useLanguageStore } from '@/stores/languageStore.js'
 import { messages } from '@/lang/index.js'
 import { computed } from 'vue'
+
 
 const languageStore = useLanguageStore()
 const t = (key) => messages[languageStore.language][key] || key
@@ -67,7 +68,6 @@ const t = (key) => messages[languageStore.language][key] || key
   background-color: #f9f9f6;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
 }
 .admin{
   width: 100%;

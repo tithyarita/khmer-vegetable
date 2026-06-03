@@ -13,7 +13,7 @@
         <span class="sep">›</span>
 
         <span class="cur">
-          {{ categoryIcon }} {{ categoryName }}
+          {{ categoryName }}
         </span>
       </nav>
 
@@ -33,13 +33,28 @@
         <!-- Controls -->
         <div class="header-controls">
 
-          <!-- Search -->
-          <div class="search-box">
-            <input
-              v-model="searchQuery"
-              type="text"
-              :placeholder="t('searchProducts')"
-            />
+          <!-- View toggle -->
+          <div class="view-toggle">
+            <button
+              class="view-btn"
+              :class="{ active: viewMode === 'grid' }"
+              @click="viewMode = 'grid'"
+              title="Grid view"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+              </svg>
+            </button>
+            <button
+              class="view-btn"
+              :class="{ active: viewMode === 'list' }"
+              @click="viewMode = 'list'"
+              title="List view"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+            </button>
           </div>
 
           <!-- Sort -->
@@ -91,10 +106,6 @@
                 :class="{ active: activeCategory === cat.value }"
                 @click="toggleCategory(cat.value)"
               >
-                <span class="cat-icon">
-                  {{ cat.icon }}
-                </span>
-
                 <span class="cat-name">
                   {{ cat.name }}
                 </span>
@@ -165,6 +176,7 @@
           <Card
             v-else
             :products="paginatedProducts"
+            :viewMode="viewMode"
           />
 
           <!-- Empty -->
@@ -210,7 +222,6 @@
       </div>
     </div>
 
-    <Footer />
   </div>
 </template>
 
@@ -220,7 +231,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useProductStore } from '../../stores/productStore'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Card from '../../components/Customer/Card.vue'
-import Footer from '../../components/Customer/Footer.vue'
 import { useLanguageStore } from '@/stores/languageStore.js'
 import { messages } from '@/lang/index.js'
 
@@ -233,6 +243,7 @@ const t = (key) =>
   messages?.[languageStore.language]?.[key] || key
 
 const showSidebar = ref(false)
+const viewMode = ref('grid')
 const sortBy = ref('featured')
 const maxPrice = ref(150)
 const appliedMaxPrice = ref(150)
@@ -246,13 +257,13 @@ const loading = ref(false)
 const tags = ['Organic', 'Fresh', 'Healthy', 'Snacks', 'Dairy']
 
 const allCategories = [
-  { value: 'vegetables', name: 'Vegetables', icon: '🫑' },
-  { value: 'leafy-greens', name: 'Leafy Greens', icon: '🥬' },
-  { value: 'tubers', name: 'Tubers', icon: '🥔' },
-  { value: 'root-veg', name: 'Root Veg', icon: '🥕' },
-  { value: 'cruciferous', name: 'Cruciferous', icon: '🥦' },
-  { value: 'fruits', name: 'Fruits', icon: '🍎' },
-  { value: 'herbs', name: 'Herbs', icon: '🌿' },
+  { value: 'vegetables', name: 'Vegetables' },
+  { value: 'leafy-greens', name: 'Leafy Greens' },
+  { value: 'tubers', name: 'Tubers' },
+  { value: 'root-veg', name: 'Root Veg' },
+  { value: 'cruciferous', name: 'Cruciferous' },
+  { value: 'fruits', name: 'Fruits' },
+  { value: 'herbs', name: 'Herbs' },
 ]
 
 const categoryMap = {
@@ -275,14 +286,6 @@ const categoryName = computed(() =>
   route.params.type ||
   'Products'
 )
-
-const categoryIcon = computed(() => {
-  const cat = allCategories.find(
-    c => c.value === categoryType.value
-  )
-
-  return cat?.icon || ''
-})
 
 const filteredProducts = computed(() => {
   let list = productStore.products.filter(p => {
@@ -481,32 +484,34 @@ h1 {
 
 .header-controls { display: flex; align-items: center; gap: 10px; }
 
-.search-box {
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.view-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: #f4f6f5;
-  border: 1.5px solid #e2e8e6;
-  border-radius: 10px;
-  padding: 0 12px;
-  transition: border-color 0.2s, background 0.2s;
-}
-.search-box:focus-within {
-  border-color: #52b788;
-  background: #fff;
-}
-.search-box svg { color: #8aa898; flex-shrink: 0; }
-.search-box input {
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--wh);
   border: none;
-  background: none;
-  outline: none;
-  padding: 9px 0;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  color: #16261e;
-  width: 180px;
+  cursor: pointer;
+  color: var(--t3);
+  transition: var(--tr);
 }
-.search-box input::placeholder { color: #8aa898; }
+
+.view-btn.active {
+  background: var(--gl);
+  color: var(--gm);
+}
+
+.view-btn:not(:last-child) {
+  border-right: 1px solid var(--bd);
+}
 
 .sort-select {
   padding: 8px 14px;
@@ -540,7 +545,6 @@ h1 {
 }
 
 .cat-item:hover, .cat-item.active { background: var(--gl); }
-.cat-icon { margin-right: 10px; }
 .cat-name { flex: 1; color: var(--t2); }
 
 .price-slider { width: 100%; margin: 10px 0; accent-color: var(--gm); }
@@ -606,14 +610,13 @@ h1 {
 }
 
 @media (max-width: 992px) {
+  .category-content { padding: 20px 16px 48px; }
+
   .main-content { grid-template-columns: 1fr; }
 
-  .header { flex-direction: column; align-items: flex-start; }
+  .header { flex-direction: column; align-items: flex-start; gap: 12px; }
 
-  .header-controls { width: 100%; flex-wrap: wrap; }
-
-  .search-box { flex: 1; min-width: 0; }
-  .search-box input { width: 100%; }
+  .header-controls { width: 100%; justify-content: space-between; }
 
   .sidebar {
     position: fixed;
@@ -623,7 +626,7 @@ h1 {
     height: 100vh;
     z-index: 200;
     background: #fff;
-    padding: 20px;
+    padding: 24px 20px;
     overflow-y: auto;
     transition: left 0.25s ease;
     box-shadow: 4px 0 20px rgba(0,0,0,0.1);
@@ -664,13 +667,21 @@ h1 {
 }
 
 @media (max-width: 600px) {
-  .category-content { padding: 16px 12px 40px; }
+  .category-content { padding: 14px 12px 40px; }
 
-  h1 { font-size: 22px; }
+  h1 { font-size: 20px; }
 
-  .header-controls { gap: 6px; }
+  .subtitle { font-size: 12px; }
 
-  .sort-select { padding: 6px 10px; font-size: 12px; }
+  .header-controls { gap: 6px; flex-wrap: nowrap; }
+
+  .view-btn { width: 28px; height: 28px; }
+
+  .sort-select { padding: 6px 10px; font-size: 12px; max-width: 130px; }
+
+  .filter-toggle { font-size: 12px; padding: 8px 14px; }
+
+  .sidebar { width: 260px; padding: 20px 16px; }
 
   .pagination { gap: 4px; }
 

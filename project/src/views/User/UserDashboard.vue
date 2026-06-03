@@ -5,9 +5,14 @@
     <main class="main-content">
       <!-- Top Bar -->
       <header class="topbar">
-        <input class="search" placeholder="Search orders, vegetables..." />
+        <button class="menu-toggle" @click="toggleSidebar" aria-label="Toggle menu">
+          <i class="bi bi-list"></i>
+        </button>
         <div class="user-info">
-          <img class="avatar" :src="user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'" />
+          <div class="avatar">
+            <img v-if="user?.avatar" :src="user.avatar" alt="avatar" class="avatar-img" />
+            <span v-else class="avatar-initials">{{ userInitials }}</span>
+          </div>
           <div>
             <div class="name">{{ user?.name || user?.email }}</div>
             <div class="role">Verified Customer</div>
@@ -19,7 +24,10 @@
       <template v-if="activeMenu === 'dashboard'">
         <!-- Profile Card -->
         <section class="profile-card">
-          <img class="profile-avatar" :src="user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'" />
+          <div class="profile-avatar">
+            <img v-if="user?.avatar" :src="user.avatar" alt="avatar" class="avatar-img" />
+            <span v-else class="avatar-initials">{{ userInitials }}</span>
+          </div>
           <div class="profile-info">
             <template v-if="!editingProfile">
               <h2>{{ user?.name || user?.email }}</h2>
@@ -30,6 +38,14 @@
             </template>
             <template v-else>
               <form @submit.prevent="saveProfile" class="edit-profile-form">
+                <div class="avatar-upload">
+                  <label for="avatar-input" class="avatar-upload-label">
+                    <img v-if="editForm.avatarPreview || user?.avatar" :src="editForm.avatarPreview || user?.avatar" alt="avatar" class="avatar-img" />
+                    <span v-else class="avatar-initials">{{ userInitials }}</span>
+                    <span class="avatar-overlay"><i class="bi bi-camera"></i></span>
+                  </label>
+                  <input id="avatar-input" type="file" accept="image/*" @change="onAvatarChange" hidden />
+                </div>
                 <input v-model="editForm.name" name="name" id="profile-name" placeholder="Name" autocomplete="name" />
                 <input v-model="editForm.email" name="email" id="profile-email" placeholder="Email" type="email" autocomplete="email" />
                 <input v-model="editForm.phone" name="phone" id="profile-phone" placeholder="Phone" autocomplete="tel" />
@@ -115,7 +131,10 @@
       <!-- Profile Section -->
       <template v-if="activeMenu === 'profile'">
         <section class="profile-card">
-          <img class="profile-avatar" :src="user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'" />
+          <div class="profile-avatar">
+            <img v-if="user?.avatar" :src="user.avatar" alt="avatar" class="avatar-img" />
+            <span v-else class="avatar-initials">{{ userInitials }}</span>
+          </div>
           <div class="profile-info">
             <template v-if="!editingProfile">
               <h2>{{ user?.name || user?.email }}</h2>
@@ -126,6 +145,14 @@
             </template>
             <template v-else>
               <form @submit.prevent="saveProfile" class="edit-profile-form">
+                <div class="avatar-upload">
+                  <label for="avatar-input2" class="avatar-upload-label">
+                    <img v-if="editForm.avatarPreview || user?.avatar" :src="editForm.avatarPreview || user?.avatar" alt="avatar" class="avatar-img" />
+                    <span v-else class="avatar-initials">{{ userInitials }}</span>
+                    <span class="avatar-overlay"><i class="bi bi-camera"></i></span>
+                  </label>
+                  <input id="avatar-input2" type="file" accept="image/*" @change="onAvatarChange" hidden />
+                </div>
                 <input v-model="editForm.name" name="name" id="profile-name" placeholder="Name" autocomplete="name" />
                 <input v-model="editForm.email" name="email" id="profile-email" placeholder="Email" type="email" autocomplete="email" />
                 <input v-model="editForm.phone" name="phone" id="profile-phone" placeholder="Phone" autocomplete="tel" />
@@ -146,7 +173,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, provide, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { useCartStore } from '@/stores/cartStore'
@@ -161,17 +188,39 @@ const user = userStore.user
 const orders = ref([])
 const loading = ref(true)
 
+const userInitials = computed(() => {
+  if (!user?.name) return '?'
+  return user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+})
+
+const isSidebarOpen = ref(false)
+const closeSidebar = () => { isSidebarOpen.value = false }
+const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value }
+provide('isSidebarOpen', isSidebarOpen)
+provide('closeSidebar', closeSidebar)
+
 // Profile editing state
 const editingProfile = ref(false)
 const savingProfile = ref(false)
-const editForm = ref({ name: '', email: '', phone: '', address: '' })
+const editForm = ref({ name: '', email: '', phone: '', address: '', avatar: null, avatarPreview: '' })
+
+function onAvatarChange(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  editForm.value.avatar = file
+  const reader = new FileReader()
+  reader.onload = (ev) => { editForm.value.avatarPreview = ev.target.result }
+  reader.readAsDataURL(file)
+}
 
 function startEdit() {
   editForm.value = {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    address: user?.address || ''
+    address: user?.address || '',
+    avatar: null,
+    avatarPreview: ''
   }
   editingProfile.value = true
 }
@@ -194,11 +243,17 @@ function handleNavigate(section) {
 async function saveProfile() {
   savingProfile.value = true
   try {
-    // Replace with your actual backend endpoint
-    const res = await axios.put(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.id}`, editForm.value, {
-      headers: { Authorization: `Bearer ${userStore.token}` }
+    const formData = new FormData()
+    formData.append('name', editForm.value.name)
+    formData.append('email', editForm.value.email)
+    formData.append('phone', editForm.value.phone)
+    formData.append('address', editForm.value.address)
+    if (editForm.value.avatar) {
+      formData.append('avatar', editForm.value.avatar)
+    }
+    const res = await axios.put(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.id}`, formData, {
+      headers: { Authorization: `Bearer ${userStore.token}`, 'Content-Type': 'multipart/form-data' }
     })
-    // Update user in store
     userStore.setUser(res.data, userStore.token)
     editingProfile.value = false
   } catch (e) {
@@ -231,60 +286,14 @@ onMounted(async () => {
   width: 100%;
   background: #f7f9fa;
 }
-.sidebar {
-  width: 220px;
-  background: #fff;
-  border-right: 1px solid #e5e5e5;
-  display: flex;
-  flex-direction: column;
-  padding: 24px 0 0 0;
-}
-.sidebar-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-.logo {
-  width: 48px;
-  margin-bottom: 8px;
-}
-.subtitle {
-  font-size: 12px;
-  color: #7ca982;
-  font-weight: 400;
-}
-.sidebar-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.sidebar-nav li {
-  padding: 12px 32px;
-  color: #333;
-  font-size: 16px;
-  cursor: pointer;
-  border-left: 4px solid transparent;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: background 0.2s, border-color 0.2s;
-}
-.sidebar-nav li.active, .sidebar-nav li:hover {
-  background: #eaf5ee;
-  border-left: 4px solid #7ca982;
-}
-.sidebar-footer {
-  margin-top: auto;
-  padding: 24px 32px;
-}
-.logout-btn {
+.menu-toggle {
+  display: none;
   background: none;
   border: none;
-  color: #e53;
-  font-size: 16px;
+  font-size: 24px;
+  color: #555;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  padding: 4px;
 }
 .main-content {
   flex: 1;
@@ -297,24 +306,90 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 32px;
-}
-.search {
-  width: 320px;
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: 1px solid #e5e5e5;
-  font-size: 15px;
 }
 .user-info {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+.avatar,
+.profile-avatar {
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #d0ecda;
+  color: #2D7A3A;
+}
+
 .avatar {
   width: 40px;
   height: 40px;
+  font-size: 16px;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  margin-right: 32px;
+  font-size: 32px;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-initials {
+  font-weight: 700;
+  color: #2D7A3A;
+}
+
+.avatar-upload {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.avatar-upload-label {
+  position: relative;
+  display: inline-block;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  background: #d0ecda;
+}
+
+.avatar-upload-label .avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 28px;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.avatar-upload-label:hover .avatar-overlay {
+  opacity: 1;
 }
 .name {
   font-weight: 600;
@@ -332,12 +407,6 @@ onMounted(async () => {
   padding: 28px 32px;
   margin-bottom: 32px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-}
-.profile-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  margin-right: 32px;
 }
 .profile-info {
   flex: 1;
@@ -494,68 +563,10 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-  .dashboard-layout {
-    flex-direction: column;
-  }
-  .sidebar {
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    padding: 12px 16px;
-    border-right: none;
-    border-bottom: 1px solid #e5e5e5;
-  }
-  .sidebar-header {
-    margin-bottom: 0;
+  .menu-toggle {
     display: flex;
     align-items: center;
-    gap: 8px;
-  }
-  .sidebar-header h3 {
-    font-size: 14px;
-    margin: 0;
-  }
-  .logo {
-    width: 32px;
-    margin-bottom: 0;
-  }
-  .subtitle {
-    display: none;
-  }
-  .sidebar-nav {
-    margin-left: auto;
-  }
-  .sidebar-nav ul {
-    display: flex;
-    gap: 4px;
-  }
-  .sidebar-nav li {
-    padding: 8px 12px;
-    font-size: 13px;
-    border-left: none;
-    border-bottom: 3px solid transparent;
-    gap: 6px;
-  }
-  .sidebar-nav li.active, .sidebar-nav li:hover {
-    border-left: none;
-    border-bottom: 3px solid #7ca982;
-  }
-  .sidebar-nav li.active {
-    background: #eaf5ee;
-  }
-  .sidebar-footer {
-    display: none;
-  }
-  .main-content {
-    padding: 16px;
-  }
-  .topbar {
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .search {
-    width: 100%;
+    justify-content: center;
   }
   .profile-card {
     flex-direction: column;
@@ -588,13 +599,6 @@ onMounted(async () => {
 }
 
 @media (max-width: 480px) {
-  .sidebar-nav li {
-    padding: 6px 8px;
-    font-size: 12px;
-  }
-  .sidebar-nav li i {
-    font-size: 14px;
-  }
   .summary-card {
     padding: 16px 20px;
   }

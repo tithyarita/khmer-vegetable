@@ -3,8 +3,11 @@
     <!-- Sidebar -->
     <div class="sidebar" :class="{ 'sidebar-open': isSidebarOpen, 'sidebar-closed': !isSidebarOpen }">
       <!-- Header -->
-      <div class="sidebar-header" @click="goHome" style="cursor: pointer">
-        <img src="../../assets/images/Logo.png" alt="Logo" class="logo" />
+      <div class="sidebar-header">
+        <button class="back-btn" @click="goHome">
+          <i class="bi bi-arrow-left"></i>
+          <span>Back</span>
+        </button>
       </div>
 
       <!-- Menu Items -->
@@ -101,13 +104,24 @@ const handleLogout = () => {
 }
 
 .sidebar-header {
-  text-align: center;
-  margin-bottom: 32px;
+  padding: 0 20px;
+  margin-bottom: 16px;
 }
 
-.logo {
-  width: 48px;
-  margin-bottom: 8px;
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 6px 0;
+  cursor: pointer;
+  font-size: 14px;
+  color: #555;
+}
+
+.back-btn:hover {
+  color: #2D7A3A;
 }
 
 .sidebar-menu {

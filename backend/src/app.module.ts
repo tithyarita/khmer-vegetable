@@ -20,6 +20,7 @@ import { OrdersModule } from './users/orders.module';
 import { ReportModule } from './report/report.module';
 import {ReviewModule} from "./review/review.module";
 import { VerifyController } from './verify/verify.controller';
+import { NavigationModule } from './navigation/navigation.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { VerifyController } from './verify/verify.controller';
     ReviewModule,
     AddressModule,
     MailModule,
+    NavigationModule,
   ],
   controllers: [AppController, VerifyController],
   providers: [AppService],
