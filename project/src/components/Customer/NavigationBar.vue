@@ -22,8 +22,7 @@
               <circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
               <circle v-if="locationStore.activeLocation" cx="10" cy="8" r="4" fill="#2D7A3A" opacity="0.3" class="pulse-dot"/>
             </svg>
-            <span class="location-text">{{ locationStore.activeLocation?.name || locationStore.activeLocation?.address || location }}</span>
-            <span v-if="locationStore.activeLocation" class="you-are-here">You are here</span>
+            <span class="location-text">{{ locationDisplay }}</span>
           </div>
           <LocationModal v-if="showLocationModal" @close="showLocationModal = false" />
 
@@ -256,6 +255,13 @@ export default {
         .join('')
         .toUpperCase()
     },
+    locationDisplay() {
+      const active = this.locationStore.activeLocation
+      if (!active) return this.location
+      const parts = (active.address || '').split(', ').filter(Boolean)
+      const filtered = parts.filter(p => !/^\d+$/.test(p.trim()) && p.trim().toLowerCase() !== 'cambodia')
+      return filtered.slice(-2).join(', ')
+    },
   },
   methods: {
     setCategory(cat) {
@@ -434,14 +440,8 @@ export default {
   position: relative;
 }
 
-.location:hover {
-  background: #e6f4ea;
-  color: #2D7A3A;
-}
-
 .location.located {
-  color: #2D7A3A;
-  background: #e6f4ea;
+  color: #555;
 }
 
 .you-are-here {

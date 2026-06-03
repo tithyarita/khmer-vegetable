@@ -8,29 +8,21 @@
         </div>
 
         <div class="modal-body">
-          <div class="current-location-section">
-            <p class="section-desc">Set your location to see delivery options and product availability</p>
-            <button class="detect-btn" @click="detectLocation" :disabled="detecting">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2a6 6 0 0 1 6 6c0 4-6 10-6 10S4 12 4 8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5"/>
-                <circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
-              </svg>
-              <span v-if="detecting">Detecting...</span>
-              <span v-else>Use current location</span>
-            </button>
-            <div v-if="currentLocation" class="detected-location">
-              <span class="loc-name">{{ currentLocation }}</span>
-              <button class="save-btn" @click="saveCurrentLocation">Save</button>
-            </div>
-          </div>
-
-          <div class="divider"><span>or</span></div>
-
           <div class="add-location-section">
             <div class="section-title">Add a new address</div>
             <div class="add-row">
               <input v-model="newLocationName" placeholder="Label (e.g. Home, Office)" @keyup.enter="addNewLocation" />
-              <input v-model="newLocationAddress" placeholder="Street, city, district..." @keyup.enter="addNewLocation" />
+              <div class="address-row">
+                <input v-model="newLocationAddress" placeholder="Street, city, district..." @keyup.enter="addNewLocation" />
+                <button class="map-btn" @click="openMap" title="Pick on map">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2a6 6 0 0 1 6 6c0 4-6 10-6 10S4 12 4 8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5"/>
+                    <circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
+                  </svg>
+                </button>
+              </div>
+              <div v-if="showMap" ref="mapEl" class="map-picker"></div>
+              <button v-if="showMap && pickedAddress" class="confirm-map-btn" @click="confirmMap">Use this location</button>
               <button class="add-btn" @click="addNewLocation" :disabled="!newLocationName.trim() || !newLocationAddress.trim()">
                 Add address
               </button>
@@ -67,36 +59,83 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick, onUnmounted } from 'vue'
 import { useLocationStore } from '@/stores/locationStore'
 
 const emit = defineEmits(['close', 'location-set'])
 const locationStore = useLocationStore()
 
-const detecting = ref(false)
-const currentLocation = ref(null)
-const currentCoords = ref(null)
 const newLocationName = ref('')
 const newLocationAddress = ref('')
+const showMap = ref(false)
+const mapEl = ref(null)
+const pickedAddress = ref('')
+const pickedCoords = ref(null)
+let mapInstance = null
+let mapMarker = null
 
-function detectLocation() {
-  if (detecting.value) return
-  detecting.value = true
-  currentLocation.value = null
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const { latitude, longitude } = pos.coords
-      currentCoords.value = { latitude, longitude }
-      currentLocation.value = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-      detecting.value = false
-      reverseGeocode(latitude, longitude)
-    },
-    () => {
-      currentLocation.value = 'Location unavailable'
-      detecting.value = false
-    },
-    { enableHighAccuracy: true }
-  )
+onUnmounted(() => {
+  if (mapInstance) mapInstance.remove()
+})
+
+function loadLeaflet() {
+  return new Promise((resolve) => {
+    if (window.L) { resolve(); return }
+    const css = document.createElement('link')
+    css.rel = 'stylesheet'
+    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'
+    document.head.appendChild(css)
+    const js = document.createElement('script')
+    js.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'
+    js.onload = resolve
+    document.head.appendChild(js)
+  })
+}
+
+async function openMap() {
+  showMap.value = true
+  pickedAddress.value = ''
+  pickedCoords.value = null
+  await nextTick()
+  await loadLeaflet()
+  const L = window.L
+  if (mapInstance) mapInstance.remove()
+  mapInstance = L.map(mapEl.value, { zoomControl: true }).setView([11.5564, 104.9282], 13)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19,
+  }).addTo(mapInstance)
+  mapInstance.on('click', onMapClick)
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords
+        mapInstance.setView([latitude, longitude], 15)
+        placeMarker(latitude, longitude)
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 7000 }
+    )
+  }
+}
+
+function onMapClick(e) {
+  placeMarker(e.latlng.lat, e.latlng.lng)
+}
+
+function placeMarker(lat, lng) {
+  const L = window.L
+  pickedCoords.value = { latitude: lat, longitude: lng }
+  if (mapMarker) mapMarker.setLatLng([lat, lng])
+  else {
+    mapMarker = L.marker([lat, lng], { draggable: true }).addTo(mapInstance)
+    mapMarker.on('dragend', () => {
+      const pos = mapMarker.getLatLng()
+      pickedCoords.value = { latitude: pos.lat, longitude: pos.lng }
+      reverseGeocode(pos.lat, pos.lng)
+    })
+  }
+  reverseGeocode(lat, lng)
 }
 
 async function reverseGeocode(lat, lng) {
@@ -107,23 +146,17 @@ async function reverseGeocode(lat, lng) {
     const data = await res.json()
     if (data.display_name) {
       const parts = data.display_name.split(', ')
-      currentLocation.value = parts.slice(0, 3).join(', ')
+      pickedAddress.value = parts.slice(0, -1).slice(-3).join(', ')
     }
   } catch {
-    // keep coordinates
+    pickedAddress.value = 'Address unavailable'
   }
 }
 
-function saveCurrentLocation() {
-  if (!currentLocation.value) return
-  const loc = {
-    name: 'Current Location',
-    address: currentLocation.value,
-    coords: currentCoords.value,
-  }
-  locationStore.addLocation(loc)
-  locationStore.setActiveLocation(loc)
-  emit('location-set', loc)
+function confirmMap() {
+  if (pickedAddress.value) newLocationAddress.value = pickedAddress.value
+  showMap.value = false
+  if (mapInstance) { mapInstance.remove(); mapInstance = null; mapMarker = null }
 }
 
 function addNewLocation() {
@@ -192,85 +225,6 @@ function addNewLocation() {
   padding: 16px 20px 20px;
 }
 
-.section-desc {
-  font-size: 13px;
-  color: #777;
-  margin: 0 0 12px;
-}
-
-.detect-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #2D7A3A;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 14px;
-  color: #2D7A3A;
-}
-
-.detect-btn:hover:not(:disabled) {
-  background: #f0f9f2;
-}
-
-.detect-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.detected-location {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 8px;
-  padding: 10px 14px;
-  background: #f0f9f2;
-  border: 1px solid #d5e8da;
-  border-radius: 8px;
-}
-
-.loc-name {
-  font-size: 13px;
-  color: #333;
-}
-
-.save-btn {
-  background: #2D7A3A;
-  color: #fff;
-  border: none;
-  padding: 6px 16px;
-  border-radius: 6px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.save-btn:hover { background: #1a5c27; }
-
-.divider {
-  text-align: center;
-  color: #bbb;
-  font-size: 12px;
-  margin: 14px 0;
-  position: relative;
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 44%;
-  height: 1px;
-  background: #eee;
-}
-
-.divider::before { left: 0; }
-.divider::after { right: 0; }
-
 .add-location-section {
   margin-bottom: 4px;
 }
@@ -301,6 +255,48 @@ function addNewLocation() {
 .add-row input:focus {
   border-color: #2D7A3A;
 }
+
+.address-row {
+  display: flex;
+  gap: 6px;
+}
+
+.address-row input {
+  flex: 1;
+}
+
+.map-btn {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid #2D7A3A;
+  border-radius: 6px;
+  background: #fff;
+  color: #2D7A3A;
+  cursor: pointer;
+}
+
+.map-btn:hover { background: #f0f9f2; }
+
+.map-picker {
+  height: 200px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  overflow: hidden;
+}
+
+.confirm-map-btn {
+  background: #2D7A3A;
+  color: #fff;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.confirm-map-btn:hover { background: #1a5c27; }
 
 .add-row input::placeholder {
   color: #bbb;
