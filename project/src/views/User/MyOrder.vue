@@ -2,6 +2,11 @@
   <div class="dashboard-layout">
     <DashboardSidebar activeMenu="orders" @navigate="handleNavigate" />
     <main class="main-content">
+      <div class="topbar">
+        <button class="menu-toggle" @click="toggleSidebar" aria-label="Toggle menu">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
       <div class="page-header">
         <h1>My Orders</h1>
         <p>Track and manage your deliveries</p>
@@ -62,6 +67,7 @@
 </template>
 
 <script setup>
+import { ref, provide } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomerOrderStore } from '@/stores/customerOrderStore'
 import DashboardSidebar from '../../components/Customer/sidebarUser.vue'
@@ -71,6 +77,12 @@ const customerOrderStore = useCustomerOrderStore()
 const orders = customerOrderStore.orders
 const loading = customerOrderStore.loading
 const error = customerOrderStore.error
+
+const isSidebarOpen = ref(false)
+const closeSidebar = () => { isSidebarOpen.value = false }
+const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value }
+provide('isSidebarOpen', isSidebarOpen)
+provide('closeSidebar', closeSidebar)
 
 async function mounted() {
   await customerOrderStore.fetchCustomerOrders()
@@ -308,12 +320,33 @@ function viewDetails(order) {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(0.75); }
 }
+.topbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #555;
+  cursor: pointer;
+  padding: 4px;
+}
+
 @media (max-width: 768px) {
   .dashboard-layout {
     flex-direction: column;
   }
   .main-content {
     padding: 16px;
+  }
+  .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 </style>

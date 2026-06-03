@@ -795,24 +795,20 @@ export default {
 
   .navbar-bottom .container {
     position: relative;
+    gap: 0;
   }
 
   .menu-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     background: #e6f4ea;
     border: none;
     border-radius: 50%;
     cursor: pointer;
     color: #2D7A3A;
-    transition: background 0.2s;
-  }
-
-  .menu-toggle:hover {
-    background: #d0ecda;
   }
 
   .categories {
@@ -835,7 +831,7 @@ export default {
   }
 
   .categories li {
-    padding: 10px 16px;
+    padding: 10px 12px;
     border-bottom: 1px solid #f0f0f0;
     color: #333;
   }
@@ -852,13 +848,13 @@ export default {
   }
 
   .nav-actions {
-    gap: 8px;
+    gap: 4px;
   }
 
   .nav-actions .favorite,
   .nav-actions .cart {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
   }
 
   .profile-dropdown {

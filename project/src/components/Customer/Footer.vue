@@ -1,56 +1,86 @@
-
 <template>
   <footer class="footer">
     <div class="footer-main">
       <div class="container">
-        <div class="footer-col brand-col">
-          <h2 class="brand-name">{{ t('brandName') }}</h2>
-          <p class="brand-desc">{{ t('brandDesc') }}</p>
-          <div class="social-icons">
-            <a href="#" class="social-icon" aria-label="Medal">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="15" r="5" stroke="#2D7A3A" stroke-width="1.6"/>
-                <path d="M8.5 9.5L7 4h10l-1.5 5.5" stroke="#2D7A3A" stroke-width="1.6" stroke-linejoin="round"/>
-                <path d="M9 4l3 6 3-6" stroke="#2D7A3A" stroke-width="1.6" stroke-linejoin="round"/>
-              </svg>
-            </a>
-            <a href="#" class="social-icon" aria-label="Message">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="5" width="18" height="13" rx="2" stroke="#2D7A3A" stroke-width="1.6"/>
-                <path d="M3 8l9 5 9-5" stroke="#2D7A3A" stroke-width="1.6"/>
-              </svg>
-            </a>
+        <div class="footer-grid">
+          <div class="footer-col brand-col">
+            <img src="../../assets/images/Logo.png" alt="" class="footer-logo" />
+            <p class="brand-desc">{{ t('brandDesc') }}</p>
+            <div class="social-icons">
+              <a href="#" class="social-icon" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+              <a href="#" class="social-icon" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+              <a href="#" class="social-icon" aria-label="Telegram"><i class="bi bi-telegram"></i></a>
+              <a href="#" class="social-icon" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+              <a href="#" class="social-icon" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+            </div>
           </div>
-        </div>
-        <div class="footer-col">
-          <h3 class="col-title">{{ t('quickLinks') }}</h3>
-          <ul class="col-links">
-            <li><a href="#">{{ t('aboutUs') }}</a></li>
-            <li><a href="#">{{ t('deliveryInfo') }}</a></li>
-            <li><a href="#">{{ t('support') }}</a></li>
-            <li><a href="#">{{ t('contact') }}</a></li>
-          </ul>
+          <div class="footer-col">
+            <h3 class="col-title">{{ t('quickLinks') }}</h3>
+            <ul class="col-links">
+              <li><router-link to="/home">{{ t('home') }}</router-link></li>
+              <li><router-link to="/products">{{ t('products') }}</router-link></li>
+              <li><router-link to="/home#farmers">{{ t('farmers') }}</router-link></li>
+              <li><router-link to="/products">{{ t('categories') }}</router-link></li>
+              <li><a href="#">{{ t('blog') }}</a></li>
+              <li><a href="#">{{ t('faqs') }}</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h3 class="col-title">{{ t('support') }}</h3>
+            <ul class="col-links">
+              <li><a href="#">{{ t('helpCenter') }}</a></li>
+              <li><a href="#">{{ t('shippingInfo') }}</a></li>
+              <li><a href="#">{{ t('returnPolicy') }}</a></li>
+              <li><a href="#">{{ t('privacyPolicy') }}</a></li>
+              <li><a href="#">{{ t('termsConditions') }}</a></li>
+              <li><a href="#">{{ t('becomeProvider') }}</a></li>
+            </ul>
+          </div>
+          <div class="footer-col contact-col">
+            <h3 class="col-title">{{ t('contact') }}</h3>
+            <ul class="col-links contact-links">
+              <li><i class="bi bi-geo-alt"></i> Phnom Penh, Cambodia</li>
+              <li><i class="bi bi-telephone"></i> <a href="tel:+85512345678">+855 12 345 678</a></li>
+              <li><i class="bi bi-envelope"></i> <a href="mailto:info@khmervegmarket.com">info@khmervegmarket.com</a></li>
+            </ul>
+            <div class="newsletter">
+              <p class="newsletter-desc">{{ t('newsletterDesc') }}</p>
+              <form class="newsletter-form" @submit.prevent="subscribe">
+                <input
+                  type="email"
+                  v-model="email"
+                  class="email-input"
+                  :placeholder="t('emailPlaceholder')"
+                  required
+                />
+                <button type="submit" class="btn-subscribe">{{ t('subscribe') }}</button>
+              </form>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
     <div class="footer-bottom">
-      <div class="container bottom-inner">
+      <div class="container">
         <p class="copyright">{{ t('copyright') }}</p>
-        <div class="bottom-links">
-          <a href="#">{{ t('privacyPolicy') }}</a>
-          <a href="#">{{ t('termsOfService') }}</a>
-          <a href="#">{{ t('cookiesSettings') }}</a>
-        </div>
       </div>
     </div>
   </footer>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useLanguageStore } from '@/stores/languageStore.js'
 import { messages } from '@/lang/index.js'
 const languageStore = useLanguageStore()
 const t = (key) => messages[languageStore.language][key] || key
+const email = ref('')
+function subscribe() {
+  if (!email.value) return
+  alert(`Subscribed: ${email.value}`)
+  email.value = ''
+}
 </script>
 
 <style scoped>
@@ -60,7 +90,8 @@ const t = (key) => messages[languageStore.language][key] || key
 }
 
 .footer {
-  background: #f3f4f6;
+  background: #fff;
+  color: #374151;
   width: 100%;
 }
 
@@ -70,47 +101,36 @@ const t = (key) => messages[languageStore.language][key] || key
   padding: 0 24px;
 }
 
-/* MAIN SECTION */
 .footer-main {
-  padding: 48px 0 40px;
+  padding: 56px 0 40px;
 }
 
-.footer-main .container {
-  display: flex;
-  gap: 32px;
-  align-items: flex-start;
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1.4fr;
+  gap: 40px;
 }
 
-/* COLUMNS */
 .footer-col {
-  flex: 1;
+  min-width: 0;
 }
 
-.brand-col {
-  flex: 1.2;
-}
-
-.newsletter-col {
-  flex: 1.4;
-}
-
-.brand-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 12px;
+.footer-logo {
+  height: 40px;
+  margin-bottom: 12px;
 }
 
 .brand-desc {
   font-size: 13.5px;
   color: #6b7280;
-  line-height: 1.6;
-  margin: 0 0 20px;
+  line-height: 1.7;
+  margin: 0 0 24px;
 }
 
 .social-icons {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .social-icon {
@@ -121,19 +141,26 @@ const t = (key) => messages[languageStore.language][key] || key
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
-  transition: border-color 0.2s;
+  background: #f9f9f6;
+  text-decoration: none;
+  font-size: 18px;
+  color: #6b7280;
+  transition: all 0.2s;
 }
 
 .social-icon:hover {
-  border-color: #2D7A3A;
+  background: #2d7a3a;
+  border-color: #2d7a3a;
+  color: #fff;
 }
 
 .col-title {
   font-size: 15px;
   font-weight: 700;
   color: #111827;
-  margin: 0 0 18px;
+  margin: 0 0 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .col-links {
@@ -145,22 +172,40 @@ const t = (key) => messages[languageStore.language][key] || key
   gap: 12px;
 }
 
-.col-links a {
+.col-links a,
+.col-links span {
   text-decoration: none;
   font-size: 13.5px;
   color: #6b7280;
   transition: color 0.2s;
+  cursor: default;
+}
+
+.col-links a {
+  cursor: pointer;
 }
 
 .col-links a:hover {
-  color: #2D7A3A;
+  color: #2d7a3a;
 }
 
-/* NEWSLETTER */
+.contact-links li i {
+  margin-right: 6px;
+  color: #2d7a3a;
+}
+
+.contact-links a {
+  display: inline-block;
+}
+
+.newsletter {
+  margin-top: 24px;
+}
+
 .newsletter-desc {
-  font-size: 13.5px;
+  font-size: 13px;
   color: #6b7280;
-  margin: 0 0 16px;
+  margin: 0 0 14px;
   line-height: 1.5;
 }
 
@@ -184,90 +229,73 @@ const t = (key) => messages[languageStore.language][key] || key
 }
 
 .email-input:focus {
-  border-color: #2D7A3A;
+  border-color: #2d7a3a;
 }
 
 .email-input::placeholder {
   color: #9ca3af;
 }
 
-.btn-join {
+.btn-subscribe {
   width: 100%;
   padding: 11px;
-  background: #2D7A3A;
+  background: #2d7a3a;
   color: #fff;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.btn-join:hover {
-  background: #1a5c27;
+.btn-subscribe:hover {
+  background: #3a9e4a;
 }
 
-/* BOTTOM BAR */
-.footer-bottom {
-  border-top: 1px solid #d1d5db;
-  padding: 18px 0;
-}
-
-.bottom-inner {
+.payment-methods {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  margin-top: 20px;
+}
+
+
+
+.footer-bottom {
+  border-top: 1px solid #e5e7eb;
+  padding: 20px 0;
   text-align: center;
 }
 
 .copyright {
   font-size: 13px;
-  color: #6b7280;
+  color: #9ca3af;
   margin: 0;
 }
 
-.bottom-links {
-  display: flex;
-  gap: 20px;
-}
-
-.bottom-links a {
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  transition: color 0.2s;
-}
-
-.bottom-links a:hover {
-  color: #2D7A3A;
-}
-
-/* RESPONSIVE */
-@media (max-width: 900px) {
-  .footer-main .container {
-    flex-wrap: wrap;
-    gap: 28px;
+@media (max-width: 1024px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
   }
-  .footer-col {
-    flex: 1 1 40%;
+  .brand-col {
+    grid-column: 1 / -1;
   }
-  .brand-col, .newsletter-col {
-    flex: 1 1 100%;
+  .contact-col {
+    grid-column: 1 / -1;
   }
 }
 
-@media (max-width: 560px) {
-  .footer-col {
-    flex: 1 1 100%;
+@media (max-width: 600px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
   }
-  .bottom-links {
-    flex-wrap: wrap;
-    justify-content: center;
+  .footer-main {
+    padding: 40px 0 32px;
   }
 }
 </style>

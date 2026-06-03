@@ -99,9 +99,7 @@ onUnmounted(() => { stopAutoSlide() })
 .hero-card {
   width: 100%;
   position: relative;
-  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   height: 500px;
 }
 

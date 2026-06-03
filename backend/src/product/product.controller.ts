@@ -14,12 +14,12 @@ import {
 } from '@nestjs/common'
 
 import { FileInterceptor } from '@nestjs/platform-express'
-import { diskStorage } from 'multer'
-import { extname } from 'path'
+import { memoryStorage } from 'multer'
 
 import { ProductService } from './product.service'
 import { ProductDto } from './dto/product.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
+import { uploadToCloudinary } from '../cloudinary'
 
 @Controller('products')
 export class ProductController {
@@ -64,21 +64,9 @@ export class ProductController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const unique =
-            Date.now() +
-            '-' +
-            Math.round(Math.random() * 1e9)
-
-          cb(null, unique + extname(file.originalname))
-        },
-      }),
-    }),
+    FileInterceptor('image', { storage: memoryStorage() }),
   )
-  create(
+  async create(
     @UploadedFile() file: Express.Multer.File,
     @Body() body: ProductDto,
     @Req() req: any,
@@ -86,6 +74,8 @@ export class ProductController {
     if (!file) {
       throw new BadRequestException('Image is required')
     }
+
+    const imageUrl = await uploadToCloudinary(file.buffer, 'products')
 
     return this.productService.create(
       {
@@ -95,7 +85,7 @@ export class ProductController {
         category: body.category,
         description: body.description,
         discount: body.discount ?? 0,
-        imageUrl: `/images/${file.filename}`,
+        imageUrl,
       },
       req.user.id,
     )
@@ -105,26 +95,18 @@ export class ProductController {
   @UseGuards(JwtAuthGuard)
   @Put(':id')
   @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const unique =
-            Date.now() +
-            '-' +
-            Math.round(Math.random() * 1e9)
-
-          cb(null, unique + extname(file.originalname))
-        },
-      }),
-    }),
+    FileInterceptor('image', { storage: memoryStorage() }),
   )
-  update(
+  async update(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
     @Body() body: ProductDto,
     @Req() req: any,
   ) {
+    const imageUrl = file
+      ? await uploadToCloudinary(file.buffer, 'products')
+      : undefined
+
     return this.productService.update(
       Number(id),
       {
@@ -134,9 +116,7 @@ export class ProductController {
         category: body.category,
         description: body.description,
         discount: body.discount ?? 0,
-        imageUrl: file
-          ? `/images/${file.filename}`
-          : undefined,
+        imageUrl,
       },
       req.user.id,
       req.user.role,

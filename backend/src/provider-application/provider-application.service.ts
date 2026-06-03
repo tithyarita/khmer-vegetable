@@ -16,16 +16,12 @@ import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
 import { Staff } from '../staff/staff.entity';
 
-export interface UploadedFiles {
-  id_document?: Express.Multer.File[];
-  profile_photo?: Express.Multer.File[];
-  farm_angle1?: Express.Multer.File[];
-  farm_angle2?: Express.Multer.File[];
-  farm_angle3?: Express.Multer.File[];
-}
-
-function normalizePath(path: string | undefined): string | undefined {
-  return path?.replace(/\\/g, '/');
+export interface UploadedFileUrls {
+  id_document_path?: string;
+  profile_photo_path?: string;
+  farm_angle1_path?: string;
+  farm_angle2_path?: string;
+  farm_angle3_path?: string;
 }
 
 const DEFAULT_PASSWORD = 'user12345';
@@ -50,7 +46,7 @@ export class ApplicationsService {
 
   async create(
     dto: CreateApplicationDto,
-    files: UploadedFiles,
+    fileUrls: UploadedFileUrls,
   ): Promise<ProviderApplication> {
     const data: DeepPartial<ProviderApplication> = {
       business_name: dto.business_name,
@@ -65,11 +61,11 @@ export class ApplicationsService {
       farm_category: dto.farm_category,
       application_status: ApplicationStatus.SUBMITTED,
       submitted_at: new Date(),
-      id_document_path: normalizePath(files.id_document?.[0]?.path),
-      profile_photo_path: normalizePath(files.profile_photo?.[0]?.path),
-      farm_angle1_path: normalizePath(files.farm_angle1?.[0]?.path),
-      farm_angle2_path: normalizePath(files.farm_angle2?.[0]?.path),
-      farm_angle3_path: normalizePath(files.farm_angle3?.[0]?.path),
+      id_document_path: fileUrls.id_document_path,
+      profile_photo_path: fileUrls.profile_photo_path,
+      farm_angle1_path: fileUrls.farm_angle1_path,
+      farm_angle2_path: fileUrls.farm_angle2_path,
+      farm_angle3_path: fileUrls.farm_angle3_path,
     };
 
     const application = this.repo.create(data);

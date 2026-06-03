@@ -3,20 +3,20 @@
     <div class="modal-overlay" @click.self="$emit('close')">
       <div class="modal-container">
         <div class="modal-header">
-          <h3>Your Location</h3>
+          <h3>Choose your location</h3>
           <button class="close-btn" @click="$emit('close')">&times;</button>
         </div>
 
         <div class="modal-body">
-          <!-- Detect current location -->
           <div class="current-location-section">
+            <p class="section-desc">Set your location to see delivery options and product availability</p>
             <button class="detect-btn" @click="detectLocation" :disabled="detecting">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
                 <path d="M10 2a6 6 0 0 1 6 6c0 4-6 10-6 10S4 12 4 8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5"/>
                 <circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
               </svg>
               <span v-if="detecting">Detecting...</span>
-              <span v-else>Detect current location</span>
+              <span v-else>Use current location</span>
             </button>
             <div v-if="currentLocation" class="detected-location">
               <span class="loc-name">{{ currentLocation }}</span>
@@ -24,19 +24,21 @@
             </div>
           </div>
 
-          <!-- Add new location manually -->
+          <div class="divider"><span>or</span></div>
+
           <div class="add-location-section">
-            <div class="section-title">Add new location</div>
+            <div class="section-title">Add a new address</div>
             <div class="add-row">
-              <input v-model="newLocationName" placeholder="Location name (e.g. Home, Office)" @keyup.enter="addNewLocation" />
-              <input v-model="newLocationAddress" placeholder="Address" @keyup.enter="addNewLocation" />
-              <button class="add-btn" @click="addNewLocation">Add</button>
+              <input v-model="newLocationName" placeholder="Label (e.g. Home, Office)" @keyup.enter="addNewLocation" />
+              <input v-model="newLocationAddress" placeholder="Street, city, district..." @keyup.enter="addNewLocation" />
+              <button class="add-btn" @click="addNewLocation" :disabled="!newLocationName.trim() || !newLocationAddress.trim()">
+                Add address
+              </button>
             </div>
           </div>
 
-          <!-- Saved locations -->
           <div class="saved-locations-section" v-if="locationStore.savedLocations.length">
-            <div class="section-title">Saved locations</div>
+            <div class="section-title">Saved addresses</div>
             <div
               v-for="loc in locationStore.savedLocations"
               :key="loc.id"
@@ -50,9 +52,13 @@
               </div>
               <div class="loc-actions">
                 <span v-if="locationStore.activeLocation?.id === loc.id" class="active-badge">Active</span>
-                <button class="remove-btn" @click.stop="locationStore.removeLocation(loc.id)">&times;</button>
+                <button class="remove-btn" @click.stop="locationStore.removeLocation(loc.id)" title="Remove">&times;</button>
               </div>
             </div>
+          </div>
+
+          <div v-if="!locationStore.savedLocations.length" class="empty-state">
+            <p>No saved addresses yet</p>
           </div>
         </div>
       </div>
@@ -142,110 +148,139 @@ function addNewLocation() {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 16px;
 }
 
 .modal-container {
   background: #fff;
-  border-radius: 16px;
-  width: 420px;
-  max-width: 90vw;
-  max-height: 80vh;
+  border-radius: 12px;
+  width: 440px;
+  max-width: 100%;
+  max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #eee;
 }
 
 .modal-header h3 {
   margin: 0;
   font-size: 16px;
-  color: #1a2e1a;
+  font-weight: 600;
+  color: #222;
 }
 
 .close-btn {
   background: none;
   border: none;
   font-size: 22px;
-  color: #888;
+  color: #999;
   cursor: pointer;
   padding: 0 4px;
+  line-height: 1;
 }
 
 .close-btn:hover { color: #333; }
 
 .modal-body {
-  padding: 16px 20px;
+  padding: 16px 20px 20px;
+}
+
+.section-desc {
+  font-size: 13px;
+  color: #777;
+  margin: 0 0 12px;
 }
 
 .detect-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 12px 16px;
-  border: 2px dashed #ccc;
-  border-radius: 10px;
-  background: #fafaf8;
+  padding: 12px;
+  border: 1px solid #2D7A3A;
+  border-radius: 8px;
+  background: #fff;
   cursor: pointer;
   font-size: 14px;
-  color: #555;
-  transition: all 0.2s;
+  color: #2D7A3A;
 }
 
 .detect-btn:hover:not(:disabled) {
-  border-color: #2D7A3A;
-  color: #2D7A3A;
-  background: #e6f4ea;
+  background: #f0f9f2;
 }
 
-.detect-btn:disabled { opacity: 0.6; cursor: default; }
+.detect-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 
 .detected-location {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 10px;
+  margin-top: 8px;
   padding: 10px 14px;
-  background: #e6f4ea;
-  border-radius: 10px;
+  background: #f0f9f2;
+  border: 1px solid #d5e8da;
+  border-radius: 8px;
 }
 
 .loc-name {
   font-size: 13px;
-  color: #1a2e1a;
-  font-weight: 500;
+  color: #333;
 }
 
 .save-btn {
   background: #2D7A3A;
   color: #fff;
   border: none;
-  padding: 5px 14px;
-  border-radius: 8px;
+  padding: 6px 16px;
+  border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
-  font-weight: 600;
 }
 
 .save-btn:hover { background: #1a5c27; }
 
+.divider {
+  text-align: center;
+  color: #bbb;
+  font-size: 12px;
+  margin: 14px 0;
+  position: relative;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 44%;
+  height: 1px;
+  background: #eee;
+}
+
+.divider::before { left: 0; }
+.divider::after { right: 0; }
+
 .add-location-section {
-  margin-top: 16px;
+  margin-bottom: 4px;
 }
 
 .section-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: #888;
   margin-bottom: 8px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .add-row {
@@ -257,8 +292,9 @@ function addNewLocation() {
 .add-row input {
   padding: 10px 12px;
   border: 1px solid #ddd;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 13px;
+  font-family: inherit;
   outline: none;
 }
 
@@ -266,19 +302,23 @@ function addNewLocation() {
   border-color: #2D7A3A;
 }
 
-.add-btn {
-  align-self: flex-end;
-  background: #1a5c27;
-  color: #fff;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  font-weight: 600;
+.add-row input::placeholder {
+  color: #bbb;
 }
 
-.add-btn:hover { background: #2D7A3A; }
+.add-btn {
+  background: #2D7A3A;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.add-btn:hover:not(:disabled) { background: #1a5c27; }
+.add-btn:disabled { opacity: 0.4; cursor: default; }
 
 .saved-locations-section {
   margin-top: 16px;
@@ -289,17 +329,19 @@ function addNewLocation() {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-radius: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.15s;
   margin-bottom: 4px;
 }
 
-.saved-location-item:hover { background: #f6fbf7; }
+.saved-location-item:hover {
+  background: #f9fafb;
+}
 
 .saved-location-item.active {
-  background: #e6f4ea;
-  border: 1px solid #2D7A3A;
+  background: #f0f9f2;
+  border-color: #2D7A3A;
 }
 
 .loc-info {
@@ -310,27 +352,26 @@ function addNewLocation() {
 
 .loc-info strong {
   font-size: 13px;
-  color: #1a2e1a;
+  color: #222;
 }
 
 .loc-address {
-  font-size: 11px;
-  color: #888;
+  font-size: 12px;
+  color: #999;
 }
 
 .loc-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .active-badge {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 11px;
   color: #2D7A3A;
-  background: #d0ecda;
+  background: #e0f0e4;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 4px;
 }
 
 .remove-btn {
@@ -339,8 +380,19 @@ function addNewLocation() {
   font-size: 18px;
   color: #ccc;
   cursor: pointer;
-  padding: 0 2px;
+  padding: 0 4px;
 }
 
 .remove-btn:hover { color: #e53e3e; }
+
+.empty-state {
+  text-align: center;
+  padding: 24px 0 8px;
+}
+
+.empty-state p {
+  font-size: 13px;
+  color: #999;
+  margin: 0;
+}
 </style>
