@@ -173,6 +173,9 @@ router.beforeEach((to, from) => {
     if (!user || role !== 'staff') {
       return `/user/login?redirect=${to.fullPath}`
     }
+    if (!sessionStorage.getItem('staff_2fa_ok')) {
+      return `/user/login?redirect=${to.fullPath}`
+    }
   }
   // ADMIN PROTECTION
   if (to.path.startsWith('/admin')) {

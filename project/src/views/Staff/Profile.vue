@@ -1,52 +1,49 @@
 <template>
-    <div class="page-body">
+  <div class="page-body">
 
-      <!-- Page Header -->
-      <div class="page-header">
-        <h1 class="page-title">Profile Settings</h1>
-        <p class="page-subtitle">Manage your account preferences and security protocols.</p>
-      </div>
-
-      <!-- Two-column layout -->
-      <div class="settings-grid">
-
-        <!-- Left: Profile form + Security -->
-        <div class="left-col">
-          <ProfileForm
-            v-model="profile"
-            @save="onSaveProfile"
-            @change-avatar="onChangeAvatar"
-          />
-          <SecurityAccess
-            :last-login="session.lastLogin"
-            :location="session.location"
-            @update-password="onUpdatePassword"
-          />
-        </div>
-
-        <!-- Right: Notifications + 2FA -->
-        <div class="right-col">
-          <NotificationsCard
-            v-model:notifications="notifications"
-          />
-          <TwoFactorAuth
-            :enabled="twoFaEnabled"
-            @enable="onEnable2FA"
-          />
-        </div>
-
-      </div>
-
-      <!-- Deactivate Account Footer -->
-      <div class="deactivate-footer">
-        <div>
-          <span class="deactivate-label">Deactivate Account</span>
-          <p class="deactivate-sub">Temporarily disable your access to the staff portal.</p>
-        </div>
-        <button class="btn-deactivate" @click="onDeactivate">Request Deactivation</button>
-      </div>
-
+    <div class="page-header">
+      <h1 class="page-title">Profile Settings</h1>
+      <p class="page-subtitle">Manage your account preferences and security protocols.</p>
     </div>
+
+    <div class="settings-grid">
+
+      <div class="left-col">
+        <ProfileForm
+          v-model="profile"
+          @save="onSaveProfile"
+          @change-avatar="onChangeAvatar"
+        />
+        <SecurityAccess
+          :last-login="session.lastLogin"
+          :location="session.location"
+          @update-password="onUpdatePassword"
+        />
+      </div>
+
+      <div class="right-col">
+        <NotificationsCard v-model:notifications="notifications" />
+
+        <div class="twofa-info-card">
+          <i class="bi bi-shield-check-fill twofa-icon"></i>
+          <div>
+            <p class="twofa-title">Two-Factor Auth is Active</p>
+            <p class="twofa-sub">
+              Every login requires email verification. This cannot be disabled for staff accounts.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="deactivate-footer">
+      <div>
+        <span class="deactivate-label">Deactivate Account</span>
+        <p class="deactivate-sub">Temporarily disable your access to the staff portal.</p>
+      </div>
+      <button class="btn-deactivate" @click="onDeactivate">Request Deactivation</button>
+    </div>
+
+  </div>
 </template>
 
 <script>
@@ -54,14 +51,12 @@ import { useUserStore } from '@/stores/userStore'
 import ProfileForm       from '../../components/Staff/Profileform.vue'
 import SecurityAccess    from '../../components/Staff/Securityaccess.vue'
 import NotificationsCard from '../../components/Staff/Notificationscard.vue'
-import TwoFactorAuth     from '../../components/Staff/Twofactorauth.vue'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
-const COOLDOWN_DAYS = 7
 
 export default {
   name: 'ProfileSettings',
-  components: { ProfileForm, SecurityAccess, NotificationsCard, TwoFactorAuth },
+  components: { ProfileForm, SecurityAccess, NotificationsCard },
 
   setup() {
     const userStore = useUserStore()
@@ -70,9 +65,7 @@ export default {
 
   data() {
     const u = this.userStore?.user || {}
-    const userId = u.id ?? null
     return {
-      userId,
       profile: {
         fullName:   u.name       || '',
         email:      u.email      || '',
@@ -84,8 +77,6 @@ export default {
         lastLogin: u.lastLogin || 'Unknown',
         location:  u.location  || '—',
       },
-      twoFaEnabled: false,
-      passwordCooldownUntil: null,
       notifications: [
         { key: 'email', title: 'Email Updates',  sub: 'Weekly digest of reports',  icon: 'bi bi-envelope-fill', iconClass: 'icon-blue',   enabled: true  },
         { key: 'push',  title: 'Push Alerts',    sub: 'Real-time stock alerts',    icon: 'bi bi-clock-fill',    iconClass: 'icon-orange', enabled: true  },
@@ -94,85 +85,15 @@ export default {
     }
   },
 
-  computed: {
-    cooldownKey() {
-      if (!this.userId) return null
-      return `pwdChangedAt_${this.userId}`
-    },
-
-    cooldownDaysLeft() {
-      if (!this.passwordCooldownUntil) return 0
-      const msLeft = this.passwordCooldownUntil - Date.now()
-      if (msLeft <= 0) return 0
-      return Math.ceil(msLeft / (1000 * 60 * 60 * 24))
-    },
-
-    passwordLocked() {
-      return this.cooldownDaysLeft > 0
-    },
-  },
-
-  mounted() {
-    if (this.userId) {
-      this.loadCooldown()
-    }
-  },
-
-  watch: {
-    'userStore.user.id'(newId) {
-      if (newId && !this.userId) {
-        this.userId = newId
-        this.loadCooldown()
-      }
-    },
-  },
-
   methods: {
-    loadCooldown() {
-      if (!this.cooldownKey) return
-      const stored = localStorage.getItem(this.cooldownKey)
-      if (!stored) return
-      const until = new Date(stored)
-      if (until > new Date()) {
-        this.passwordCooldownUntil = until
-      } else {
-        localStorage.removeItem(this.cooldownKey)
-      }
-    },
-
-    saveCooldown() {
-      if (!this.cooldownKey) return
-      const until = new Date(Date.now() + COOLDOWN_DAYS * 24 * 60 * 60 * 1000)
-      this.passwordCooldownUntil = until
-      localStorage.setItem(this.cooldownKey, until.toISOString())
-    },
-
     async onUpdatePassword({ currentPassword, newPassword }) {
-      if (!this.userId && this.userStore?.user?.id) {
-        this.userId = this.userStore.user.id
-        this.loadCooldown()
-      }
-
-      if (!this.userId) {
-        alert('User session not found. Please re-login.')
-        return
-      }
-
-      // Guard: cooldown active
-      if (this.passwordLocked) {
-        alert(`You can only change your password once every ${COOLDOWN_DAYS} days.\n${this.cooldownDaysLeft} day(s) remaining.`)
-        return
-      }
-
-      // Guard: same password
-      if (currentPassword === newPassword) {
-        alert('New password must be different from your current password.')
-        return
-      }
+      const userId = this.userStore?.user?.id
+      if (!userId) { alert('User session not found. Please re-login.'); return }
+      if (currentPassword === newPassword) { alert('New password must be different from your current password.'); return }
 
       try {
         const token = localStorage.getItem('token')
-        const res = await fetch(`${API_BASE}/users/${this.userId}/password`, {
+        const res = await fetch(`${API_BASE}/users/${userId}/password`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -181,35 +102,23 @@ export default {
           body: JSON.stringify({ currentPassword, newPassword }),
         })
 
-        if (res.status === 401) {
-          alert('Current password is incorrect.')
+        if (res.status === 400) {
+          const body = await res.json().catch(() => ({}))
+          alert(body.message || 'Current password is incorrect.')
           return
         }
-
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
           throw new Error(body.message || `Server error (${res.status})`)
         }
-
-        // Success — lock for 7 days
-        this.saveCooldown()
-        alert('Password updated successfully! You can change it again in 7 days.')
-
+        alert('Password updated successfully!')
       } catch (err) {
         alert(`Failed to update password: ${err.message}`)
       }
     },
 
-    onSaveProfile() {
-      alert('Profile changes saved!')
-    },
-    onChangeAvatar() {
-      alert('Avatar upload dialog would open here.')
-    },
-    onEnable2FA() {
-      this.twoFaEnabled = true
-      alert('Two-Factor Authentication enabled!')
-    },
+    onSaveProfile()  { alert('Profile changes saved!') },
+    onChangeAvatar() { alert('Avatar upload dialog would open here.') },
     onDeactivate() {
       if (confirm('Are you sure you want to request account deactivation?')) {
         alert('Deactivation request submitted.')
@@ -220,8 +129,7 @@ export default {
 </script>
 
 <style scoped>
-.page-body { padding: 28px 32px; }
-
+.page-body     { padding: 28px 32px; }
 .page-header   { margin-bottom: 24px; }
 .page-title    { font-size: 26px; font-weight: 800; color: #1a1a2e; margin: 0 0 4px; }
 .page-subtitle { font-size: 13.5px; color: #6b7280; margin: 0; }
@@ -233,51 +141,33 @@ export default {
   margin-bottom: 20px;
   align-items: start;
 }
+.left-col, .right-col { display: flex; flex-direction: column; gap: 16px; }
 
-.left-col,
-.right-col {
+/* 2FA info card */
+.twofa-info-card {
+  background: #1f4e2e;
+  border-radius: 14px;
+  padding: 20px;
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 14px;
+  color: #fff;
 }
+.twofa-icon  { font-size: 24px; color: #4ade80; flex-shrink: 0; margin-top: 2px; }
+.twofa-title { font-size: 14px; font-weight: 700; margin: 0 0 5px; color: #fff; }
+.twofa-sub   { font-size: 12.5px; color: #a8c5b0; margin: 0; line-height: 1.55; }
 
+/* Deactivate footer */
 .deactivate-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 18px;
-  border-top: 1px solid #e5e7eb;
-  gap: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 18px; border-top: 1px solid #e5e7eb; gap: 16px;
 }
-
-.deactivate-label {
-  display: block;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #d63b6b;
-  margin-bottom: 3px;
+.deactivate-label { display: block; font-size: 13.5px; font-weight: 700; color: #d63b6b; margin-bottom: 3px; }
+.deactivate-sub   { font-size: 12px; color: #9aa0ab; margin: 0; }
+.btn-deactivate   {
+  background: none; border: none; font-size: 13px; font-weight: 700; color: #d63b6b;
+  cursor: pointer; padding: 9px 18px; border-radius: 8px; font-family: inherit;
+  white-space: nowrap; flex-shrink: 0; transition: background 0.15s;
 }
-
-.deactivate-sub {
-  font-size: 12px;
-  color: #9aa0ab;
-  margin: 0;
-}
-
-.btn-deactivate {
-  background: none;
-  border: none;
-  font-size: 13px;
-  font-weight: 700;
-  color: #d63b6b;
-  cursor: pointer;
-  padding: 9px 18px;
-  border-radius: 8px;
-  font-family: inherit;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: background 0.15s;
-}
-
 .btn-deactivate:hover { background: #fde8ef; }
 </style>
