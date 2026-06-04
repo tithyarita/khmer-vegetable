@@ -65,7 +65,7 @@ const routes = [
       { path: 'checkout', component: Checkout },
       { path: 'profile', component: Profile },
       { path: 'order-tracker', alias: 'track-order', component: OrderTracker },
-      { path: 'product/:id', component: ProductDetailUser, props: true },
+      { path: 'product/:id', name: 'publicProductDetail', component: ProductDetailUser, props: true },
       { path: 'products', component: ProductCategory },
       { path: 'category/:type', component: ProductCategory, props: true },
       { path: 'settings', component: settings },
@@ -83,7 +83,8 @@ const routes = [
       { path: 'products', component: ProviderProduct },
       { path: 'revenue', component: ProviderRevenue },
       { path: 'profile', component: ProfileSettingProvider },
-      { path: 'product/:id', component: ProductDetail, props: true },
+      // --- CRITICAL FIX: Named this child route 'productDetail' so programatic pushes match ---
+      { path: 'product/:id', name: 'productDetail', component: ProductDetail, props: true },
     ],
   },
 
@@ -127,8 +128,7 @@ const routes = [
   // AUTH
   { path: '/user/login', component: () => import('../views/User/login.vue') },
   { path: '/user/register', component: () => import('../views/User/resgister.vue') },
-  { path: '/user/forgot-password', component: () => import('../views/User/Forgotpassword.vue') },
-  { path: '/user/forgot-password', component: () => import('../views/User/Fogotpassword.vue') },
+  { path: '/user/forgot-password', component: () => import('../views/User/Forgotpassword.vue') }, // Fixed duplicate typo entry here
   { path: '/user/verify-otp', component: () => import('../views/User/VertifyOtp.vue') },
   { path: '/user/reset-password', component: () => import('../views/User/Resetpassword.vue') },
   { path: '/provider/login', component: () => import('../views/Provider/login.vue') },
@@ -147,18 +147,13 @@ const router = createRouter({
   routes,
 })
 
-// ==================== GLOBAL GUARD (FIXED) ====================
-router.beforeEach((to, from) => {
+// ==================== GLOBAL GUARD (CLEANED) ====================
+router.beforeEach((to) => {
   const user = JSON.parse(localStorage.getItem('user'))
   const token = localStorage.getItem('token')
   const role = user?.role?.trim()?.toLowerCase()
 
-  // NOT LOGGED IN
-  if ((to.path.startsWith('/admin') || to.path.startsWith('/provider')) && !token) {
-    return `/user/login?redirect=${to.fullPath}`
-  }
-
- // NOT LOGGED IN
+  // 1. COMBINED NOT LOGGED IN CHECK
   if (
     (to.path.startsWith('/admin') ||
      to.path.startsWith('/provider') ||
@@ -168,7 +163,7 @@ router.beforeEach((to, from) => {
     return `/user/login?redirect=${to.fullPath}`
   }
 
-    // STAFF PROTECTION  
+  // 2. STAFF PROTECTION  
   if (to.path.startsWith('/staff')) {
     if (!user || role !== 'staff') {
       return `/user/login?redirect=${to.fullPath}`
@@ -177,21 +172,22 @@ router.beforeEach((to, from) => {
       return `/user/login?redirect=${to.fullPath}`
     }
   }
-  // ADMIN PROTECTION
+
+  // 3. ADMIN PROTECTION
   if (to.path.startsWith('/admin')) {
     if (!user || role !== 'admin') {
       return `/user/login?redirect=${to.fullPath}`
     }
   }
 
-  // PROVIDER PROTECTION
+  // 4. PROVIDER PROTECTION
   if (to.path.startsWith('/provider')) {
     if (!user || role !== 'provider') {
       return `/user/login?redirect=${to.fullPath}`
     }
   }
   
-  // APPLICATION FORM PROTECTION — must verify email first
+  // 5. APPLICATION FORM PROTECTION
   if (to.path === '/application-form') {
     const verified = sessionStorage.getItem('app_verified_email')
     if (!verified) {
@@ -199,7 +195,6 @@ router.beforeEach((to, from) => {
     }
   }
 
-  // Allow navigation
   return true
 })
 

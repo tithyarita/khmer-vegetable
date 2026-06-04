@@ -1,7 +1,6 @@
 <template>
   <div class="users-management-viewport">
     
-    <!-- Top Action Control Bar -->
     <header class="dashboard-header-block">
       <div class="brand-title-group">
         <h1 class="main-dashboard-title">Users Directory</h1>
@@ -26,13 +25,12 @@
           <i class="bi bi-download font-icon-left"></i> Export CSV
         </button>
 
-        <button class="action-btn-pill btn-solid-forest" @click="openModal">
+        <button class="action-btn-pill btn-solid-forest" @click="openCreateModal">
           <i class="bi bi-person-plus-fill font-icon-left"></i> Add User
         </button>
       </div>
     </header>
 
-    <!-- Error Callout Banner Component -->
     <div v-if="errorMessage" class="error-notification-toast">
       <div class="error-toast-body">
         <i class="bi bi-exclamation-triangle-fill error-toast-icon"></i>
@@ -40,7 +38,6 @@
       </div>
     </div>
 
-    <!-- Core Dynamic Loading Placeholder -->
     <div v-if="loading" class="matrix-loading-screen">
       <div class="loading-spinner-circle"></div>
       <p class="loading-status-msg">Synchronizing real-time profile arrays...</p>
@@ -48,7 +45,6 @@
 
     <div v-else class="dashboard-content-layer">
       
-      <!-- Metrics KPI Layout Deck -->
       <section class="kpi-metrics-grid">
         <div class="kpi-card shadow-sm-soft">
           <div class="kpi-meta-block">
@@ -91,7 +87,6 @@
         </div>
       </section>
 
-      <!-- Main Directory Table Module -->
       <div class="content-panel-card data-table-card shadow-sm-soft">
         <div class="table-scroll-viewport">
           <table class="modern-data-table">
@@ -106,7 +101,6 @@
               </tr>
             </thead>
             <tbody>
-              <!-- Empty Dataset Placeholder -->
               <tr v-if="filteredUsers.length === 0">
                 <td colspan="6" class="table-empty-row-state">
                   <div class="empty-state-pouch">
@@ -117,7 +111,6 @@
                 </td>
               </tr>
 
-              <!-- Iterative Record Row -->
               <tr v-for="user in filteredUsers" :key="user.id" class="table-row-interaction">
                 <td class="table-cell-mono">#{{ user.id }}</td>
                 <td>
@@ -144,9 +137,17 @@
                   <span class="table-timestamp-text">{{ formatDate(user.created_at) }}</span>
                 </td>
                 <td class="table-align-right">
-                  <button class="row-delete-action-btn" @click="deleteUser(user.id)" title="Remove user profile">
-                    <i class="bi bi-trash3"></i>
-                  </button>
+                  <div class="action-button-group">
+                    <button class="row-action-btn view-btn" @click="openViewModal(user)" title="View Details">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="row-action-btn edit-btn" @click="openEditModal(user)" title="Edit Profile">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="row-action-btn delete-btn" @click="deleteUser(user.id)" title="Remove user profile">
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -155,17 +156,28 @@
       </div>
     </div>
 
-    <!-- Management Modal Layer Template -->
     <transition name="modal-fade">
       <div v-if="showModal" class="modal-backdrop-layer" @click.self="closeModal">
         <div class="modal-surface-container shadow-lg-sharp">
           
           <header class="modal-header-panel">
             <div class="modal-title-pouch">
-              <div class="modal-icon-decor"><i class="bi bi-person-plus"></i></div>
+              <div class="modal-icon-decor" :class="modalType">
+                <i v-if="modalType === 'create'" class="bi bi-person-plus"></i>
+                <i v-else-if="modalType === 'edit'" class="bi bi-pencil-square"></i>
+                <i v-else class="bi bi-card-text"></i>
+              </div>
               <div>
-                <h3 class="modal-headline">Register Profile</h3>
-                <p class="modal-subheadline">Instantiate a secure platform authorization entry.</p>
+                <h3 class="modal-headline">
+                  <span v-if="modalType === 'create'">Register Profile</span>
+                  <span v-else-if="modalType === 'edit'">Modify Profile Matrix</span>
+                  <span v-else>Profile Deep-Dive Details</span>
+                </h3>
+                <p class="modal-subheadline">
+                  <span v-if="modalType === 'create'">Instantiate a secure platform authorization entry.</span>
+                  <span v-else-if="modalType === 'edit'">Update core registry data arrays securely.</span>
+                  <span v-else>Read-only access to user state database entity.</span>
+                </p>
               </div>
             </div>
             <button class="modal-dismiss-btn" @click="closeModal"><i class="bi bi-x-lg"></i></button>
@@ -174,23 +186,49 @@
           <form @submit.prevent="submitUser" class="modal-form-matrix">
             <div class="form-field-row">
               <label class="form-input-label">Account Owner Name</label>
-              <input v-model="newUser.name" type="text" placeholder="e.g. Alexander Pierce" class="form-input-element" required />
+              <input 
+                v-model="formUser.name" 
+                type="text" 
+                placeholder="e.g. Alexander Pierce" 
+                class="form-input-element" 
+                :disabled="modalType === 'view'"
+                required 
+              />
             </div>
 
             <div class="form-field-row">
               <label class="form-input-label">Email Address Address</label>
-              <input v-model="newUser.email" type="email" placeholder="name@domain.com" class="form-input-element" required />
+              <input 
+                v-model="formUser.email" 
+                type="email" 
+                placeholder="name@domain.com" 
+                class="form-input-element" 
+                :disabled="modalType === 'view'"
+                required 
+              />
             </div>
 
             <div class="form-grid-dual">
               <div class="form-field-row">
                 <label class="form-input-label">Mobile Line</label>
-                <input v-model="newUser.phone" type="text" placeholder="+1 (555) 000-0000" class="form-input-element" required />
+                <input 
+                  v-model="formUser.phone" 
+                  type="text" 
+                  placeholder="+1 (555) 000-0000" 
+                  class="form-input-element" 
+                  :disabled="modalType === 'view'"
+                  required 
+                />
               </div>
               
               <div class="form-field-row">
                 <label class="form-input-label">Access Authorization Role</label>
-                <select v-model="newUser.role" class="form-input-element select-menu-custom" required>
+                <select 
+                  v-model="formUser.role" 
+                  class="form-input-element select-menu-custom" 
+                  :disabled="modalType === 'view'"
+                  required
+                >
                   <option value="admin">Admin</option>
                   <option value="staff">Staff</option>
                   <option value="provider">Provider</option>
@@ -199,18 +237,39 @@
               </div>
             </div>
 
-            <div class="form-field-row">
-              <label class="form-input-label">Access Core Password</label>
-              <input v-model="newUser.password" type="password" placeholder="••••••••" class="form-input-element" required />
+            <div v-if="modalType !== 'view'" class="form-field-row">
+              <label class="form-input-label">
+                Access Core Password 
+                <span v-if="modalType === 'edit'" class="optional-tag">(Leave blank to keep unchanged)</span>
+              </label>
+              <input 
+                v-model="formUser.password" 
+                type="password" 
+                placeholder="••••••••" 
+                class="form-input-element" 
+                :required="modalType === 'create'" 
+              />
+            </div>
+
+            <div v-if="modalType === 'view'" class="form-grid-dual metadata-view-block">
+              <div class="form-field-row">
+                <label class="form-input-label">System Identity ID</label>
+                <div class="static-view-value">#{{ formUser.id }}</div>
+              </div>
+              <div class="form-field-row">
+                <label class="form-input-label">Created At Timestamp</label>
+                <div class="static-view-value">{{ formatDate(formUser.created_at) }}</div>
+              </div>
             </div>
 
             <footer class="modal-actions-footer">
               <button class="action-btn-pill btn-outline-gray" type="button" @click="closeModal">
-                Cancel
+                {{ modalType === 'view' ? 'Close Window' : 'Cancel' }}
               </button>
-              <button class="action-btn-pill btn-solid-forest" type="submit" :disabled="submitting">
-                <span v-if="submitting" class="inline-loading-dots">Saving profile entry...</span>
-                <span v-else>Confirm & Save User</span>
+              <button v-if="modalType !== 'view'" class="action-btn-pill btn-solid-forest" type="submit" :disabled="submitting">
+                <span v-if="submitting" class="inline-loading-dots">Processing pipeline update...</span>
+                <span v-else-if="modalType === 'create'">Confirm & Save User</span>
+                <span v-else>Apply Core Changes</span>
               </button>
             </footer>
           </form>
@@ -237,14 +296,19 @@ const loading = ref(false)
 const submitting = ref(false)
 const search = ref('')
 const errorMessage = ref('')
-const showModal = ref(false)
 
-const newUser = ref({
+// Modal structural layout managers
+const showModal = ref(false)
+const modalType = ref('create') // Can be 'create', 'edit', or 'view'
+
+const formUser = ref({
+  id: null,
   name: '',
   email: '',
   phone: '',
   password: '',
-  role: 'customer'
+  role: 'customer',
+  created_at: null
 })
 
 /* REMOTE REGISTRY EXTRACTION */
@@ -278,19 +342,42 @@ const deleteUser = async (id) => {
     users.value = users.value.filter(u => u.id !== id)
   } catch (error) {
     console.error('Destruction handling error payload:', error)
-    alert(error.response?.data?.message || 'Failed to destroy profile entity.')
+    alert(error.response?.data?.message || 'Failed to destroy profile entity. Please clean database child relations first.')
   }
 }
 
 /* INTERFACE CONTROL MODAL SCHEDULERS */
-const openModal = () => {
-  newUser.value = {
+const openCreateModal = () => {
+  modalType.value = 'create'
+  formUser.value = {
+    id: null,
     name: '',
     email: '',
     phone: '',
     password: '',
-    role: 'customer'
+    role: 'customer',
+    created_at: null
   }
+  showModal.value = true
+}
+
+const openEditModal = (user) => {
+  modalType.value = 'edit'
+  formUser.value = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    password: '', // Clear field out to prevent hashing confusion 
+    role: user.role,
+    created_at: user.created_at
+  }
+  showModal.value = true
+}
+
+const openViewModal = (user) => {
+  modalType.value = 'view'
+  formUser.value = { ...user }
   showModal.value = true
 }
 
@@ -301,12 +388,22 @@ const closeModal = () => {
 const submitUser = async () => {
   submitting.value = true
   try {
-    await axios.post(REGISTER_URL, newUser.value)
+    if (modalType.value === 'create') {
+      // POST orchestration for registering a profile
+      await axios.post(REGISTER_URL, formUser.value)
+    } else if (modalType.value === 'edit') {
+      // PUT optimization mapping targets cleanly to endpoint ID
+      const payload = { ...formUser.value }
+      if (!payload.password || !payload.password.trim()) {
+        delete payload.password // Don't wipe clean database value if field skipped
+      }
+      await axios.put(`${API_URL}/${formUser.value.id}`, payload)
+    }
     showModal.value = false
     await fetchUsers()
   } catch (error) {
     console.error('Data pipeline write fault:', error)
-    alert(error.response?.data?.message || 'Profile insertion rejected by data core validations.')
+    alert(error.response?.data?.message || 'Profile processing rejected by data core validations.')
   } finally {
     submitting.value = false
   }
@@ -671,6 +768,36 @@ onMounted(fetchUsers)
 
 .table-align-right { text-align: right; }
 
+/* ACTION DESK ROW GRIDS */
+.action-button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.row-action-btn {
+  background: transparent;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-size: 14px;
+}
+
+.row-action-btn:hover {
+  background-color: #f1f5f9;
+}
+
+.view-btn:hover { color: #2563eb; background-color: #eff6ff; }
+.edit-btn:hover { color: #d97706; background-color: #fffbeb; }
+.delete-btn:hover { color: #ef4444; background-color: #fef2f2; }
+
 /* IDENTITY MATRIX CHIPS DESIGN */
 .profile-composite-identity {
   display: flex;
@@ -752,27 +879,6 @@ onMounted(fetchUsers)
 
 .badge-role-pill.customer { background-color: #f5f3ff; color: #5b21b6; }
 .badge-role-pill.customer .role-badge-bullet { background-color: #8b5cf6; }
-
-/* ACTION DESK ROW INTERACTION BUTTONS */
-.row-delete-action-btn {
-  background: transparent;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  color: #94a3b8;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-  font-size: 15px;
-}
-
-.row-delete-action-btn:hover {
-  background-color: #fef2f2;
-  color: #ef4444;
-}
 
 /* EMPTY BLANK CONTEXT DATA STATES */
 .table-empty-row-state {
@@ -882,13 +988,15 @@ onMounted(fetchUsers)
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background-color: #f0fdf4;
-  color: #16a34a;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
 }
+
+.modal-icon-decor.create { background-color: #f0fdf4; color: #16a34a; }
+.modal-icon-decor.edit { background-color: #fffbeb; color: #d97706; }
+.modal-icon-decor.view { background-color: #eff6ff; color: #2563eb; }
 
 .modal-headline {
   font-size: 17px;
@@ -945,6 +1053,12 @@ onMounted(fetchUsers)
   color: #475569;
 }
 
+.optional-tag {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
 .form-input-element {
   padding: 10px 14px;
   font-size: 14px;
@@ -957,9 +1071,30 @@ onMounted(fetchUsers)
   transition: all 0.15s ease;
 }
 
-.form-input-element:focus {
+.form-input-element:focus:not(:disabled) {
   border-color: #16a34a;
   box-shadow: 0 0 0 3px rgba(22,163,74,0.06);
+}
+
+.form-input-element:disabled {
+  background-color: #f8fafc;
+  color: #64748b;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.metadata-view-block {
+  background-color: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.static-view-value {
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 500;
+  padding: 4px 0;
 }
 
 .select-menu-custom {

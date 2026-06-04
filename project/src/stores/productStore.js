@@ -46,39 +46,22 @@ export const useProductStore = defineStore('product', () => {
   }
 
   // ================= FORMAT PRODUCT =================
-  const formatProduct = (p) => {
-    if (!p) return p
+// Inside useProductStore in productStore.js
 
-    const image = p.image || p.imageUrl || ''
+const formatProduct = (p) => {
+  if (!p) return p;
 
-    let finalImage = ''
+  let image = p.image || p.imageUrl || '';
+  let finalImage = image;
 
-    if (image) {
-      if (image.startsWith('http')) {
-        finalImage = image
-      } else if (image.startsWith('/')) {
-        finalImage = `${API_BASE_URL}${image}`
-      } else {
-        finalImage = `${API_BASE_URL}/uploads/${image.replace(/^\/uploads\//, '')}`
-      }
-    }
-
-    return {
-      ...p,
-      image: finalImage,
-
-      providerId:
-        p.providerId ||
-        p.provider_id ||
-        p.provider?.id ||
-        null,
-
-      providerName:
-        p.providerName ||
-        p.provider?.provider_name ||
-        'Unknown',
-    }
+  if (image && !image.startsWith('http')) {
+    // Remove existing slashes and normalize to /uploads/ prefix
+    const clean = image.replace(/^\/+/, '').replace(/^(images|uploads)\//, '');
+    finalImage = `${API_BASE_URL}/uploads/${clean}`;
   }
+
+  return { ...p, image: finalImage };
+};
 
   // ================= GET ALL PRODUCTS =================
   const fetchAllProducts = async () => {
@@ -222,6 +205,47 @@ export const useProductStore = defineStore('product', () => {
     }
   }
 
+  // ================= ORDER PRODUCT (DECREASE STOCK) =================
+  const orderProduct = async (id) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const targetProduct = products.value.find(p => p.id === id)
+      if (!targetProduct) throw new Error('Product not found')
+      if (targetProduct.stock <= 0) throw new Error('Product out of stock')
+
+      const updatedStock = targetProduct.stock - 1
+
+      const formData = new FormData()
+      formData.append('name', targetProduct.name || '')
+      formData.append('price', Number(targetProduct.price || 0))
+      formData.append('stock', Number(updatedStock))
+      formData.append('category', targetProduct.category || '')
+      formData.append('description', targetProduct.description || '')
+      formData.append('discount', Number(targetProduct.discount || 0))
+
+      const res = await api.put(`/products/${id}`, formData)
+      const updated = formatProduct(res.data)
+
+      const index = products.value.findIndex(p => p.id === id)
+      if (index !== -1) {
+        products.value[index] = updated
+      }
+
+      if (selectedProduct.value?.id === id) {
+        selectedProduct.value = updated
+      }
+
+      return updated
+    } catch (err) {
+      handleError(err, 'ORDER PRODUCT STOCK DECREASE FAILED')
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // ================= DELETE PRODUCT =================
   const deleteProduct = async (id) => {
     loading.value = true
@@ -272,6 +296,7 @@ export const useProductStore = defineStore('product', () => {
     fetchProductById,
     createProduct,
     updateProduct,
+    orderProduct, // Added here
     deleteProduct,
 
     productCount,

@@ -1,53 +1,74 @@
 <template>
-  <div class="product-table-wrapper">
+  <div class="table-card">
     <div class="table-responsive">
-      <table class="table table-hover mb-0">
+      <table class="custom-table">
         <thead>
-          <tr class="table-light">
-            <th class="id-header">ID</th>
-            <th class="name-header">PRODUCT NAME</th>
-            <th class="price-header">PRICE</th>
-            <th class="discount-header">DISCOUNT (%)</th>
-            <th class="date-header">ADDED DATE</th>
-            <th class="stock-header">STOCK (KG)</th>
-            <th class="action-header">ACTIONS</th>
+          <tr>
+            <th class="w-id">ID</th>
+            <th class="w-name">Product Name</th>
+            <th class="w-price text-end">Base Price</th>
+            <th class="w-discount text-center">Discount</th>
+            <th class="w-final text-end text-emerald">Price After Discount</th>
+            <th class="w-date">Added Date</th>
+            <th class="w-stock text-center">Stock Level</th>
+            <th class="w-actions text-end">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="product in products" :key="product.id" class="product-row">
-            <td class="id-col">{{ product.id }}</td>
-            <td class="name-col">
-              <div class="product-row-content">
-                <img 
-                  :src="product.image || placeholderImage" 
-                  @error="handleImageError"
-                  class="row-image rounded" 
-                  :alt="product.name"
-                  style="width: 50px; height: 50px; object-fit: cover;"
-                />
-                <span>{{ product.name }}</span>
+          <tr v-for="product in products" :key="product.id" class="table-row">
+            <td class="cell-id">#{{ product.id }}</td>
+            <td>
+              <div class="product-profile">
+                <div class="image-container">
+                  <img 
+                    :src="product.image || placeholderImage" 
+                    @error="handleImageError"
+                    class="product-thumb" 
+                    :alt="product.name"
+                  />
+                </div>
+                <span class="product-title-name">{{ product.name }}</span>
               </div>
             </td>
-            <td class="price-col">${{ product.price }}</td>
-            <td class="discount-col">{{ product.discount || 0 }}%</td>
-            <td class="date-col">{{ product.addedDate || 'N/A' }}</td>
-            <td class="stock-col">
-              <span :class="stockClass(product.stock)">
+            <td class="text-end fw-semibold text-dark">${{ Number(product.price).toFixed(2) }}</td>
+            <td class="text-center">
+              <span v-if="product.discount" class="discount-pill">
+                -{{ product.discount }}%
+              </span>
+              <span v-else class="text-muted small">-</span>
+            </td>
+            <td class="text-end fw-bold text-emerald">
+              ${{ (product.priceAfterDiscount ?? product.price).toFixed(2) }}
+            </td>
+            
+            <td class="text-muted font-monospace small">
+              {{ product.formattedAddedDate || product.addedDate || 'N/A' }}
+            </td>
+
+            <td class="text-center">
+              <span :class="['stock-status-badge', stockClass(product.stock)]">
+                <span class="status-dot"></span>
                 {{ stockLabel(product.stock) }}
               </span>
             </td>
-            <td class="action-col">
-              <div class="action-buttons d-flex gap-2">
-                <button class="btn btn-sm btn-info" @click="$emit('view', product.id)" title="View Details">
+            <td>
+              <div class="action-trigger-group">
+                <button class="action-btn btn-view" @click="$emit('view', product.id)" title="View Details">
                   <i class="bi bi-eye"></i>
                 </button>
-                <button class="btn btn-sm btn-warning" @click="$emit('edit', product)" title="Edit">
+                <button class="action-btn btn-edit" @click="$emit('edit', product)" title="Edit">
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-danger" @click="$emit('delete', product.id)" title="Delete">
+                <button class="action-btn btn-delete" @click="$emit('delete', product.id)" title="Delete">
                   <i class="bi bi-trash"></i>
                 </button>
               </div>
+            </td>
+          </tr>
+          <tr v-if="!products.length">
+            <td colspan="8" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox display-6 d-block mb-2 text-neutral"></i>
+              No products available matching criteria.
             </td>
           </tr>
         </tbody>
@@ -58,19 +79,13 @@
 
 <script setup>
 const props = defineProps({
-  products: {
-    type: Array,
-    required: true
-  }
+  products: { type: Array, required: true }
 })
+defineEmits(['view', 'edit', 'delete'])
 
-const emit = defineEmits(['view', 'edit', 'delete'])
-
-// SVG placeholder image as data URI - no external requests
-const placeholderImage = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 50 50%22%3E%3Crect width=%2250%22 height=%2250%22 fill=%22%23f0f0f0%22/%3E%3C/svg%3E'
+const placeholderImage = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 50 50%22%3E%3Crect width=%2250%22 height=%2250%22 fill=%22%23f3f4f6%22/%3E%3C/svg%3E'
 
 const handleImageError = (event) => {
-  // Prevent infinite error loop - only set placeholder once
   if (event.target.src !== placeholderImage) {
     event.target.src = placeholderImage
   }
@@ -78,227 +93,166 @@ const handleImageError = (event) => {
 
 const stockClass = (stock) => {
   const value = Number(stock || 0)
-  if (value <= 0) return 'stock-badge stock-out'
-  if (value < 5) return 'stock-badge stock-low'
-  return 'stock-badge stock-ok'
+  if (value <= 0) return 'is-out'
+  if (value < 5) return 'is-low'
+  return 'is-ok'
 }
 
 const stockLabel = (stock) => {
   const value = Number(stock || 0)
   if (value <= 0) return 'Out of stock'
-  if (value < 5) return `${value} kg - Low stock`
+  if (value < 5) return `${value} kg (Low)`
   return `${value} kg`
 }
 </script>
 
 <style scoped>
-.product-table-wrapper {
-  flex: 1;
-  overflow-y: auto;
-  background: white;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+.table-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
 }
 
-.table-responsive {
-  height: 100%;
-  overflow-y: auto;
-}
-
-.table {
-  font-size: 13px;
-}
-
-.table thead th {
-  background-color: #f9faf9;
-  border-bottom: 1px solid #e8e8e8;
-  font-weight: 700;
-  color: #9ca3af;
-  font-size: 9.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  padding: 12px;
-  position: sticky;
-  top: 0;
-}
-
-.id-header {
-  width: 12%;
-}
-
-.name-header {
-  width: 27%;
-}
-
-.price-header {
-  width: 12%;
-  text-align: left;
-}
-
-.discount-header {
-  width: 15%;
-
-}
-
-.date-header {
-  width: 16%;
-
-}
-
-.stock-header {
-  width: 14%;
-
-}
-
-.action-header {
-  width: 14%;
-  
-}
-
-.product-row {
-  border-bottom: 1px solid #e8e8e8;
-  transition: all 0.2s;
-}
-
-.product-row:hover {
-  background-color: #fafbfa;
-}
-
-.product-row td {
-  padding: 12px;
-  vertical-align: middle;
-  color: #6b7280;
-  border: none;
-}
-
-.id-col {
-  font-weight: 500;
-  color: #999;
-  width: 12%;
-  font-size: 0.85rem;
-}
-
-.name-col {
-  width: 27%;
-}
-
-.product-row-content {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
+.custom-table {
   width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
 }
 
-.row-image {
-  width: 50px;
-  height: 50px;
+.custom-table thead th {
+  background: #f8fafc;
+  padding: 16px 20px;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.custom-table tbody td {
+  padding: 16px 20px;
+  vertical-align: middle;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.table-row {
+  transition: background-color 0.2s ease;
+}
+.table-row:hover {
+  background-color: #f8fafc;
+}
+
+/* Explicit Width Mixes */
+.w-id { width: 6%; }
+.w-name { width: 24%; }
+.w-price { width: 11%; }
+.w-discount { width: 10%; }
+.w-final { width: 15%; }
+.w-date { width: 15%; } /* Expanded slightly to perfectly accommodate localized AM/PM stamps cleanly */
+.w-stock { width: 11%; }
+.w-actions { width: 10%; }
+
+.cell-id {
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.product-profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.image-container {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.product-thumb {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  background: #e9ecef;
-  flex-shrink: 0;
 }
 
-.price-col {
+.product-title-name {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.text-emerald {
+  color: #10b981 !important;
+}
+
+.discount-pill {
+  background: #fef2f2;
+  color: #ef4444;
+  padding: 4px 8px;
+  border-radius: 6px;
   font-weight: 600;
-  color: #212529;
-  width: 12%;
-  text-align: left;
+  font-size: 12px;
 }
 
-.discount-col {
-  font-weight: 600;
-  color: #212529;
-  width: 15%;
-  text-align: left;
-  /* padding: 12px 12px; */
-}
-
-.date-col {
-  font-size: 0.9rem;
-  color: #666;
-  width: 16%;
-
-}
-
-.stock-col {
-  font-weight: 600;
-  color: #212529;
-  width: 14%;
-
-}
-
-.stock-badge {
+/* Redesigned Stock Badges */
+.stock-status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: 0.82rem;
-}
-
-.stock-ok {
-  background: #e8f5e9;
-  color: #1b5e20;
-}
-
-.stock-low {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.stock-out {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.action-col {
-  text-align: center;
-  width: 14%;
-}
-
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.view-detail-btn {
-  padding: 0.375rem 0.75rem;
-  border: 1px solid #daa520;
-  background: white;
-  color: #daa520;
-  cursor: pointer;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 30px;
   font-weight: 500;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
+  font-size: 13px;
+}
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
 }
 
-.view-detail-btn:hover {
-  background: #daa520;
-  color: white;
+.is-ok { background: #ecfdf5; color: #065f46; }
+.is-ok .status-dot { background: #10b981; }
+
+.is-low { background: #fffbeb; color: #92400e; }
+.is-low .status-dot { background: #f59e0b; }
+
+.is-out { background: #f1f5f9; color: #475569; }
+.is-out .status-dot { background: #94a3b8; }
+
+/* Dynamic Smooth Action Group */
+.action-trigger-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
-@media (max-width: 768px) {
-  .id-header, .name-header, .price-header, .date-header, .stock-header, .action-header {
-    width: auto;
-  }
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  color: #64748b;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
 
-  .table {
-    font-size: 0.8rem;
-  }
+.btn-view:hover { background: #e0f2fe; color: #0369a1; }
+.btn-edit:hover { background: #fef3c7; color: #b45309; }
+.btn-delete:hover { background: #fee2e2; color: #b91c1c; }
 
-  .product-row td {
-    padding: 8px;
-  }
-
-  .row-image {
-    width: 40px;
-    height: 40px;
-  }
-
-  .view-detail-btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-  }
+@media (max-width: 992px) {
+  .custom-table thead th, .custom-table tbody td { padding: 12px; }
+  .image-container { width: 36px; height: 36px; }
 }
 </style>

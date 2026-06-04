@@ -1,114 +1,113 @@
 <template>
-  <div class="product-detail">
-    <div class="detail-container">
-      <!-- Sidebar -->
-      <div class="sidebar-wrapper">
+  <div class="product-detail-viewport">
+    <div class="detail-layout-container">
+      
+      <aside class="sidebar-wrapper">
         <SideBar />
-      </div>
+      </aside>
 
-      <!-- Main Content -->
-      <div class="main-content">
-        <!-- Header -->
-        <PageHeader title="Product Details" />
+      <main class="main-viewport-content">
+        <div class="header-container-wrapper">
+          <PageHeader title="Product Details" />
+        </div>
 
-        <!-- Content Area -->
-        <div class="content-wrapper flex-grow-1 overflow-y-auto">
-          <div class="p-4">
-            <!-- Back Button -->
-            <div class="mb-4">
-              <button @click="goBack" class="btn btn-link btn-sm p-0 text-decoration-none text-muted hover-link">
-                <i class="bi bi-arrow-left"></i> Back to Products
-              </button>
-            </div>
+        <div class="scrolling-content-pane">
+          
+          <div class="navigation-action-row">
+            <button @click="goBack" class="back-link-btn">
+              <i class="bi bi-arrow-left-short fs-4"></i> Back to Products
+            </button>
+          </div>
 
-            <!-- Main Card -->
-            <div class="card detail-card shadow-sm">
-              <div class="card-body p-5">
-                <div class="row">
-                  <!-- Product Image Section -->
-                  <div class="col-lg-5 mb-5 mb-lg-0">
-                    <div class="product-image-wrapper">
-                      <div class="product-image-container">
-                        <img 
-                          :src="product.image" 
-                          @error="handleImageError"
-                          class="img-fluid"
-                          :alt="product.name"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Product Information Section -->
-                  <div class="col-lg-7">
-                    <!-- Product Name and Price -->
-                    <div class="mb-5">
-                      <h2 class="product-title">{{ product.name }}</h2>
-                      <p class="product-id text-muted">ID: {{ product.id }}</p>
-                      <div class="price-section d-flex align-items-baseline gap-3">
-                        <span class="product-price">${{ product.price }}</span>
-                        <span class="price-unit text-muted">per unit</span>
-                      </div>
-                    </div>
-
-                    <!-- Product Details Grid -->
-                    <div class="details-grid mb-5">
-                      <div class="detail-row">
-                        <span class="detail-label">Stock Available</span>
-                        <span class="detail-value">{{ product.stock }}</span>
-                      </div>
-                      <div class="detail-row">
-                        <span class="detail-label">Date Added</span>
-                        <span class="detail-value">{{ product.addedDate || 'N/A' }}</span>
-                      </div>
-                    </div>
-
-                    <!-- Description Section -->
-                    <div class="description-section mb-5" v-if="product.description">
-                      <h5 class="description-title mb-3">
-                        <i class="bi bi-file-text"></i> Description
-                      </h5>
-                      <p class="description-text">{{ product.description }}</p>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="action-buttons-section">
-                      <button @click="editProduct" class="btn btn-success btn-lg me-2">
-                        <i class="bi bi-pencil"></i> Edit Product
-                      </button>
-                      <button @click="deleteProduct" class="btn btn-outline-danger btn-lg">
-                        <i class="bi bi-trash"></i> Delete
-                      </button>
-                    </div>
-                  </div>
+          <div class="row g-4 m-0">
+            
+            <div class="col-xl-5 col-lg-6">
+              <div class="cute-media-card">
+                <div class="media-display-frame">
+                  <img 
+                    :src="product.image" 
+                    @error="handleImageError"
+                    class="hero-fluid-img"
+                    :alt="product.name"
+                  />
                 </div>
               </div>
             </div>
 
-            <!-- Additional Info Card -->
-            <div class="card detail-card shadow-sm mt-4">
-              <div class="card-header bg-white border-bottom p-4">
-                <h5 class="mb-0 fw-bold">
-                  <i class="bi bi-info-circle text-success"></i> Additional Information
-                </h5>
-              </div>
-              <div class="card-body p-4">
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <div class="info-item">
-                      <p class="info-label mb-1"><i class="bi bi-check2-circle" :class="product.stock > 0 ? 'text-success' : 'text-danger'"></i> Status</p>
-                      <p class="info-value"><span :class="['badge', product.stock > 0 ? 'bg-success' : 'bg-danger']">{{ product.stock > 0 ? 'Active' : 'Inactive' }}</span></p>
+            <div class="col-xl-7 col-lg-6">
+              <div class="info-details-card">
+                
+                <div class="identity-header-block">
+                  <div class="d-flex align-items-center justify-content-between mb-3">
+                    <span class="badge-category-tag text-uppercase">
+                      {{ product.category || 'General Catalog' }}
+                    </span>
+                    <span class="text-serial-id">ID: {{ product.id }}</span>
+                  </div>
+                  <h1 class="main-product-title">{{ product.name || 'Unnamed Product' }}</h1>
+                </div>
+
+                <div class="pricing-matrix-module">
+                  <div class="d-flex align-items-baseline gap-3">
+                    <div class="d-flex flex-column">
+                      <span class="pricing-label">Final Value</span>
+                      <span class="final-calculated-price">${{ calculateFinalDisplayPrice() }}</span>
+                    </div>
+                    <div v-if="Number(product.discount) > 0" class="d-flex flex-column border-start ps-3 border-light-subtle">
+                      <span class="pricing-label line-through-label">Original Price</span>
+                      <span class="strike-original-price">${{ Number(product.price).toFixed(2) }}</span>
+                    </div>
+                    <span v-if="Number(product.discount) > 0" class="badge-discount-tag">
+                      -{{ product.discount }}% Off
+                    </span>
+                  </div>
+                </div>
+
+                <div class="specs-grid-layout mb-4">
+                  <div class="spec-metric-item">
+                    <div class="label-wrapper"><i class="bi bi-box-seam text-mint me-2"></i> Stock Available</div>
+                    <div class="value-wrapper fw-bold">{{ product.stock || 0 }} Units</div>
+                  </div>
+                  
+                  <div class="spec-metric-item">
+                    <div class="label-wrapper"><i class="bi bi-clock text-mint me-2"></i> Date Added</div>
+                    <div class="value-wrapper font-monospace text-secondary">
+                      {{ formatMysqlDate(product.addedDate) }}
+                    </div>
+                  </div>
+                  
+                  <div class="spec-metric-item">
+                    <div class="label-wrapper"><i class="bi bi-shield-check text-mint me-2"></i> Lifecycle Status</div>
+                    <div class="value-wrapper">
+                      <span :class="['lifecycle-indicator-pill', product.stock > 0 ? 'is-active-status' : 'is-inactive-status']">
+                        {{ product.stock > 0 ? 'Active' : 'Inactive' }}
+                      </span>
                     </div>
                   </div>
                 </div>
+
+                <div class="description-content-well mb-4" v-if="product.description">
+                  <h5 class="well-title"><i class="bi bi-file-text text-mint me-2"></i> Description</h5>
+                  <p class="well-paragraph">{{ product.description }}</p>
+                </div>
+
+                <div class="action-footer-buttons">
+                  <button @click="editProduct" class="btn btn-action-prime">
+                    <i class="bi bi-pencil-square me-2"></i> Edit Details
+                  </button>
+                  <button @click="deleteProduct" class="btn btn-action-danger">
+                    <i class="bi bi-trash3 me-2"></i> Delete Product
+                  </button>
+                </div>
+
               </div>
             </div>
+
           </div>
         </div>
-      </div>
+      </main>
     </div>
 
-    <!-- Edit Modal -->
     <PopupCard 
       v-if="showModal"
       :is-open="showModal"
@@ -132,6 +131,7 @@ const router = useRouter()
 const route = useRoute()
 const productStore = useProductStore()
 const showModal = ref(false)
+
 const product = ref({
   id: '',
   name: '',
@@ -140,21 +140,18 @@ const product = ref({
   category: '',
   image: '',
   addedDate: '',
-  description: ''
+  description: '',
+  discount: 0
 })
 
 onMounted(async () => {
-  // Get product ID from route params or query
   const productId = route.params.id || route.query.id
-  
   if (productId) {
-    // Fetch products from store if not already loaded
     if (!productStore.products || productStore.products.length === 0) {
       await productStore.fetchAllProducts()
     }
     loadProduct(productId)
   } else {
-    // If no product ID, redirect back to products
     router.push('/provider/products')
   }
 })
@@ -162,16 +159,11 @@ onMounted(async () => {
 const loadProduct = (productId) => {
   try {
     if (!productId) {
-      alert('No product ID found')
       router.push('/provider/products')
       return
     }
-
-    // Find product from store
     const foundProduct = productStore.products.find(p => String(p.id) === String(productId))
-    
     if (foundProduct) {
-      // Ensure all properties exist
       product.value = {
         id: foundProduct.id ?? '',
         name: foundProduct.name ?? '',
@@ -179,46 +171,52 @@ const loadProduct = (productId) => {
         stock: foundProduct.stock ?? 0,
         category: foundProduct.category ?? '',
         image: foundProduct.image ?? '',
-        addedDate: foundProduct.addedDate ?? '',
-        description: foundProduct.description ?? ''
+        addedDate: foundProduct.addedDate ?? '', 
+        description: foundProduct.description ?? '',
+        discount: foundProduct.discount ?? 0
       }
-      console.log('Product loaded:', product.value)
     } else {
-      console.error('Product not found with ID:', productId)
-      console.log('Available products:', productStore.products)
-      alert('Product not found')
       router.push('/provider/products')
     }
   } catch (error) {
-    console.error('Error loading product:', error)
-    alert('Error loading product: ' + error.message)
     router.push('/provider/products')
   }
 }
 
-onMounted(() => {
-  const productId = route.params.id || route.query.id
-  if (productId) {
-    loadProduct(productId)
-  } else {
-    router.push('/provider-products')
-  }
-})
+const formatMysqlDate = (dateStr) => {
+  if (!dateStr) return 'N/A'
+  try {
+    const standardDateTime = dateStr.replace(' ', 'T')
+    const parsedDate = new Date(standardDateTime)
+    
+    if (isNaN(parsedDate.getTime())) return dateStr
 
-const capitalizeCategory = (category) => {
-  return category.charAt(0).toUpperCase() + category.slice(1)
+    return parsedDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+  } catch (e) {
+    return dateStr
+  }
+}
+
+const calculateFinalDisplayPrice = () => {
+  const base = Number(product.value.price) || 0
+  const disc = Number(product.value.discount) || 0
+  return (base * (1 - (disc / 100))).toFixed(2)
 }
 
 const handleImageError = (event) => {
-  event.target.src = 'https://via.placeholder.com/300'
+  event.target.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 300 300%22%3E%3Crect width=%22300%22 height=%22300%22 fill=%22%23f1f5f9%22/%3E%3C/svg%3E'
 }
 
-const goBack = () => {
-  router.push('/provider/products')
-}
+const goBack = () => { router.push('/provider/products') }
 
 const editProduct = () => {
-  // Make sure product data is fresh
   const productId = route.params.id || route.query.id
   loadProduct(productId)
   showModal.value = true
@@ -226,7 +224,6 @@ const editProduct = () => {
 
 const closeModal = () => {
   showModal.value = false
-  // Refresh product data after modal closes
   setTimeout(() => {
     const productId = route.params.id || route.query.id
     loadProduct(productId)
@@ -235,353 +232,323 @@ const closeModal = () => {
 
 const saveProduct = async (productData) => {
   try {
-    // Update product through the store
     await productStore.updateProduct(productData.id, productData)
-    
-    // Reload the product data
     loadProduct(productData.id)
-    
-    // Close modal and show success
     showModal.value = false
-    alert('Product updated successfully!')
   } catch (error) {
-    console.error('Error saving product:', error)
-    alert('Error updating product: ' + (error?.message || error))
+    console.error(error)
   }
 }
 
 const deleteProduct = async () => {
-  if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+  if (confirm('Are you absolutely certain you wish to delete this profile? This cannot be undone.')) {
     try {
-      const productId = product.value.id
-      // Delete product through the store
-      await productStore.deleteProduct(productId)
-      alert('Product deleted successfully!')
+      await productStore.deleteProduct(product.value.id)
       router.push('/provider/products')
     } catch (error) {
-      console.error('Error deleting product:', error)
-      alert('Error deleting product: ' + error.message)
+      console.error(error)
     }
   }
 }
 </script>
 
 <style scoped>
-.product-detail {
-  background-color: #f5f5f5;
-  width: 100%;
+.product-detail-viewport {
+  background-color: #fafbfd;
+  width: 100vw;
   height: 100vh;
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  margin: 0;
-  padding: 0;
   overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-.detail-container {
+.detail-layout-container {
   display: flex;
-  height: 100%;
+  height: 100vh;
   width: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .sidebar-wrapper {
-  width: 250px;
-  background-color: #f8f9fa;
-  border-right: 1px solid #dee2e6;
-  overflow-y: auto;
+  width: 260px;
+  background-color: #ffffff;
   flex-shrink: 0;
-  height: 100vh;
-  position: sticky;
-  top: 0;
+  padding: 0;
+  height: 100%;
+  magin: 0;
 }
 
-.main-content {
+.main-viewport-content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100%;
   overflow: hidden;
 }
 
-.content-wrapper {
-  background-color: #f5f5f5;
+.header-container-wrapper {
+  flex-shrink: 0;
+}
+
+.scrolling-content-pane {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  /* padding: 24px 32px; */
 }
 
-.hover-link {
-  color: #666 !important;
-  transition: all 0.3s ease;
+/* Custom Styled Scrollbar Elements */
+.scrolling-content-pane::-webkit-scrollbar {
+  width: 6px;
+}
+.scrolling-content-pane::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrolling-content-pane::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
 }
 
-.hover-link:hover {
-  color: #2d5016 !important;
-  padding-left: 5px;
+/* Navigation Line */
+.navigation-action-row {
+  margin-bottom: 24px;
 }
 
-.detail-card {
+.back-link-btn {
+  background: transparent;
   border: none;
-  border-radius: 8px;
-  background: white;
-  transition: all 0.3s ease;
+  color: #718096;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.back-link-btn:hover {
+  color: #10b981;
+  transform: translateX(-2px);
 }
 
-.detail-card:hover {
-  box-shadow: 0 4px 12px rgba(45, 80, 22, 0.1) !important;
+/* Image Wrapper Grid Styling */
+.cute-media-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 20px;
+  border: 1px solid #eef2f6;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
 }
 
-.product-image-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.product-image-container {
-  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
-  border-radius: 12px;
-  padding: 1rem;
+.media-display-frame {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #f8fafc;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 600px;
-  border: 2px solid #e9ecef;
-  transition: all 0.3s ease;
-  overflow: hidden;
 }
 
-.product-image-container:hover {
-  border-color: #2d5016;
-}
-
-.product-image-container img {
+.hero-fluid-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.media-display-frame:hover .hero-fluid-img {
+  transform: scale(1.04);
 }
 
-.description-section {
-  background: linear-gradient(135deg, #f0f9ff 0%, #f5f5f5 100%);
-  border-left: 4px solid #2d5016;
-  border-radius: 6px;
-  padding: 1.5rem;
+/* Specification Board Layout Cards */
+.info-details-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 36px;
+  border: 1px solid #eef2f6;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
 }
 
-.description-title {
-  color: #2d5016;
+.badge-category-tag {
+  background: #ecfdf5;
+  color: #10b981;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.75px;
+  padding: 6px 14px;
+  border-radius: 100px;
+}
+
+.text-serial-id {
+  font-size: 13px;
+  color: #a0aec0;
   font-weight: 600;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.description-title .bi {
-  font-size: 1.2rem;
-}
-
-.description-text {
-  color: #333;
-  line-height: 1.6;
-  margin: 0;
-  font-weight: 500;
-}
-
-.product-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.product-id {
-  font-size: 0.95rem;
-  margin-top: 0.5rem;
-  font-weight: 500;
-}
-
-.price-section {
-  margin-top: 1.5rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #f0f9ff 0%, #f5f5f5 100%);
-  border-left: 4px solid #2d5016;
+  background: #f7fafc;
+  padding: 4px 10px;
   border-radius: 6px;
 }
 
-.product-price {
-  font-size: 2.5rem;
+.main-product-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1a202c;
+  letter-spacing: -0.5px;
+}
+
+/* Pricing Matrix Cluster Module */
+.pricing-matrix-module {
+  background: #f8fafc;
+  padding: 20px 24px;
+  border-radius: 18px;
+  border: 1px solid #edf2f7;
+  margin: 24px 0;
+  position: relative;
+}
+
+.pricing-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #718096;
+  text-uppercase: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.final-calculated-price {
+  font-size: 38px;
+  font-weight: 850;
+  color: #10b981;
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+.line-through-label { color: #a0aec0; }
+.strike-original-price {
+  font-size: 20px;
+  font-weight: 600;
+  color: #a0aec0;
+  text-decoration: line-through;
+  margin-top: 4px;
+}
+
+.badge-discount-tag {
+  background: #fef2f2;
+  color: #ef4444;
   font-weight: 700;
-  color: #2d5016;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  align-self: center;
 }
 
-.price-unit {
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.details-grid {
+/* Functional Information Properties Rows Matrix */
+.specs-grid-layout {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 12px;
 }
 
-.detail-row {
-  display: grid;
-  grid-template-columns: 150px 1fr;
-  gap: 1.5rem;
-  padding: 1rem;
-  background-color: #f9f9f9;
-  border-radius: 6px;
-  border-left: 3px solid transparent;
-  transition: all 0.3s ease;
-}
-
-.detail-row:hover {
-  background-color: #f0f5f0;
-  border-left-color: #2d5016;
-  padding-left: 1.5rem;
-}
-
-.detail-label {
-  font-weight: 600;
-  color: #666;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.detail-value {
-  color: #333;
-  font-weight: 500;
-  font-size: 1rem;
-}
-
-.action-buttons-section {
+.spec-metric-item {
   display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.btn-success {
-  background-color: #2d5016;
-  border-color: #2d5016;
-  font-weight: 600;
-  padding: 0.6rem 2rem;
-  transition: all 0.3s ease;
-}
-
-.btn-success:hover {
-  background-color: #1e5a24;
-  border-color: #1e5a24;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
-}
-
-.btn-outline-danger {
-  color: #dc3545;
-  border-color: #dc3545;
-  font-weight: 600;
-  padding: 0.6rem 2rem;
-  transition: all 0.3s ease;
-}
-
-.btn-outline-danger:hover {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  transform: translateY(-2px);
-}
-
-.btn-lg {
-  font-size: 1rem;
-  border-radius: 6px;
-}
-
-.info-item {
-  padding: 1rem;
-  background-color: #f9f9f9;
-  border-radius: 6px;
-  border-left: 3px solid #2d5016;
-  transition: all 0.3s ease;
-}
-
-.info-item:hover {
-  background-color: #f0f5f0;
-  transform: translateX(5px);
-}
-
-.info-label {
-  font-weight: 600;
-  color: #666;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #edf2f7;
+  border-radius: 14px;
+  font-size: 14px;
+  transition: border 0.2s ease;
+}
+.spec-metric-item:hover {
+  border-color: #e2e8f0;
 }
 
-.info-value {
-  color: #333;
+.label-wrapper {
+  color: #4a5568;
   font-weight: 500;
-  font-size: 1rem;
+}
+
+.value-wrapper {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.text-mint {
+  color: #10b981;
+}
+
+.lifecycle-indicator-pill {
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.is-active-status { background: #dcfce7; color: #15803d; }
+.is-inactive-status { background: #fee2e2; color: #b91c1c; }
+
+/* Description Well Content Component Container */
+.description-content-well {
+  background: #fafbfd;
+  border: 1px solid #edf2f7;
+  border-radius: 16px;
+  padding: 20px;
+}
+.well-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 8px;
+}
+.well-paragraph {
+  font-size: 14px;
+  color: #4a5568;
+  line-height: 1.6;
   margin: 0;
 }
 
-.card-header {
-  background-color: white !important;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.card-header h5 {
-  color: #1a1a1a;
-  font-size: 1.1rem;
+/* Operational Action Buttons */
+.action-footer-buttons {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  gap: 14px;
+  margin-top: 32px;
 }
 
-.card-header .bi {
-  font-size: 1.2rem;
+.btn-action-prime {
+  background: #1a202c;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 14px;
+  padding: 14px 32px;
+  border: none;
+  font-size: 15px;
+  box-shadow: 0 4px 12px rgba(26, 32, 44, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-action-prime:hover {
+  background: #2d3748;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26, 32, 44, 0.15);
 }
 
-@media (max-width: 768px) {
-  .sidebar-wrapper {
-    display: none;
-  }
-
-  .content-wrapper {
-    padding: 1rem !important;
-  }
-
-  .card {
-    margin-bottom: 1rem;
-  }
-
-  .product-title {
-    font-size: 1.5rem;
-  }
-
-  .product-price {
-    font-size: 2rem;
-  }
-
-  .action-buttons-section {
-    flex-direction: column;
-  }
-
-  .btn-lg {
-    width: 100%;
-  }
-
-  .detail-row {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-
-  .detail-label {
-    font-size: 0.8rem;
-  }
+.btn-action-danger {
+  background: transparent;
+  color: #e53e3e;
+  border: 1px solid #fed7d7;
+  font-weight: 600;
+  border-radius: 14px;
+  padding: 14px 28px;
+  font-size: 15px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-action-danger:hover {
+  background: #fff5f5;
+  border-color: #feb2b2;
+  transform: translateY(-2px);
 }
 </style>

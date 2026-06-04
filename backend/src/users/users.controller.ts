@@ -1,146 +1,203 @@
-
 import {
   Controller,
-  Post,
-  Body,
   Get,
+  Post,
+  Put,
+  Patch,
   Delete,
+  Body,
   Param,
   Query,
-  Put,
   UploadedFile,
   UseInterceptors,
   BadRequestException,
-  Patch,
+  NotFoundException,
   ParseIntPipe,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
-import { InjectRepository } from '@nestjs/typeorm';
-import { uploadToCloudinary } from '../cloudinary';
-import { Repository } from 'typeorm';
-import { users, UserRole } from './users.entity';
-import { orders } from './orders.entity';
-import { UsersService } from './users.service';
-import * as bcrypt from 'bcryptjs';
+} from '@nestjs/common'
+
+import { FileInterceptor } from '@nestjs/platform-express'
+import { diskStorage } from 'multer'
+import { extname } from 'path'
+
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import * as bcrypt from 'bcryptjs'
+
+import { users, UserRole } from './users.entity'
+import { orders } from './orders.entity'
+import { UsersService } from './users.service'
 
 @Controller('users')
 export class UsersController {
   constructor(
     @InjectRepository(users)
     private readonly usersRepository: Repository<users>,
+
     @InjectRepository(orders)
     private readonly ordersRepository: Repository<orders>,
+
     private readonly usersService: UsersService,
   ) {}
-  // =========================
-  // UPDATE USER PROFILE
-  // =========================
+
+  // =====================================================
+  // UPDATE USER (FIXED + LOCAL FILE UPLOAD)
+  // =====================================================
   @Put(':id')
   @UseInterceptors(
-    FileInterceptor('avatar', { storage: memoryStorage() }),
+    FileInterceptor('avatar', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const unique =
+            Date.now() + '-' + Math.round(Math.random() * 1e9)
+
+          cb(null, unique + extname(file.originalname))
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
   )
   async updateUser(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) userId: number,
     @Body() body: any,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    const update: any = {};
-    if (body.name) update.name = body.name;
-    if (body.email) update.email = body.email;
-    if (body.phone) update.phone = body.phone;
-    if (body.address) update.address = body.address;
-    if (body.role) update.role = body.role;
-    if (body.password) {
-      const bcrypt = require('bcryptjs');
-      update.password = await bcrypt.hash(body.password, 10);
+    console.log('BODY:', body)
+    console.log('FILE:', file?.filename)
+
+    const update: Partial<users> = {}
+
+    // -------------------------
+    // TEXT FIELDS
+    // -------------------------
+    if (body.name?.trim()) update.name = body.name
+    if (body.email?.trim()) update.email = body.email
+    if (body.phone?.trim()) update.phone = body.phone
+
+    if (body.password?.trim()) {
+      update.password = await bcrypt.hash(body.password, 10)
     }
+
+    // -------------------------
+    // AVATAR (LOCAL FILE PATH)
+    // -------------------------
     if (file) {
-      update.avatar = await uploadToCloudinary(file.buffer, 'users/avatars');
+      update.avatar = `/uploads/${file.filename}`
     }
-    await this.usersRepository.update(id, update);
-    return await this.usersRepository.findOne({ where: { id: Number(id) } });
+
+    // -------------------------
+    // VALIDATION
+    // -------------------------
+    if (Object.keys(update).length === 0) {
+      throw new BadRequestException('No valid fields provided')
+    }
+
+    // -------------------------
+    // UPDATE DB
+    // -------------------------
+    await this.usersRepository.update(userId, update)
+
+    const updated = await this.usersRepository.findOne({
+      where: { id: userId },
+    })
+
+    if (!updated) {
+      throw new NotFoundException('User not found')
+    }
+
+    return updated
   }
 
-  // =========================
-  // GET USER ORDERS
-  // =========================
-  @Get(':id/orders')
-  async getUserOrders(@Param('id') id: string) {
-    return this.ordersRepository.find({ where: { customer_id: Number(id) } });
+  // =====================================================
+  // GET USER
+  // =====================================================
+  @Get(':id')
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+    })
+
+    if (!user) throw new NotFoundException('User not found')
+
+    return user
   }
 
-  // =========================
-  // GET USERS (ALL OR FILTER BY ROLE)
-  // =========================
+  // =====================================================
+  // GET ALL USERS
+  // =====================================================
   @Get()
   async findAll(@Query('role') role?: string) {
-    try {
-      if (role && Object.values(UserRole).includes(role as UserRole)) {
-        return await this.usersRepository.find({
-          select: ['id', 'name', 'email', 'phone', 'role', 'created_at'],
-          where: { role: role as UserRole },
-          order: { id: 'ASC' },
-        });
-      }
-      return await this.usersRepository.find({
-        select: ['id', 'name', 'email', 'phone', 'role', 'created_at'],
-        order: { id: 'ASC' },
-      });
-    } catch (error) {
-      console.error('Error in /users:', error);
-      throw error;
-    }
-  }
-
-  // =========================
-  // CLEAN PROVIDERS ENDPOINT (IMPORTANT)
-  // =========================
-  @Get('providers')
-  async getProviders() {
     return this.usersRepository.find({
-      where: { role: UserRole.PROVIDER },
-    });
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        created_at: true,
+        avatar: true,
+      },
+      where: role ? { role: role as UserRole } : {},
+      order: { id: 'ASC' },
+    })
   }
 
-  // =========================
+  // =====================================================
   // DELETE USER
-  // =========================
+  // =====================================================
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    await this.usersRepository.delete(id);
-    return { message: 'User deleted successfully' };
+  async remove(@Param('id', ParseIntPipe) userId: number) {
+    await this.usersRepository.manager.query(
+      'DELETE FROM cart WHERE user_id = $1',
+      [userId],
+    )
+
+    await this.usersRepository.manager.query(
+      'DELETE FROM favorite WHERE user_id = $1',
+      [userId],
+    )
+
+    await this.usersRepository.manager.query(
+      'DELETE FROM review WHERE user_id = $1',
+      [userId],
+    )
+
+    await this.usersRepository.delete(userId)
+
+    return { message: 'User deleted successfully' }
   }
 
-  // =========================
-  // REGISTER USER
-  // =========================
+  // =====================================================
+  // USER ORDERS
+  // =====================================================
+  @Get(':id/orders')
+  async getUserOrders(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersRepository.find({
+      where: { customer_id: id },
+    })
+  }
+
+  // =====================================================
+  // REGISTER
+  // =====================================================
   @Post('register')
-  async register(
-    @Body()
-    body: {
-      name: string;
-      email: string;
-      phone: string;
-      password: string;
-      role?: string;
-    },
-  ) {
-    return this.usersService.register(body);
+  async register(@Body() body: any) {
+    return this.usersService.register(body)
   }
 
-  // =========================
-  // CHANGE PASSWORD
-  // =========================
+  // =====================================================
+  // PASSWORD CHANGE
+  // =====================================================
   @Patch(':id/password')
   async changePassword(
     @Param('id', ParseIntPipe) id: number,
-    @Body('currentPassword') currentPassword: string,
-    @Body('newPassword') newPassword: string,
+    @Body('currentPassword') cp: string,
+    @Body('newPassword') np: string,
   ) {
-    if (!currentPassword || !newPassword) {
-      throw new BadRequestException('Both currentPassword and newPassword are required');
+    if (!cp || !np) {
+      throw new BadRequestException('Passwords missing')
     }
-    return this.usersService.changePassword(id, currentPassword, newPassword);
+
+    return this.usersService.changePassword(id, cp, np)
   }
 }

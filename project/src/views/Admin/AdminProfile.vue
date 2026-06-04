@@ -1,371 +1,556 @@
 <template>
-  <div class="profile-page">
-
-    <!-- TOP BAR -->
-    <div class="top-bar">
-      <div>
-        <h1>Account Information</h1>
-        <p>Manage your admin profile</p>
-      </div>
-
-      <button class="logout-btn" @click="logout">
-        Logout
-      </button>
-    </div>
-
-    <!-- PROFILE CARD -->
-    <div class="card">
-
-      <!-- HEADER -->
-      <div class="card-header">
-
-        <div class="avatar-wrapper">
-          <img
-            :src="previewImage || admin.avatar || defaultAvatar"
-            class="avatar"
-          />
-
-          <label class="upload-btn">
-            Change Photo
-            <input type="file" hidden @change="onImageChange" />
-          </label>
+  <div class="profile-page-wrapper">
+    <div class="dashboard-card">
+      
+      <div class="sidebar-panel">
+        <div class="brand-zone">
+          <h1>FreshHarvest</h1>
+          <p class="subtitle">Vendor Management Hub</p>
         </div>
 
-        <div class="user-info">
-          <h2>{{ admin.name }}</h2>
-          <p>{{ admin.role }}</p>
+        <div class="avatar-section">
+          <div class="avatar-wrapper">
+<img
+  :src="previewImage || getAvatarUrl()"
+  class="avatar"
+  alt="Admin Profile"
+/>
+            <label class="upload-overlay">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              <input type="file" hidden @change="onImageChange" accept="image/*" />
+            </label>
+          </div>
+          <div class="user-meta">
+            <h2>{{ adminData.name || 'Store Manager' }}</h2>
+            <span class="role-badge">{{ adminData.role || 'Admin' }}</span>
+          </div>
         </div>
 
-        <button v-if="!isEditing" class="edit-btn" @click="startEdit">
-          Edit Profile
-        </button>
-
-      </div>
-
-      <!-- FORM -->
-      <form v-if="isEditing" @submit.prevent="saveProfile" class="form-grid">
-
-        <div class="field">
-          <label>Full Name</label>
-          <input v-model="form.name" type="text" required />
-        </div>
-
-        <div class="field">
-          <label>Email</label>
-          <input v-model="form.email" type="email" required />
-        </div>
-
-        <div class="field">
-          <label>Phone</label>
-          <input v-model="form.phone" type="text" />
-        </div>
-
-        <div class="field">
-          <label>Address</label>
-          <input v-model="form.address" type="text" />
-        </div>
-
-        <div class="field full">
-          <label>New Password</label>
-          <input v-model="form.password" type="password" />
-        </div>
-
-        <div class="actions full">
-          <button type="submit" class="save-btn">Save Changes</button>
-          <button type="button" class="cancel-btn" @click="cancelEdit">
-            Cancel
+        <div class="sidebar-footer">
+          <button v-if="!isEditing" class="edit-btn" @click="startEdit">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"></path>
+            </svg>
+            Edit Profile Details
+          </button>
+          <button type="button" class="logout-btn" @click="logout">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Sign Out Hub
           </button>
         </div>
+      </div>
 
-      </form>
-
-      <!-- VIEW MODE -->
-      <div v-else class="info-grid">
-
-        <div class="info">
-          <label>Name</label>
-          <p>{{ admin.name }}</p>
+      <div class="main-panel">
+        <div class="panel-header">
+          <h3>Account & Distribution Security</h3>
+          <p>Review or adjust administrative locations, tokens, and store contacts.</p>
         </div>
 
-        <div class="info">
-          <label>Email</label>
-          <p>{{ admin.email }}</p>
-        </div>
+        <form v-if="isEditing" @submit.prevent="saveProfile" class="workspace-content">
+          <div class="form-grid">
+            <div class="field">
+              <label>Full Name</label>
+              <input v-model="form.name" type="text" required placeholder="Green Grocer" />
+            </div>
 
-        <div class="info">
-          <label>Phone</label>
-          <p>{{ admin.phone || '-' }}</p>
-        </div>
+            <div class="field">
+              <label>Email Address</label>
+              <input v-model="form.email" type="email" required placeholder="manager@freshharvest.com" />
+            </div>
 
-        <div class="info">
-          <label>Address</label>
-          <p>{{ admin.address || '-' }}</p>
-        </div>
+            <div class="field text-only-field">
+              <label>Phone Number</label>
+              <input v-model="form.phone" type="tel" placeholder="+1 (555) 019-2834" />
+            </div>
 
+            <div class="field full">
+              <label>New Security Password</label>
+              <input v-model="form.password" type="password" placeholder="Leave blank to preserve current credentials" />
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="save-btn" :disabled="submitting">
+              {{ submitting ? 'Committing...' : 'Commit Changes' }}
+            </button>
+            <button type="button" class="cancel-btn" @click="cancelEdit">Dismiss</button>
+          </div>
+        </form>
+
+        <div v-else class="workspace-content">
+          <div class="info-grid">
+            <div class="info-card">
+              <label>Full Name</label>
+              <p>{{ adminData.name || 'Not Configured' }}</p>
+            </div>
+
+            <div class="info-card">
+              <label>Email Address</label>
+              <p>{{ adminData.email || 'Not Configured' }}</p>
+            </div>
+
+            <div class="info-card">
+              <label>Phone Number</label>
+              <p>{{ adminData.phone || 'No active phone setup' }}</p>
+            </div>
+
+            <div class="info-card">
+              <label>Privilege Tier</label>
+              <p style="text-transform: capitalize;">{{ adminData.role || 'Admin User' }}</p>
+            </div>
+          </div>
+          
+          <div class="view-placeholder-graphics">
+            <div class="organic-leaf-watermark">
+              <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#e1ebe5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 9.8a7 7 0 0 1-9 8.2Z"></path>
+                <path d="M9.8 6.1C7.5 11.7 7.4 12.5 4 15c2.5-1 3.5-2.5 5.8-8.9Z"></path>
+              </svg>
+              <span>Fresh Products Active Management Nodes</span>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
-
   </div>
 </template>
 
-<script>
-import axios from "axios";
+<script setup>
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
 
-export default {
-  name: "AdminProfile",
+const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
-  data() {
-    return {
-      isEditing: false,
+const userId = ref(1)
+const defaultAvatar =
+  'https://cdn-icons-png.flaticon.com/512/149/149071.png'
 
-      defaultAvatar:
-        "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+const adminData = ref({})
+const form = ref({ name: '', email: '', phone: '', password: '' })
 
-      admin: {
-        id: null,
-        name: "",
-        email: "",
-        phone: "",
-        address: "",
-        role: "Administrator",
-        avatar: "",
+const isEditing = ref(false)
+const submitting = ref(false)
+
+const selectedFile = ref(null)
+const previewImage = ref(null)
+
+// =========================
+// GET AVATAR (FIXED LOGIC)
+// =========================
+const getAvatarUrl = () => {
+  if (!adminData.value.avatar) return defaultAvatar
+
+  // already full URL
+  if (adminData.value.avatar.startsWith('http')) {
+    return adminData.value.avatar
+  }
+
+  // backend path
+  return `${BASE}${adminData.value.avatar}`
+}
+
+// =========================
+// IMAGE SELECT
+// =========================
+const onImageChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    selectedFile.value = file
+    previewImage.value = URL.createObjectURL(file)
+  }
+}
+
+// =========================
+// LOAD PROFILE
+// =========================
+const loadProfileData = async () => {
+  try {
+    const res = await axios.get(`${BASE}/users/${userId.value}`)
+
+    adminData.value = res.data
+
+    form.value = {
+      name: res.data.name || '',
+      email: res.data.email || '',
+      phone: res.data.phone || '',
+      password: '',
+    }
+  } catch (err) {
+    console.error('LOAD ERROR:', err)
+  }
+}
+
+// =========================
+// EDIT MODE
+// =========================
+const startEdit = () => (isEditing.value = true)
+
+const cancelEdit = () => {
+  isEditing.value = false
+  selectedFile.value = null
+  previewImage.value = null
+}
+
+// =========================
+// SAVE PROFILE
+// =========================
+const saveProfile = async () => {
+  submitting.value = true
+
+  try {
+    const formData = new FormData()
+
+    formData.append('name', form.value.name)
+    formData.append('email', form.value.email)
+    formData.append('phone', form.value.phone)
+
+    if (form.value.password?.trim()) {
+      formData.append('password', form.value.password)
+    }
+
+    if (selectedFile.value) {
+      formData.append('avatar', selectedFile.value)
+    }
+
+    const res = await axios.put(
+      `${BASE}/users/${userId.value}`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
       },
+    )
 
-      form: {
-        name: "",
-        email: "",
-        phone: "",
-        address: "",
-        password: "",
-      },
+    adminData.value = res.data
 
-      imageFile: null,
-      previewImage: null,
-    };
-  },
+    // reset UI
+    isEditing.value = false
+    selectedFile.value = null
+    previewImage.value = null
+  } catch (err) {
+    console.error('UPDATE ERROR:', err)
+    alert(err.response?.data?.message || 'Update failed')
+  } finally {
+    submitting.value = false
+  }
+}
 
-  computed: {
-    token() {
-      return localStorage.getItem("token");
-    },
+// =========================
+// LOGOUT
+// =========================
+const logout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  window.location.href = '/login'
+}
 
-    currentUser() {
-      return JSON.parse(localStorage.getItem("user"));
-    },
-  },
-
-  mounted() {
-    this.loadProfile();
-  },
-
-  methods: {
-
-    loadProfile() {
-      if (!this.currentUser) return;
-
-      this.admin = { ...this.currentUser };
-    },
-
-    startEdit() {
-      this.form = {
-        name: this.admin.name,
-        email: this.admin.email,
-        phone: this.admin.phone,
-        address: this.admin.address,
-        password: "",
-      };
-
-      this.isEditing = true;
-    },
-
-    cancelEdit() {
-      this.isEditing = false;
-      this.previewImage = null;
-      this.imageFile = null;
-    },
-
-    onImageChange(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      this.imageFile = file;
-      this.previewImage = URL.createObjectURL(file);
-    },
-
-    async saveProfile() {
-      try {
-        const formData = new FormData();
-
-        formData.append("name", this.form.name);
-        formData.append("email", this.form.email);
-        formData.append("phone", this.form.phone);
-        formData.append("address", this.form.address);
-
-        if (this.form.password) {
-          formData.append("password", this.form.password);
-        }
-
-        if (this.imageFile) {
-          formData.append("avatar", this.imageFile);
-        }
-
-        const res = await axios.put(
-          `${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${this.admin.id}`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${this.token}`,
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-
-        this.admin = res.data;
-
-        localStorage.setItem("user", JSON.stringify(this.admin));
-
-        this.isEditing = false;
-        this.previewImage = null;
-        this.imageFile = null;
-
-        alert("Profile updated successfully");
-      } catch (err) {
-        console.log(err);
-        alert("Update failed");
-      }
-    },
-
-    logout() {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      this.$router.push("/login");
-    },
-  },
-};
+onMounted(loadProfileData)
 </script>
 
 <style scoped>
-.profile-page {
-  min-height: 100vh;
-  background: #f6f8fb;
-  padding: 40px;
-  font-family: Arial;
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.profile-page-wrapper {
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  box-sizing: border-box;
+  padding: 20px 40px 40px 40px;
+  overflow: hidden; 
 }
 
-.top-bar {
+.dashboard-card {
+  background: #ffffff;
+  width: 100%;
+  height: 100%;
+  min-height: 540px;
+  max-height: calc(100vh - 140px);
+  border-radius: 20px;
+  border: 1px solid #e1ebe4;
+  box-shadow: 0 10px 30px -15px rgba(23, 43, 30, 0.04);
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  overflow: hidden;
+}
+
+.sidebar-panel {
+  background: #fafdfb;
+  border-right: 1px solid #e1ebe4;
+  padding: 24px;
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
 }
 
-.logout-btn {
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 10px;
-  cursor: pointer;
+.brand-zone h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #112214;
+  margin: 0 0 2px 0;
+  letter-spacing: -0.5px;
 }
 
-.card {
-  background: white;
-  max-width: 900px;
-  margin: auto;
-  padding: 30px;
-  border-radius: 18px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 25px;
-}
-
-.avatar {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.upload-btn {
-  display: block;
+.subtitle {
   font-size: 12px;
-  color: #16a34a;
-  cursor: pointer;
-  margin-top: 5px;
-}
-
-.user-info h2 {
+  color: #5b7363;
   margin: 0;
 }
 
-.edit-btn {
-  margin-left: auto;
-  background: #16a34a;
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 10px;
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  margin: auto 0;
 }
 
-.form-grid {
+.avatar-wrapper {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 2px #10b981;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(16, 34, 20, 0.65);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.avatar-wrapper:hover .upload-overlay {
+  opacity: 1;
+}
+
+.user-meta h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #112214;
+  margin: 0 0 4px 0;
+}
+
+.role-badge {
+  background: #e6f7ed;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 99px;
+}
+
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edit-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edit-btn:hover { background: #059669; }
+
+.logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #dc2626;
+  border: 1px solid #e1ebe4;
+  padding: 9px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.main-panel {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.panel-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #112214;
+  margin: 0 0 2px 0;
+}
+
+.panel-header p {
+  font-size: 13px;
+  color: #5b7363;
+  margin: 0;
+}
+
+.workspace-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.form-grid, .info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
+  gap: 16px;
+  margin: auto 0;
+  padding: 10px 0;
 }
 
 .field {
   display: flex;
   flex-direction: column;
+  gap: 4px;
 }
 
-.field.full {
-  grid-column: span 2;
+.field.full { grid-column: span 2; }
+
+.field label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #3b5243;
+  text-transform: uppercase;
 }
 
 .field input {
-  padding: 10px;
-  border: 1px solid #ddd;
+  padding: 10px 14px;
+  border: 1px solid #cbd6cf;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #112214;
+  outline: none;
+  background: #fbfdfc;
+}
+
+.field input:focus {
+  border-color: #10b981;
+  background: #ffffff;
+}
+
+.info-card {
+  background: #f6faf7;
+  border: 1px solid #edf3ef;
+  padding: 16px;
   border-radius: 10px;
+}
+
+.info-card label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b8273;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-card p {
+  font-size: 14px;
+  font-weight: 600;
+  color: #112214;
+  margin: 0;
 }
 
 .actions {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
 }
 
 .save-btn {
-  background: #16a34a;
-  color: white;
+  background: #112214;
+  color: #ffffff;
   border: none;
-  padding: 10px;
-  border-radius: 10px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.save-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .cancel-btn {
-  background: #e5e7eb;
-  border: none;
-  padding: 10px;
-  border-radius: 10px;
+  background: #f0f4f1;
+  color: #3b5243;
+  border: 1px solid #cbd6cf;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+.view-placeholder-graphics {
+  margin-top: auto;
+  border-top: 1px dashed #e1ebe4;
+  padding-top: 12px;
 }
 
-.info label {
+.organic-leaf-watermark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #93a89a;
   font-size: 12px;
-  color: gray;
-}
-
-.info p {
-  font-weight: bold;
+  font-weight: 500;
 }
 </style>

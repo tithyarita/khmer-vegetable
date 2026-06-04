@@ -3,15 +3,12 @@
 
     <div class="product-container">
 
-      <!-- SIDEBAR -->
       <div class="sidebar-wrapper">
         <SideBar />
       </div>
 
-      <!-- MAIN -->
       <div class="main-content">
 
-        <!-- ALERT -->
         <transition name="slide-down">
           <div
             v-if="alertMessage"
@@ -47,7 +44,6 @@
           </div>
         </transition>
 
-        <!-- LOADING -->
         <div
           v-if="loading"
           class="loading-wrapper"
@@ -57,15 +53,12 @@
 
         <template v-else>
 
-          <!-- HEADER -->
           <PageHeader title="All Products" />
 
-          <!-- FILTER -->
           <div class="filter-bar">
 
             <div class="row g-3 align-items-center">
 
-              <!-- SEARCH -->
               <div class="col-md-3">
                 <input
                   v-model="searchQuery"
@@ -75,7 +68,6 @@
                 />
               </div>
 
-              <!-- SORT -->
               <div class="col-md-3">
                 <select
                   v-model="sortBy"
@@ -99,7 +91,6 @@
                 </select>
               </div>
 
-              <!-- CATEGORY -->
               <div class="col-md-3">
                 <select
                   v-model="selectedCategory"
@@ -123,7 +114,6 @@
                 </select>
               </div>
 
-              <!-- BUTTON -->
               <div class="col-md-3 text-end">
                 <button
                   class="btn btn-success"
@@ -137,7 +127,6 @@
             </div>
           </div>
 
-          <!-- TABLE -->
           <div class="table-wrapper">
 
             <ProductTable
@@ -149,7 +138,6 @@
 
           </div>
 
-          <!-- PAGINATION -->
           <div class="pagination-wrapper">
 
             <ul class="pagination">
@@ -202,7 +190,6 @@
 
     </div>
 
-    <!-- POPUP -->
     <PopupCard
       :is-open="showModal"
       :is-edit-mode="isEditMode"
@@ -223,137 +210,117 @@ import {
 } from 'vue'
 
 import { useRouter } from 'vue-router'
-
 import { useProductStore } from '../../stores/productStore'
-
 import SideBar from '../../components/provider_com/sideBar.vue'
-
 import PageHeader from '@/components/provider_com/pageHeader.vue'
-
 import ProductTable from '../../components/provider_com/productTable.vue'
-
 import PopupCard from '../../components/provider_com/popupCard.vue'
 
 const router = useRouter()
-
 const productStore = useProductStore()
 
 /* -------------------------------- */
 /* STATE */
 /* -------------------------------- */
-
 const loading = ref(false)
-
 const searchQuery = ref('')
-
 const sortBy = ref('popular')
-
 const selectedCategory = ref('')
-
 const currentPage = ref(1)
-
 const itemsPerPage = ref(10)
-
 const showModal = ref(false)
-
 const isEditMode = ref(false)
-
 const selectedProduct = ref(null)
-
 const alertMessage = ref('')
-
 const isSuccess = ref(true)
+
+/* -------------------------------- */
+/* DATE FORMATTER LAYER */
+/* -------------------------------- */
+/**
+ * Safely parses standard MySQL Datetime strings (e.g., '2026-06-04 10:39:47')
+ * and transforms it cleanly into a readable browser presentation layer.
+ */
+const formatMysqlDate = (dateStr) => {
+  if (!dateStr) return 'N/A'
+  try {
+    const standardDateTime = dateStr.replace(' ', 'T')
+    const parsedDate = new Date(standardDateTime)
+    
+    if (isNaN(parsedDate.getTime())) return dateStr 
+
+    return parsedDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+  } catch (e) {
+    return dateStr
+  }
+}
 
 /* -------------------------------- */
 /* ALERT */
 /* -------------------------------- */
-
-const showAlert = (
-  message,
-  success = true
-) => {
-
+const showAlert = (message, success = true) => {
   alertMessage.value = message
-
   isSuccess.value = success
-
   setTimeout(() => {
-
     alertMessage.value = ''
-
   }, 3000)
 }
 
 const clearAlert = () => {
-
   alertMessage.value = ''
 }
 
 /* -------------------------------- */
-/* FILTER PRODUCTS */
+/* FILTER & AUTO-CALCULATE PRODUCTS */
 /* -------------------------------- */
-
 const filteredProducts = computed(() => {
+  let products = productStore.products.map(product => {
+    const basePrice = Number(product.price) || 0
+    const discountPercent = Number(product.discount) || 0
+    const finalPrice = basePrice * (1 - (discountPercent / 100))
 
-  let products = [
-    ...productStore.products
-  ]
+    return {
+      ...product,
+      priceAfterDiscount: Number(finalPrice.toFixed(2)),
+      // Format the date string directly before passing it down to the ProductTable component
+      formattedAddedDate: formatMysqlDate(product.addedDate)
+    }
+  })
 
   /* SEARCH */
   if (searchQuery.value) {
-
-    const query =
-      searchQuery.value.toLowerCase()
-
-    products = products.filter(
-      product =>
-        product.name
-          ?.toLowerCase()
-          .includes(query)
+    const query = searchQuery.value.toLowerCase()
+    products = products.filter(product =>
+      product.name?.toLowerCase().includes(query)
     )
   }
 
   /* CATEGORY */
   if (selectedCategory.value) {
-
-    products = products.filter(
-      product =>
-        product.category ===
-        selectedCategory.value
+    products = products.filter(product =>
+      product.category === selectedCategory.value
     )
   }
 
   /* SORT */
   switch (sortBy.value) {
-
     case 'price-low':
-
-      products.sort(
-        (a, b) =>
-          Number(a.price) -
-          Number(b.price)
-      )
-
+      products.sort((a, b) => a.priceAfterDiscount - b.priceAfterDiscount)
       break
 
     case 'price-high':
-
-      products.sort(
-        (a, b) =>
-          Number(b.price) -
-          Number(a.price)
-      )
-
+      products.sort((a, b) => b.priceAfterDiscount - a.priceAfterDiscount)
       break
 
     case 'stock-low':
-
-      products.sort(
-        (a, b) =>
-          Number(a.stock) -
-          Number(b.stock)
-      )
-
+      products.sort((a, b) => Number(a.stock) - Number(b.stock))
       break
 
     default:
@@ -366,237 +333,110 @@ const filteredProducts = computed(() => {
 /* -------------------------------- */
 /* PAGINATION */
 /* -------------------------------- */
-
 const totalPages = computed(() => {
-
-  return Math.max(
-    1,
-
-    Math.ceil(
-      filteredProducts.value.length /
-      itemsPerPage.value
-    )
-  )
+  return Math.max(1, Math.ceil(filteredProducts.value.length / itemsPerPage.value))
 })
 
 const paginatedProducts = computed(() => {
-
-  const start =
-    (currentPage.value - 1) *
-    itemsPerPage.value
-
-  return filteredProducts.value.slice(
-    start,
-    start + itemsPerPage.value
-  )
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  return filteredProducts.value.slice(start, start + itemsPerPage.value)
 })
 
-const goToPage = page => {
+const goToPage = page => { currentPage.value = page }
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++ }
+const prevPage = () => { if (currentPage.value > 1) currentPage.value-- }
 
-  currentPage.value = page
-}
-
-const nextPage = () => {
-
-  if (
-    currentPage.value <
-    totalPages.value
-  ) {
-
-    currentPage.value++
-  }
-}
-
-const prevPage = () => {
-
-  if (currentPage.value > 1) {
-
-    currentPage.value--
-  }
-}
-
-/* RESET PAGE */
-watch(
-  [
-    searchQuery,
-    selectedCategory,
-    sortBy
-  ],
-
-  () => {
-
-    currentPage.value = 1
-  }
-)
+watch([searchQuery, selectedCategory, sortBy], () => {
+  currentPage.value = 1
+})
 
 /* -------------------------------- */
 /* FETCH PRODUCTS */
 /* -------------------------------- */
-
 const loadProducts = async () => {
-
   loading.value = true
-
   try {
-
     await productStore.fetchProviderProducts()
-
   } catch (error) {
-
     console.error(error)
-
-    showAlert(
-      'Failed to load products',
-      false
-    )
-
+    showAlert('Failed to load products', false)
   } finally {
-
     loading.value = false
   }
 }
 
 onMounted(() => {
-
   loadProducts()
 })
 
 /* -------------------------------- */
 /* MODAL */
 /* -------------------------------- */
-
 const openAddModal = () => {
-
   isEditMode.value = false
-
   selectedProduct.value = null
-
   showModal.value = true
 }
 
 const openEditModal = product => {
-
   isEditMode.value = true
-
-  selectedProduct.value = {
-    ...product
-  }
-
+  selectedProduct.value = { ...product }
   showModal.value = true
 }
 
 const closeModal = () => {
-
   showModal.value = false
-
   selectedProduct.value = null
 }
 
 /* -------------------------------- */
 /* STOCK ALERT */
 /* -------------------------------- */
-
 const checkStockStatus = product => {
-
   if (product.stock <= 0) {
-
-    showAlert(
-      `${product.name} is OUT OF STOCK`,
-      false
-    )
-
+    showAlert(`${product.name} is OUT OF STOCK`, false)
   } else if (product.stock <= 5) {
-
-    showAlert(
-      `${product.name} stock is LOW`,
-      false
-    )
+    showAlert(`${product.name} stock is LOW`, false)
   }
 }
 
 /* -------------------------------- */
 /* SAVE PRODUCT */
 /* -------------------------------- */
-
 const saveProduct = async productData => {
-
   try {
+    const price = Number(productData.price) || 0
+    const discount = Number(productData.discount) || 0
+    const calculatedFinalPrice = price * (1 - (discount / 100))
 
-    /* CONVERT NUMBERS */
     const formattedProduct = {
-
       ...productData,
-
-      price:
-        Number(productData.price) || 0,
-
-      discount:
-        Number(productData.discount) || 0,
-
-      stock:
-        Number(productData.stock) || 0
+      price,
+      discount,
+      stock: Number(productData.stock) || 0,
+      priceAfterDiscount: Number(calculatedFinalPrice.toFixed(2))
     }
 
-    console.log(
-      'Formatted Product:',
-      formattedProduct
-    )
-
-    /* VALIDATION */
-    if (
-      !formattedProduct.name ||
-      formattedProduct.price <= 0
-    ) {
-
-      showAlert(
-        'Please fill all required fields',
-        false
-      )
-
+    if (!formattedProduct.name || formattedProduct.price <= 0) {
+      showAlert('Please fill all required fields', false)
       return
     }
 
-    /* UPDATE */
     if (isEditMode.value) {
-
-      await productStore.updateProduct(
-        formattedProduct.id,
-        formattedProduct
-      )
-
-      showAlert(
-        'Product updated successfully'
-      )
-
+      await productStore.updateProduct(formattedProduct.id, formattedProduct)
+      showAlert('Product updated successfully')
     } else {
-
-      await productStore.createProduct(
-        formattedProduct
-      )
-
-      showAlert(
-        'Product added successfully'
-      )
+      await productStore.createProduct(formattedProduct)
+      showAlert('Product added successfully')
     }
 
-    /* CHECK STOCK */
-    checkStockStatus(
-      formattedProduct
-    )
-
-    /* RELOAD */
+    checkStockStatus(formattedProduct)
     await loadProducts()
-
     closeModal()
-
   } catch (error) {
-
     console.error(error)
-
     showAlert(
-      error.response?.data?.message ||
-      error.message ||
-      'Failed to save product',
+      error.response?.data?.message || error.message || 'Failed to save product',
       false
     )
   }
@@ -605,52 +445,25 @@ const saveProduct = async productData => {
 /* -------------------------------- */
 /* DELETE */
 /* -------------------------------- */
-
 const removeProduct = async productId => {
-
-  const confirmed = confirm(
-    'Delete this product?'
-  )
-
+  const confirmed = confirm('Delete this product?')
   if (!confirmed) return
 
   try {
-
-    await productStore.deleteProduct(
-      productId
-    )
-
-    showAlert(
-      'Product deleted successfully'
-    )
-
+    await productStore.deleteProduct(productId)
+    showAlert('Product deleted successfully')
     await loadProducts()
-
   } catch (error) {
-
     console.error(error)
-
-    showAlert(
-      'Failed to delete product',
-      false
-    )
+    showAlert('Failed to delete product', false)
   }
 }
 
 /* -------------------------------- */
 /* VIEW */
 /* -------------------------------- */
-
 const viewProduct = productId => {
-
-  router.push({
-
-    name: 'productDetail',
-
-    params: {
-      id: productId
-    }
-  })
+  router.push({ name: 'productDetail', params: { id: productId } })
 }
 </script>
 
@@ -661,111 +474,79 @@ const viewProduct = productId => {
   overflow:hidden;
   background:#f5f5f5;
 }
-
 .product-container{
   display:flex;
   height:100%;
 }
-
 .sidebar-wrapper{
   width:250px;
   background:white;
   border-right:1px solid #ddd;
 }
-
 .main-content{
   flex:1;
   display:flex;
   flex-direction:column;
   overflow-y:auto;
 }
-
 .filter-bar{
   padding:20px;
   background:white;
   border-bottom:1px solid #eee;
 }
-
 .table-wrapper{
   flex:1;
   overflow:auto;
 }
-
 .pagination-wrapper{
   padding:15px;
   background:white;
   display:flex;
   justify-content:center;
 }
-
 .loading-wrapper{
   flex:1;
   display:flex;
   align-items:center;
   justify-content:center;
 }
-
 .alert-bar{
   position:fixed;
   top:20px;
   left:50%;
   transform:translateX(-50%);
   z-index:9999;
-
   min-width:300px;
-
   padding:14px 20px;
-
   border-radius:10px;
-
   color:white;
-
   box-shadow:0 4px 15px rgba(0,0,0,.2);
 }
-
-.alert-success{
-  background:#16a34a;
-}
-
-.alert-error{
-  background:#dc2626;
-}
-
+.alert-success{ background:#16a34a; }
+.alert-error{ background:#dc2626; }
 .alert-content{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:20px;
 }
-
 .alert-close{
   border:none;
   background:none;
   color:white;
   font-size:18px;
 }
-
 .slide-down-enter-active,
 .slide-down-leave-active{
   transition:.3s;
 }
-
 .slide-down-enter-from,
 .slide-down-leave-to{
   opacity:0;
-  transform:
-    translateX(-50%)
-    translateY(-20px);
+  transform: translateX(-50%) translateY(-20px);
 }
-
 @media(max-width:768px){
-
-  .product-container{
-    flex-direction:column;
-  }
-
-  .sidebar-wrapper{
-    width:100%;
-  }
+  .product-container{ flex-direction:column; }
+  .sidebar-wrapper{ width:100%; }
 }
 </style>

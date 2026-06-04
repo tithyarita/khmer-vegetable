@@ -1,23 +1,30 @@
-import { v2 as cloudinary } from 'cloudinary'
+import { v2 as cloudinary } from 'cloudinary';
+import { ConfigService } from '@nestjs/config';
+
+const config = new ConfigService();
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
+  cloud_name: config.get<string>('CLOUDINARY_CLOUD_NAME'),
+  api_key: config.get<string>('CLOUDINARY_API_KEY'),
+  api_secret: config.get<string>('CLOUDINARY_API_SECRET'),
+});
 
 export async function uploadToCloudinary(
   buffer: Buffer,
   folder: string,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: 'auto' },
-      (error, result) => {
-        if (error || !result) reject(error || new Error('Upload failed'))
-        else resolve(result.secure_url)
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: 'auto',
       },
-    )
-    uploadStream.end(buffer)
-  })
+      (err, result) => {
+        if (err || !result) return reject(err);
+        resolve(result.secure_url);
+      },
+    );
+
+    stream.end(buffer);
+  });
 }

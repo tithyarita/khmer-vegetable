@@ -1,10 +1,8 @@
 <template>
   <div class="product-page">
 
-    <!-- FILTER BAR -->
     <div class="filterbar">
       <div class="filter-group">
-
         <span>Filter by:</span>
 
         <select v-model="status">
@@ -16,44 +14,30 @@
 
         <select v-model="provider">
           <option>All Providers</option>
-
-          <option
-            v-for="p in providers"
-            :key="p"
-          >
-            {{ p }}
-          </option>
+          <option v-for="p in providers" :key="p">{{ p }}</option>
         </select>
 
         <select v-model="category">
           <option>All Categories</option>
-
-          <option
-            v-for="c in categories"
-            :key="c"
-          >
-            {{ c }}
-          </option>
+          <option v-for="c in categories" :key="c">{{ c }}</option>
         </select>
-
       </div>
     </div>
 
-    <!-- GROUPED TABLE -->
     <div
       v-for="(products, providerName) in groupedProducts"
       :key="providerName"
       class="table-card"
     >
-
       <h2>{{ providerName }}</h2>
 
       <table>
         <thead>
           <tr>
             <th>PRODUCT</th>
-            <th>PRICE</th>
+            <th>ORIGINAL PRICE</th>
             <th>DISCOUNT</th>
+            <th>FINAL PRICE</th>
             <th>STOCK</th>
             <th>STATUS</th>
             <th>ACTIONS</th>
@@ -63,20 +47,16 @@
         <tbody>
           <tr v-for="p in products" :key="p.id">
 
-            <!-- PRODUCT -->
             <td class="product">
               <img :src="getImageUrl(p.image)" @error="console.log('Image failed to load:', p.image)" />
-
               <div>
                 <div class="name">{{ p.name }}</div>
                 <div class="date">{{ formatDate(p.createdAt) }}</div>
               </div>
             </td>
 
-            <!-- PRICE -->
-            <td class="price">${{ p.price }}</td>
+            <td class="price original-strike">${{ Number(p.price).toFixed(2) }}</td>
 
-            <!-- DISCOUNT -->
             <td>
               <span v-if="p.discount > 0" class="discount">
                 -{{ p.discount }}%
@@ -84,21 +64,22 @@
               <span v-else>-</span>
             </td>
 
-            <!-- STOCK -->
+            <td class="price final-green">
+              ${{ getFinalPrice(p.price, p.discount) }}
+            </td>
+
             <td>
               <span :class="stockClass(p.stock)">
                 {{ p.stock }}
               </span>
             </td>
 
-            <!-- STATUS -->
             <td>
               <span :class="['status', stockClass(p.stock)]">
                 {{ stockStatus(p.stock) }}
               </span>
             </td>
 
-            <!-- ACTIONS -->
             <td class="actions">
               <button @click="openProduct(p)">👁</button>
               <button @click="editProduct(p)">✏️</button>
@@ -108,20 +89,16 @@
           </tr>
         </tbody>
       </table>
-
     </div>
 
-    <!-- EDIT DRAWER -->
     <transition name="slide">
       <aside v-if="showEdit" class="drawer">
-
         <div class="drawer-header">
           <span class="drawer-title">Edit Product</span>
           <button class="close" @click="closeEdit">×</button>
         </div>
 
         <form @submit.prevent="submitEdit" class="edit-form">
-
           <div class="form-row">
             <div class="form-group">
               <label>Name</label>
@@ -137,7 +114,7 @@
           <div class="form-row">
             <div class="form-group">
               <label>Price</label>
-              <input v-model.number="editForm.price" type="number" min="0" />
+              <input v-model.number="editForm.price" type="number" min="0" step="0.01" />
             </div>
 
             <div class="form-group">
@@ -163,101 +140,111 @@
 
           <button type="submit" class="save-btn">Save Changes</button>
         </form>
-
       </aside>
     </transition>
 
-    <!-- PRODUCT DRAWER -->
     <transition name="slide">
-      <aside v-if="showProduct" class="drawer">
-
+      <aside v-if="showProduct" class="drawer preview-drawer">
         <div class="drawer-header">
-          <span class="drawer-title">Product Preview</span>
+          <span class="drawer-title">Product Insights</span>
           <button class="close" @click="showProduct = false">×</button>
         </div>
 
-        <img :src="getImageUrl(selected.image)" class="drawer-img" />
-
-        <div class="drawer-id-badge">
-          ID: {{ selected.id }}
+        <div class="preview-hero-wrapper">
+          <img :src="getImageUrl(selected.image)" class="drawer-img-new" />
+          <div class="drawer-absolute-badge">ID: {{ selected.id }}</div>
         </div>
 
-        <h2 class="drawer-prod-name">{{ selected.name }}</h2>
+        <div class="preview-content">
+          <h2 class="drawer-title-primary">{{ selected.name }}</h2>
+          <div class="drawer-tag">{{ selected.category || 'General Category' }}</div>
+          
+          <p class="desc-clean">{{ selected.description || 'No written description provided for this resource asset.' }}</p>
 
-        <div class="drawer-date">
-          {{ formatDate(selected.createdAt) }}
+          <div class="drawer-grid-modern">
+            <div class="grid-card final-price-highlight">
+              <label>Calculated Final Price</label>
+              <div class="card-value">${{ getFinalPrice(selected.price, selected.discount) }}</div>
+            </div>
+
+            <div class="grid-card">
+              <label>Original Price</label>
+              <div class="card-value">${{ Number(selected.price).toFixed(2) }}</div>
+            </div>
+
+            <div class="grid-card">
+              <label>Applied Discount</label>
+              <div class="card-value color-red">{{ selected.discount }}% Off</div>
+            </div>
+
+            <div class="grid-card">
+              <label>Current Stock</label>
+              <div class="card-value">{{ selected.stock }} Units</div>
+            </div>
+
+            <div class="grid-card">
+              <label>Availability status</label>
+              <div :class="['card-status', stockClass(selected.stock)]">
+                {{ stockStatus(selected.stock) }}
+              </div>
+            </div>
+
+            <div class="grid-card">
+              <label>Assigned Provider</label>
+              <div class="card-value text-truncate">{{ selected.provider?.provider_name || 'Unknown' }}</div>
+            </div>
+
+            <div class="grid-card full-span-card">
+              <label>Created Timestamp (MySQL Database)</label>
+              <div class="card-value date-stamp">
+                ⏳ {{ formatMySQLTimestamp(selected.createdAt) }}
+              </div>
+            </div>
+          </div>
         </div>
-
-        <p class="desc">{{ selected.description }}</p>
-
-        <div class="drawer-grid">
-
-          <div>
-            <label>Price</label>
-            <div>${{ selected.price }}</div>
-          </div>
-
-          <div>
-            <label>Discount</label>
-            <div>{{ selected.discount }}%</div>
-          </div>
-
-          <div>
-            <label>Stock</label>
-            <div>{{ selected.stock }}</div>
-          </div>
-
-          <div>
-            <label>Status</label>
-            <div>{{ stockStatus(selected.stock) }}</div>
-          </div>
-
-          <div style="grid-column: span 2;">
-            <label>Provider</label>
-            <div>{{ selected.provider?.provider_name || 'Unknown' }}</div>
-          </div>
-
-        </div>
-
       </aside>
     </transition>
 
   </div>
 </template>
-
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useProductStore } from '@/stores/productStore'
 
+/* =========================
+   STORE
+========================= */
 const store = useProductStore()
 const { products } = storeToRefs(store)
 
 /* =========================
-   IMAGE FIX (IMPORTANT)
+   CONFIG
 ========================= */
-const IMAGE_BASE_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/uploads/`
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const UPLOAD_BASE = `${API_BASE}/uploads`
 
+/* =========================
+   IMAGE RESOLVER (FIXED)
+========================= */
 function getImageUrl(image) {
-  if (!image) {
-    console.log('No image value:', image)
-    return ''
+  if (!image) return ''
+
+  // already full URL
+  if (image.startsWith('http')) return image
+
+  let clean = image.replace(/^\/+/, '')
+
+  // FIX: backend mismatch /images → /uploads
+  if (clean.startsWith('images/')) {
+    clean = clean.replace('images/', 'uploads/')
   }
 
-  if (image.startsWith('http')) {
-    console.log('Image is full URL:', image)
-    return image
+  if (clean.startsWith('uploads/')) {
+    return `${API_BASE}/${clean}`
   }
 
-  if (image.startsWith('/uploads/')) {
-    const url = `${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}${image}`
-    console.log('Image with /uploads/ prefix:', url)
-    return url
-  }
-
-  const url = IMAGE_BASE_URL + image
-  console.log('Image as filename:', url)
-  return url
+  return image || '';
 }
 
 /* =========================
@@ -271,77 +258,81 @@ const category = ref('All')
    DRAWERS
 ========================= */
 const showProduct = ref(false)
-const selected = ref(null)
-
 const showEdit = ref(false)
+
+const selected = ref(null)
 const editForm = ref({})
 let editImageFile = null
 
 /* =========================
-   LOAD PRODUCTS
+   INIT
 ========================= */
 onMounted(async () => {
   await store.fetchAllProducts()
 })
 
 /* =========================
-   PROVIDERS
+   PROVIDERS / CATEGORIES
 ========================= */
 const providers = computed(() => {
-  const names = new Set()
+  const set = new Set()
   products.value.forEach(p => {
-    if (p.provider?.provider_name) {
-      names.add(p.provider.provider_name)
-    }
+    if (p.provider?.provider_name) set.add(p.provider.provider_name)
   })
-  return Array.from(names)
+  return [...set]
 })
 
-/* =========================
-   CATEGORIES
-========================= */
-const categories = computed(() => {
-  return [...new Set(products.value.map(p => p.category))]
-})
+const categories = computed(() =>
+  [...new Set(products.value.map(p => p.category).filter(Boolean))]
+)
 
 /* =========================
-   STOCK STATUS
+   STOCK LOGIC
 ========================= */
 function stockClass(stock) {
-  if (stock === 0) return 'out'
+  if (!stock || stock === 0) return 'out'
   if (stock <= 10) return 'low'
   return 'ok'
 }
 
 function stockStatus(stock) {
-  if (stock === 0) return 'Out of Stock'
+  if (!stock || stock === 0) return 'Out of Stock'
   if (stock <= 10) return 'Low Stock'
   return 'In Stock'
 }
 
 /* =========================
-   FILTER
+   PRICE
+========================= */
+function getFinalPrice(price, discount) {
+  const p = Number(price) || 0
+  const d = Number(discount) || 0
+
+  if (d <= 0) return p.toFixed(2)
+  return (p * (1 - d / 100)).toFixed(2)
+}
+
+/* =========================
+   FILTERING
 ========================= */
 const filteredProducts = computed(() => {
   return products.value.filter(p => {
     return (
       (status.value === 'All' || stockStatus(p.stock) === status.value) &&
-      (provider.value === 'All Providers' || p.provider?.provider_name === provider.value) &&
+      (provider.value === 'All Providers' ||
+        p.provider?.provider_name === provider.value) &&
       (category.value === 'All' || p.category === category.value)
     )
   })
 })
 
-/* =========================
-   GROUP
-========================= */
 const groupedProducts = computed(() => {
   const groups = {}
 
   filteredProducts.value.forEach(p => {
-    const providerName = p.provider?.provider_name || 'Unknown Provider'
-    if (!groups[providerName]) groups[providerName] = []
-    groups[providerName].push(p)
+    const key = p.provider?.provider_name || 'Unknown Provider'
+    if (!groups[key]) groups[key] = []
+    groups[key].push(p)
   })
 
   return groups
@@ -365,14 +356,22 @@ function closeEdit() {
   showEdit.value = false
 }
 
+/* =========================
+   IMAGE UPLOAD
+========================= */
 function onImageChange(e) {
-  const file = e.target.files[0]
+  const file = e.target.files?.[0]
   if (file) editImageFile = file
 }
 
+/* =========================
+   SAVE EDIT
+========================= */
 async function submitEdit() {
   try {
-    const payload = { ...editForm.value }
+    const payload = {
+      ...editForm.value,
+    }
 
     if (editImageFile) {
       payload.imageFile = editImageFile
@@ -384,39 +383,60 @@ async function submitEdit() {
     await nextTick()
     await store.fetchAllProducts()
 
-    alert('Product updated!')
+    alert('Product updated successfully')
   } catch (err) {
+    console.error(err)
     alert('Failed to update product')
   }
 }
 
+/* =========================
+   DELETE
+========================= */
 async function deleteProduct(p) {
-  if (!confirm('Are you sure?')) return
+  if (!confirm('Delete this product?')) return
 
   try {
     await store.deleteProduct(p.id)
     await store.fetchAllProducts()
-    alert('Product deleted!')
+    alert('Deleted successfully')
   } catch (err) {
-    alert('Failed to delete product')
+    console.error(err)
+    alert('Delete failed')
   }
 }
 
 /* =========================
-   DATE
+   DATE FORMATTERS
 ========================= */
 function formatDate(date) {
   if (!date) return ''
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
+  })
+}
+
+function formatMySQLTimestamp(date) {
+  if (!date) return 'No Timestamp'
+
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return date
+
+  return d.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
   })
 }
 </script>
 <style scoped>
 /* =========================
-   PAGE
+   PAGE OVERVIEW
 ========================= */
 .product-page {
   background: #f5f7fb;
@@ -427,7 +447,7 @@ function formatDate(date) {
 }
 
 /* =========================
-   FILTER BAR
+   FILTER DESIGN
 ========================= */
 .filterbar {
   max-width: 1250px;
@@ -440,9 +460,7 @@ function formatDate(date) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow:
-    0 10px 35px rgba(16, 185, 129, 0.08),
-    0 2px 10px rgba(0,0,0,.03);
+  box-shadow: 0 10px 35px rgba(16, 185, 129, 0.08), 0 2px 10px rgba(0,0,0,.03);
 }
 
 .filter-group {
@@ -486,7 +504,7 @@ function formatDate(date) {
 }
 
 /* =========================
-   PROVIDER SECTION
+   DATA TABLE LAYOUT
 ========================= */
 .table-card {
   max-width: 1250px;
@@ -496,9 +514,7 @@ function formatDate(date) {
   border-radius: 28px;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,.7);
-  box-shadow:
-    0 15px 40px rgba(16,185,129,.08),
-    0 3px 10px rgba(0,0,0,.04);
+  box-shadow: 0 15px 40px rgba(16,185,129,.08), 0 3px 10px rgba(0,0,0,.04);
 }
 
 .table-card h2 {
@@ -520,9 +536,6 @@ function formatDate(date) {
   margin-top: 10px;
 }
 
-/* =========================
-   TABLE
-========================= */
 table {
   width: 100%;
   border-collapse: separate;
@@ -552,20 +565,16 @@ td {
   transition: all .2s ease;
 }
 
-/* =========================
-   ROWS
-========================= */
 tbody tr {
   transition: all .25s ease;
 }
 
 tbody tr:hover {
   background: linear-gradient(to right, #f7fff9, #f0fdf4);
-  transform: scale(1.002);
 }
 
 /* =========================
-   PRODUCT INFO
+   CELL ATTRIBUTES
 ========================= */
 .product {
   display: flex;
@@ -600,17 +609,24 @@ tbody tr:hover .product img {
 }
 
 /* =========================
-   PRICE
+   PRICING DESIGN STYLES
 ========================= */
 .price {
-  font-weight: 800;
-  color: #166534;
   font-size: 15px;
 }
 
-/* =========================
-   DISCOUNT
-========================= */
+.original-strike {
+  color: #9ca3af;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.final-green {
+  font-weight: 800;
+  color: #166534;
+  font-size: 16px;
+}
+
 .discount {
   background: #fee2e2;
   color: #dc2626;
@@ -624,11 +640,9 @@ tbody tr:hover .product img {
 }
 
 /* =========================
-   STOCK
+   STOCK INTERFACES
 ========================= */
-.ok,
-.low,
-.out {
+.ok, .low, .out {
   font-weight: 700;
   padding: 7px 12px;
   border-radius: 999px;
@@ -639,49 +653,21 @@ tbody tr:hover .product img {
   min-width: 52px;
 }
 
+.ok { background: #dcfce7; color: #15803d; }
+.low { background: #fef3c7 !important; color: #d97706 !important; }
+.out { background: #fee2e2 !important; color: #dc2626 !important; }
 
-.ok {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.low,
-.status.Low\ Stock {
-  background: #fef3c7 !important;
-  color: #d97706 !important;
-}
-
-.out,
-.status.Out\ of\ Stock {
-  background: #fee2e2 !important;
-  color: #dc2626 !important;
-}
-
-/* =========================
-   STATUS
-========================= */
 .status {
   padding: 7px 14px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
-  background: #dcfce7;
-  color: #15803d;
-  letter-spacing: .02em;
-}
-
-.status.Out\ of\ Stock {
-  background: #fee2e2;
-  color: #dc2626;
 }
 
 /* =========================
-   ACTION BUTTONS
+   ACTION HANDLERS
 ========================= */
-.actions {
-  white-space: nowrap;
-}
-
+.actions { white-space: nowrap; }
 .actions button {
   margin-right: 8px;
   cursor: pointer;
@@ -697,71 +683,21 @@ tbody tr:hover .product img {
 .actions button:hover {
   background: linear-gradient(to bottom right, #22c55e, #16a34a);
   color: white;
-  transform: translateY(-2px) scale(1.05);
+  transform: translateY(-2px);
   box-shadow: 0 10px 18px rgba(34,197,94,.25);
 }
 
 /* =========================
-   FOOTER
-========================= */
-.footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 24px;
-  font-size: 13px;
-  color: #6b7280;
-  background: #fcfffd;
-}
-
-/* =========================
-   PAGINATION
-========================= */
-.pagination {
-  display: flex;
-  gap: 8px;
-}
-
-.pagination button {
-  background: #f3f4f6;
-  border: none;
-  border-radius: 12px;
-  padding: 8px 14px;
-  font-size: 14px;
-  color: #111827;
-  cursor: pointer;
-  transition: all .25s ease;
-  font-weight: 600;
-}
-
-.pagination button:hover {
-  background: #dcfce7;
-  transform: translateY(-1px);
-}
-
-.pagination button.active {
-  background: linear-gradient(to right, #22c55e, #16a34a);
-  color: #fff;
-  box-shadow: 0 8px 18px rgba(34,197,94,.3);
-}
-
-.pagination button:disabled {
-  color: #9ca3af;
-  background: #f3f4f6;
-  cursor: not-allowed;
-}
-
-/* =========================
-   DRAWER
+   DRAWERS ENGINE
 ========================= */
 .drawer {
   position: fixed;
   right: 0;
   top: 0;
-  width: 430px;
+  width: 440px;
   max-width: 100%;
   height: 100vh;
-  background: rgba(255,255,255,.96);
+  background: rgba(255,255,255,.98);
   backdrop-filter: blur(18px);
   box-shadow: -12px 0 40px rgba(0,0,0,.08);
   z-index: 100;
@@ -769,252 +705,210 @@ tbody tr:hover .product img {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid rgba(255,255,255,.6);
 }
 
-/* =========================
-   DRAWER HEADER
-========================= */
 .drawer-header {
   display: flex;
   align-items: center;
   width: 100%;
-  margin-bottom: 20px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 14px;
 }
 
 .drawer-title {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
-  color: #111827;
+  color: #0f172a;
   flex: 1;
 }
 
 .close {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 12px;
   border: none;
-  background: #f3f4f6;
-  font-size: 24px;
-  color: #6b7280;
+  background: #f1f5f9;
+  font-size: 20px;
+  color: #64748b;
   cursor: pointer;
-  transition: all .25s ease;
+  transition: all .2s;
 }
 
 .close:hover {
   background: #fee2e2;
   color: #dc2626;
-  transform: rotate(90deg);
 }
 
-/* =========================
-   DRAWER IMAGE
-========================= */
-.drawer-img {
+/* =======================================
+   REDESIGNED PRODUCT PREVIEW DRAWERS
+======================================= */
+.preview-drawer {
+  background: #ffffff;
+  padding-bottom: 40px;
+}
+
+.preview-hero-wrapper {
+  position: relative;
   width: 100%;
-  border-radius: 24px;
-  margin-bottom: 20px;
-  object-fit: cover;
-  box-shadow: 0 15px 30px rgba(0,0,0,.08);
+  aspect-ratio: 1 / 1; /* FIXED: Automatically makes the wrapper a perfect fluid square */
+  border-radius: 20px;
+  overflow: hidden;
+  margin-top: 10px;
+  margin-bottom: 22px;
+  background: #f8fafc; /* Canvas base filler for irregular aspect ratios */
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 12px 26px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* =========================
-   BADGE
-========================= */
-.drawer-id-badge {
-  background: linear-gradient(to right, #dcfce7, #bbf7d0);
-  color: #166534;
-  font-size: 12px;
-  font-weight: 800;
-  border-radius: 999px;
-  padding: 7px 14px;
-  display: inline-block;
-  margin-bottom: 12px;
-  width: fit-content;
-}
-
-/* =========================
-   TITLE
-========================= */
-.drawer-prod-name {
-  font-size: 28px;
-  font-weight: 800;
-  margin-bottom: 6px;
-  color: #111827;
-  line-height: 1.2;
-}
-
-.drawer-date {
-  color: #9ca3af;
-  font-size: 13px;
-  margin-bottom: 14px;
-}
-
-.desc {
-  color: #4b5563;
-  font-size: 14px;
-  line-height: 1.8;
-  margin-bottom: 26px;
-}
-
-/* =========================
-   GRID
-========================= */
-.drawer-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
+.drawer-img-new {
   width: 100%;
-}
-
-.drawer-grid > div {
-  background: #f9fffb;
-  border: 1px solid #ecfdf5;
-  border-radius: 18px;
-  padding: 16px;
-  transition: all .2s ease;
-}
-
-.drawer-grid > div:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(16,185,129,.08);
-}
-
-label {
+  height: 100%;
+  object-fit: contain; /* Keeps full image visible inside the square boundary */
   display: block;
-  color: #9ca3af;
+}
+
+.drawer-absolute-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
   font-size: 11px;
   font-weight: 700;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
+  padding: 5px 12px;
+  border-radius: 8px;
+  z-index: 2;
 }
 
-/* =========================
-   ANIMATION
-========================= */
-.slide-enter-active,
-.slide-leave-active {
-  transition: all .35s ease;
+.drawer-title-primary {
+  font-size: 25px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+  line-height: 1.25;
 }
 
-.slide-enter-from,
-.slide-leave-to {
-  transform: translateX(100%);
-  opacity: 0;
-}
-
-/* =========================
-   SCROLLBAR
-========================= */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #bbf7d0;
-  border-radius: 999px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-.edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  margin-top: 10px;
-}
-
-.form-row {
-  display: flex;
-  gap: 18px;
-}
-
-.form-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.edit-form input,
-.edit-form textarea {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 15px;
-  background: #f9fafb;
-  color: #1f2937;
-  transition: border-color .2s;
-}
-
-.edit-form input:focus,
-.edit-form textarea:focus {
-  border-color: #22c55e;
-  outline: none;
-}
-
-.save-btn {
-  margin-top: 10px;
-  background: linear-gradient(to right, #22c55e, #16a34a);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  padding: 12px 0;
-  font-size: 16px;
+.drawer-tag {
+  display: inline-block;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 12px;
   font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(34,197,94,.13);
-  transition: background .2s, transform .2s;
+  padding: 5px 14px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  border: 1px solid #bbf7d0;
 }
 
-.save-btn:hover {
-  background: linear-gradient(to right, #16a34a, #22c55e);
-  transform: translateY(-2px) scale(1.03);
+.desc-clean {
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.6;
+  background: #f8fafc;
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin: 0 0 24px 0;
+  border-left: 4px solid #cbd5e1;
 }
 
-@media (max-width: 900px) {
-  .form-row {
-    flex-direction: column;
-    gap: 0;
-  }
+/* MODERN DRAWER GRID */
+.drawer-grid-modern {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
 
+.grid-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.full-span-card {
+  grid-column: span 2;
+}
+
+.final-price-highlight {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #bbf7d0;
+}
+
+.grid-card label {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.grid-card .card-value {
+  color: #1e293b;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.final-price-highlight .card-value {
+  color: #15803d;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.color-red { color: #dc2626 !important; }
+.text-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.card-status { font-size: 14px; font-weight: 700; }
+.card-status.ok { color: #15803d; }
+.card-status.low { color: #d97706; }
+.card-status.out { color: #dc2626; }
+
+.date-stamp {
+  color: #0284c7 !important;
+  font-family: monospace;
+  font-size: 13px !important;
+}
 
 /* =========================
-   RESPONSIVE
+   FORM CONFIG
+========================= */
+.edit-form { display: flex; flex-direction: column; gap: 18px; margin-top: 10px; }
+.form-row { display: flex; gap: 18px; }
+.form-group { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.edit-form input, .edit-form textarea {
+  border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; font-size: 15px; background: #f9fafb; color: #1f2937;
+}
+.edit-form input:focus, .edit-form textarea:focus { border-color: #22c55e; outline: none; }
+.save-btn {
+  margin-top: 10px; background: linear-gradient(to right, #22c55e, #16a34a); color: #fff; border: none;
+  border-radius: 12px; padding: 12px 0; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+.save-btn:hover { transform: translateY(-1px); }
+
+/* =========================
+   ANIMATION RULES
+========================= */
+.slide-enter-active, .slide-leave-active { transition: all .3s ease-out; }
+.slide-enter-from, .slide-leave-to { transform: translateX(100%); }
+
+/* =========================
+   RESPONSIVE DESIGN
 ========================= */
 @media (max-width: 900px) {
-  .product-page {
-    padding: 20px 14px 40px;
-  }
-
-  .filterbar {
-    border-radius: 20px;
-    padding: 16px;
-  }
-
-  .filter-group {
-    width: 100%;
-  }
-
-  .filter-group select {
-    flex: 1;
-    min-width: unset;
-  }
-
-  .table-card {
-    overflow-x: auto;
-  }
-
-  table {
-    min-width: 850px;
-  }
-
-  .drawer {
-    width: 100%;
-    border-radius: 0;
-  }
+  .form-row { flex-direction: column; gap: 0; }
+  .product-page { padding: 20px 14px 40px; }
+  .filterbar { border-radius: 20px; padding: 16px; flex-direction: column; gap: 12px; }
+  .filter-group { width: 100%; }
+  .filter-group select { flex: 1; min-width: unset; }
+  .table-card { overflow-x: auto; }
+  table { min-width: 950px; }
+  .drawer { width: 100%; border-radius: 0; }
 }
 </style>
