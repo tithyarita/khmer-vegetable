@@ -58,6 +58,24 @@ export const useReviewStore = defineStore('review', () => {
     }
   }
 
+  // Get reviews for current provider (owner of products)
+  const fetchReviewsByProvider = async () => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const res = await api.get('/reviews/provider')
+      reviews.value = res.data.map(formatReview)
+      return reviews.value
+    } catch (err) {
+      console.error('FETCH PROVIDER REVIEWS ERROR:', err)
+      error.value = err.message
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Create review
   const createReview = async (data) => {
     loading.value = true
@@ -158,6 +176,7 @@ export const useReviewStore = defineStore('review', () => {
     error,
     fetchReviewsByProduct,
     fetchReviewsByUser,
+    fetchReviewsByProvider,
     createReview,
     updateReview,
     deleteReview,

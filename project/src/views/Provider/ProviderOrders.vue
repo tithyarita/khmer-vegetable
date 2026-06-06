@@ -45,6 +45,12 @@
                   <path d="M7 10l5 5 5-5"/>
                 </svg>
               </button>
+              <button class="btn-view-detail" @click="openFeedbackModal" title="View customer feedback">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span>Feedback</span>
+              </button>
             </div>
 
             <div class="search-bar">
@@ -277,7 +283,38 @@
       </div>
     </transition>
 
-    <transition name="toast">
+  <transition name="modal">
+    <div v-if="showFeedbackModal" class="modal-overlay" @click.self="closeFeedbackModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <div class="modal-title-section">
+            <h2 class="modal-title">Customer Feedback</h2>
+            <p class="modal-subtitle">Reviews for your products</p>
+          </div>
+          <button class="modal-close-btn" @click="closeFeedbackModal" aria-label="Close">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div v-if="!providerReviews.length" class="state-box">No feedback yet.</div>
+          <div v-else class="review-list">
+            <div v-for="r in providerReviews" :key="r.id" class="review-item">
+              <div class="review-avatar" :style="{ background: r.color }">{{ r.initials }}</div>
+              <div class="review-content">
+                <div class="review-meta">
+                  <strong>{{ r.author }}</strong>
+                  <span class="review-date">{{ r.date }}</span>
+                </div>
+                <div class="review-rating">Rating: {{ r.rating }}/5</div>
+                <div class="review-body">{{ r.feedback }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </transition>
+
+  <transition name="toast">
       <div v-if="toast.show" class="toast" :class="`toast-${toast.type}`">
         <svg class="toast-icon" viewBox="0 0 24 24" fill="currentColor">
           <path v-if="toast.type === 'success'" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
@@ -295,6 +332,7 @@ import axios from 'axios'
 import SideBar from "@/components/provider_com/sideBar.vue"
 import { useUserStore } from '@/stores/userStore'
 import PageHeader from '@/components/provider_com/pageHeader.vue'
+import { useReviewStore } from '@/stores/reviewStore'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 const userStore = useUserStore()
@@ -314,6 +352,9 @@ const searchQuery = ref('')
 const showDetailModal = ref(false)
 const selectedOrder = ref(null)
 const sortOrder = ref('desc')
+const reviewStore = useReviewStore()
+const providerReviews = ref([])
+const showFeedbackModal = ref(false)
 
 // --- Toast ---
 const toast = reactive({ show: false, message: '', type: 'success' })
@@ -494,6 +535,21 @@ const updateStatus = async (order, status) => {
 const openDetailModal = (order) => {
   selectedOrder.value = { ...order }
   showDetailModal.value = true
+}
+
+const openFeedbackModal = async () => {
+  try {
+    providerReviews.value = await reviewStore.fetchReviewsByProvider()
+    showFeedbackModal.value = true
+  } catch (err) {
+    console.error('Failed to load provider reviews', err)
+    showToast('Failed to load feedback', 'error')
+  }
+}
+
+const closeFeedbackModal = () => {
+  showFeedbackModal.value = false
+  providerReviews.value = []
 }
 
 const closeDetailModal = () => {

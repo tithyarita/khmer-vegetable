@@ -66,6 +66,18 @@ export class ReviewService {
     });
   }
 
+  // GET ALL REVIEWS FOR A PROVIDER (products owned by the provider)
+  async findByProvider(userId: number) {
+    return this.reviewRepository
+      .createQueryBuilder('review')
+      .leftJoinAndSelect('review.user', 'user')
+      .leftJoinAndSelect('review.product', 'product')
+      .leftJoinAndSelect('product.provider', 'provider')
+      .where('provider.user_id = :userId', { userId })
+      .orderBy('review.createdAt', 'DESC')
+      .getMany();
+  }
+
   // GET ONE REVIEW
   async findOne(id: number) {
     const review = await this.reviewRepository.findOne({

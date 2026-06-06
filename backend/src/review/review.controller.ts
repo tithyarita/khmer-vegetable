@@ -38,6 +38,13 @@ export class ReviewController {
     return this.reviewService.findByUser(req.user.id);
   }
 
+  // GET ALL REVIEWS FOR CURRENT PROVIDER
+  @UseGuards(JwtAuthGuard)
+  @Get('provider')
+  findByProvider(@Req() req: any) {
+    return this.reviewService.findByProvider(req.user.id);
+  }
+
   // GET ONE REVIEW
   @Get(':id')
   findOne(@Param('id') id: string) {
