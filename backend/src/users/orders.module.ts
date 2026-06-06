@@ -7,11 +7,12 @@ import { orders } from './orders.entity';
 import { orderItems } from './order-items.entity';
 import { Product } from '../product/product.entity';
 import { Customer } from '../customer/customer.entity';
+import { users } from '../users/users.entity';
 import { ReportModule } from '../report/report.module'; // <-- import here
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([orders, orderItems, Product, Customer]),
+    TypeOrmModule.forFeature([orders, orderItems, Product, Customer, users]),
     ReportModule, // <-- makes ReportService available
   ],
   providers: [OrdersService],

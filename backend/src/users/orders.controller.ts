@@ -7,11 +7,13 @@ import {
   Delete,
   Param,
   ParseIntPipe,
-  Query,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
+  Request,
   HttpException,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -20,6 +22,7 @@ import { diskStorage } from 'multer';
 import { OrdersService } from './orders.service';
 import { OrderStatus, PaymentStatus } from './orders.entity';
 import { CreateOrderDto, UpdateOrderDto } from './dto/orders.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 interface MulterFile {
   filename: string;
@@ -32,6 +35,7 @@ export class OrdersController {
   // =========================
   // CREATE ORDER
   // =========================
+  @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(
     FileInterceptor('receipt', {
@@ -43,10 +47,47 @@ export class OrdersController {
       }),
     }),
   )
-  async create(@Body() body: any, @UploadedFile() file?: MulterFile) {
+  async create(
+    @Request() req: any,
+    @Body() body: any,
+    @UploadedFile() file?: MulterFile,
+  ) {
     try {
+      const customerId = Number(req.user?.id ?? req.user?.sub ?? 0);
+      if (!customerId) {
+        throw new BadRequestException('Authenticated customer is required to place an order.');
+      }
+
+      const providerOrders = body.providerOrders
+        ? JSON.parse(body.providerOrders)
+        : [];
+
+      if (Array.isArray(providerOrders) && providerOrders.length > 0) {
+        const dtos: CreateOrderDto[] = providerOrders.map((group: any) => {
+          const providerId = Number(group.providerId || group.provider_id || 0);
+          if (!providerId) {
+            throw new BadRequestException('Each provider order group must include a valid provider_id.');
+          }
+
+          return {
+            customer_id: customerId,
+            provider_id: providerId,
+            items: Array.isArray(group.items)
+              ? group.items.map((item: any) => ({
+                  product_id: Number(item.product_id || item.id),
+                  quantity: Number(item.quantity || 0),
+                }))
+              : [],
+            payment_method: body.payment_method,
+            payment_status: PaymentStatus.PENDING,
+          };
+        });
+
+        return await this.ordersService.createMany(dtos, file?.filename);
+      }
+
       const dto: CreateOrderDto = {
-        customer_id: Number(body.customer_id),
+        customer_id: customerId,
         provider_id: Number(body.provider_id),
         items: JSON.parse(body.items || '[]'),
         payment_method: body.payment_method,
@@ -55,8 +96,9 @@ export class OrdersController {
 
       return await this.ordersService.create(dto, file?.filename);
     } catch (error) {
+      console.error('Order creation error:', error);
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Order creation failed');
+      throw new InternalServerErrorException(error?.message || 'Order creation failed');
     }
   }
 

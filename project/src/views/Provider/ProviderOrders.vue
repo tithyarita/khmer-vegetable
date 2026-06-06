@@ -96,18 +96,22 @@
                     </td>
                   </tr>
                   <tr
-                    v-for="order in filteredOrders"
+                    v-for="order in paginatedOrders"
                     :key="order.orderId"
                     class="order-row"
-                    :class="`status-${order.status}`"
+                    :class="{ ['status-' + order.status]: true, selected: order.orderId === highlightedRow }"
+                    @click="selectRow(order)"
                   >
                     <td class="col-order-id">
-                      <span class="id-badge">{{ order.id }}</span>
+                      <span class="order-id">{{ order.orderCode }}</span>
                     </td>
-                    <td class="col-customer">
-                      <div class="customer-info">
-                        <span class="customer-name">{{ order.customerName }}</span>
-                        <span class="customer-id">{{ order.customerId }}</span>
+                    <td>
+                      <div class="customer-cell">
+                        <span class="customer-avatar">{{ order.customerName.slice(0, 2).toUpperCase() }}</span>
+                        <div>
+                          <span class="customer-name">{{ order.customerName }}</span>
+                          <span class="customer-id">{{ order.customerId }}</span>
+                        </div>
                       </div>
                     </td>
                     <td class="col-items">
@@ -119,7 +123,7 @@
                     <td class="col-date">
                       {{ formatDate(order.createdAt) }}
                     </td>
-                    <td class="col-status">
+                    <td class="col-status" @click.stop>
                       <button
                         v-if="order.status === 'pending'"
                         class="btn btn-pending"
@@ -136,18 +140,20 @@
                       </button>
                       <span v-else class="done-text">✓ Completed</span>
                     </td>
-                    <td class="col-action">
-                      <button class="btn-view-detail" @click="openDetailModal(order)" title="View order details">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                          <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        View
-                      </button>
+                    <td>
+                      <button class="btn btn-view" @click.stop="openDetailModal(order)">View Details</button>
                     </td>
                   </tr>
                 </tbody>
               </table>
+                <div class="pagination-row">
+                  <span>SHOWING {{ (page - 1) * pageSize + 1 }}-{{ Math.min(page * pageSize, filteredOrders.length) }} OF {{ filteredOrders.length }}</span>
+                  <div class="pagination">
+                    <button :disabled="page === 1" @click="page--">&lt;</button>
+                    <button v-for="p in totalPages" :key="p" :class="{ active: p === page }" @click="page = p">{{ p }}</button>
+                    <button :disabled="page === totalPages" @click="page++">&gt;</button>
+                  </div>
+                </div>
             </div>
           </div>
         </div>
@@ -186,17 +192,33 @@
             </div>
 
             <div class="info-card card-order">
-              <h3 class="card-title">Order Information</h3>
+              <h3 class="card-title">Order Summary</h3>
               <div class="info-grid">
                 <div class="info-item">
-                  <span class="info-label">Created At</span>
-                  <span class="info-value">{{ formatFullDate(selectedOrder.createdAt) }}</span>
+                  <span class="info-label">Order Code</span>
+                  <span class="info-value">{{ selectedOrder.orderCode }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Order Status</span>
+                  <span class="info-value">{{ selectedOrder.status }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Provider</span>
+                  <span class="info-value">{{ selectedOrder.providerName }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Payment Status</span>
+                  <span class="info-value">{{ selectedOrder.paymentStatus }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Payment Method</span>
                   <span class="info-value" style="text-transform: uppercase; font-weight: 700; color: #1e3a8a;">
                     {{ selectedOrder.paymentMethod }}
                   </span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Items</span>
+                  <span class="info-value">{{ selectedOrder.item }}</span>
                 </div>
               </div>
             </div>
@@ -215,6 +237,24 @@
                 </div>
                 <div v-else class="no-receipt-error">
                   <span>⚠️ No receipt image attached by customer.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-card card-items" v-if="selectedOrder.items?.length">
+              <h3 class="card-title">Order Items</h3>
+              <div class="items-table">
+                <div class="items-row items-header">
+                  <span>Product</span>
+                  <span>Qty</span>
+                  <span>Price</span>
+                  <span>Total</span>
+                </div>
+                <div class="items-row" v-for="item in selectedOrder.items" :key="item.name">
+                  <span>{{ item.name }}</span>
+                  <span>{{ item.qty }}</span>
+                  <span>{{ item.price }}</span>
+                  <span>{{ item.total }}</span>
                 </div>
               </div>
             </div>
@@ -302,21 +342,32 @@ const fetchOrders = async () => {
     const response = await axios.get(`${API_BASE_URL}/orders/provider/${providerId}`)
     orders.value = response.data.map(order => {
       const customerRawId = order.customer?.id ?? order.customer_id
+      const rawItems = order.order_items ?? order.items ?? []
       return {
         orderId: order.id,
         id: order.order_code || `#O${order.id}`,
+        orderCode: order.order_code || `#O${order.id}`,
+        providerId: order.provider_id ?? order.provider?.id,
+        providerName: order.provider?.provider_name || order.provider?.name || `Provider ${order.provider_id}`,
         customerIdRaw: customerRawId,
         customerId: `#C${customerRawId}`,
         customerName: order.customer?.name || `Customer ${order.customer_id}`,
+        customerPhone: order.customer?.phone || order.customer_phone || '',
         status: order.status,
+        paymentStatus: order.payment_status || order.paymentStatus || 'pending',
         total: parseFloat(order.total),
         createdAt: new Date(order.created_at),
         completedAt: order.completed_at ? new Date(order.completed_at) : null,
-        items: [],
-        item: order.item ?? 1,
+        items: rawItems.map(item => ({
+          name: item.product?.name || item.name || `Item ${item.product_id ?? item.id ?? ''}`,
+          qty: item.quantity ?? item.qty ?? 1,
+          price: item.price != null ? `$${parseFloat(item.price).toFixed(2)}` : '$0.00',
+          total: item.quantity != null && item.price != null ? `$${(parseFloat(item.price) * item.quantity).toFixed(2)}` : '$0.00'
+        })),
+        item: order.item ?? rawItems.length ?? 1,
         // ✅ Map database fields correctly for payment verification
         paymentMethod: order.payment_method || order.paymentMethod || 'bank',
-        receiptUrl: order.receipt_url || order.receipt || order.payment_receipt || null
+        receiptUrl: order.payment_url || order.receipt_url || order.receipt || order.payment_receipt || null
       }
     })
   } catch (err) {
@@ -388,6 +439,20 @@ const filteredOrders = computed(() => {
     return sortOrder.value === 'desc' ? -diff : diff
   })
 })
+
+// --- Pagination / Selection (UI only)
+const page = ref(1)
+const pageSize = 10
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredOrders.value.length / pageSize)))
+const paginatedOrders = computed(() => {
+  const start = (page.value - 1) * pageSize
+  return filteredOrders.value.slice(start, start + pageSize)
+})
+
+const highlightedRow = ref(null)
+const selectRow = (order) => {
+  highlightedRow.value = order.orderId
+}
 
 const sectionTitle = computed(() => ({
   all: 'All Orders', pending: 'Pending Orders',
@@ -720,61 +785,40 @@ const formatFullDate = (date) => {
 /* Table */
 .table-container {
   overflow-x: auto;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-bg-white);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 1.5rem;
 }
 
 .orders-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
-  table-layout: fixed;
+  margin-bottom: 1rem;
 }
 
-.orders-table thead {
-  background: var(--color-bg-light);
-  border-bottom: 1px solid var(--color-border);
-}
+.orders-table thead { background: transparent; }
 
 .orders-table th {
-  padding: 12px;
-  text-align: center;
-  color: var(--color-text-secondary);
+  color: #64748b;
   font-weight: 600;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.2px;
+  padding: 0.8rem 0.5rem;
+  text-align: left;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #f1f5f9;
 }
+.order-row { cursor: pointer; }
+.order-row:hover { background: #f8fafc; }
+.order-row.selected { background: #f1f5f9; }
 
-.orders-table th:nth-child(1) { width: 14.28%; text-align: left; }
-.orders-table th:nth-child(2) { width: 14.28%; text-align: left; }
-.orders-table th:nth-child(3) { width: 10%; }
-.orders-table th:nth-child(4) { width: 12%; }
-.orders-table th:nth-child(5) { width: 16%; }
-.orders-table th:nth-child(6) { width: 14%; }
-.orders-table th:nth-child(7) { width: 12%; }
-
-.order-row {
-  border-bottom: 1px solid var(--color-border);
-  transition: background-color 0.15s ease;
-  border-left: 3px solid transparent;
+.order-row td {
+  padding: 1rem 0.5rem;
+  vertical-align: middle;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--color-text-primary);
 }
-
-.order-row:hover { background: var(--color-bg-light); }
-.order-row.status-pending    { border-left-color: var(--color-pending); }
-.order-row.status-delivering { border-left-color: var(--color-delivering); }
-.order-row.status-completed  { border-left-color: var(--color-completed); }
-
-.order-row td { padding: 12px; vertical-align: middle; color: var(--color-text-primary); }
-.col-order-id { text-align: left; }
-.col-customer { text-align: left; }
-.col-items    { text-align: center; }
-.col-total    { text-align: center; }
-.col-date     { text-align: center; }
-.col-status   { text-align: center; }
-.col-action   { text-align: center; }
-
 .id-badge {
   display: inline-block;
   padding: 5px 8px;
@@ -817,11 +861,10 @@ const formatFullDate = (date) => {
   transition: all 0.2s;
 }
 
-.btn-pending { background: #FF9800; color: white; }
-.btn-pending:hover { background: #F57C00; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3); }
-.btn-delivering { background: #2196F3; color: white; }
-.btn-delivering:hover { background: #1976D2; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3); }
-.done-text { font-size: 0.75rem; font-weight: 700; color: #4CAF50; }
+.btn-pending { background: #ea580c; color: white; }
+.btn-pending:hover { background: #c2410c; transform: translateY(-1px); }
+.btn-delivering { background: #2563eb; color: white; }
+.btn-delivering:hover { background: #1d4ed8; transform: translateY(-1px); }
 
 .btn-view-detail {
   display: inline-flex;
@@ -845,6 +888,79 @@ const formatFullDate = (date) => {
 
 .btn-view-detail:hover { background: #1976D2; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3); }
 .btn-view-detail svg { width: 13px; height: 13px; }
+
+.btn-view {
+  background: #e2e8f0;
+  color: #334155;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-view:hover { background: #cbd5e1; }
+.customer-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.customer-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e3f2fd;
+  color: #1565c0;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.order-id {
+  font-weight: 600;
+  color: #14532d;
+}
+
+/* Selected row */
+.orders-table tr.selected { background: rgba(33, 150, 243, 0.05); border-left-color: rgba(33,150,243,0.6); }
+
+/* Pagination */
+.pagination-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 600;
+}
+.pagination button {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  border-radius: 6px;
+  margin: 0 0.15rem;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination button.active { background: #14532d; color: #fff; border-color: #14532d; }
+@keyframes bannerSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+      
 
 /* Empty state */
 .empty-row td { padding: 0; border: none; }
@@ -947,6 +1063,14 @@ const formatFullDate = (date) => {
 .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .info-item { display: flex; flex-direction: column; gap: 3px; }
 .info-label { font-size: 0.68rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
+
+.card-items { border-left-color: #4A90E2; }
+.items-table { display: grid; gap: 10px; }
+.items-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f1f5; align-items: center; }
+.items-header { color: #666; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; }
+.items-row:last-child { border-bottom: none; }
+.items-row span { font-size: 0.9rem; color: #1a1a1a; }
+
 .info-value { font-size: 0.9rem; color: var(--color-text-primary); font-weight: 500; }
 
 /* ✅ Receipt CSS Elements */
@@ -1067,7 +1191,7 @@ const formatFullDate = (date) => {
   .stat-icon  { width: 40px; height: 40px; font-size: 1.2rem; }
   .orders-table { font-size: 0.8rem; }
   .orders-table th, .orders-table td { padding: 8px; }
-  .btn-view-detail { padding: 4px 6px; font-size: 0.6amp; }
+  .btn-view-detail { padding: 4px 6px; font-size: 0.6rem; }
   .modal-content { max-width: 95vw; }
   .modal-header { padding: 14px 16px; }
   .modal-body   { padding: 14px 16px 18px; gap: 10px; }

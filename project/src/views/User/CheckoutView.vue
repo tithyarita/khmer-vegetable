@@ -186,6 +186,10 @@
                     <label style="font-size: 12px; font-weight: 600;">Upload Remittance Receipt Copy</label>
                     <input @change="handleReceiptUpload" type="file" accept="image/*" />
                   </div>
+                  <div v-if="receiptPreview" class="receipt-preview-block">
+                    <p style="font-size: 12px; color: #334155; margin: 12px 0 6px;">Saved receipt: {{ receiptFileName }}</p>
+                    <img :src="receiptPreview" alt="Receipt preview" class="receipt-preview-img" />
+                  </div>
                 </div>
 
                 <div v-if="paymentMethod === 'cash'" class="cash-payment-box">
@@ -379,6 +383,9 @@ const serviceFee = ref(1)
 
 const providerPayments = ref([])
 const paymentReceipt = ref(null)
+const receiptPreview = ref('')
+const receiptFileName = ref('')
+const RECEIPT_STORAGE_KEY = 'checkoutReceipt'
 
 const errors = reactive({})
 
@@ -432,6 +439,62 @@ const fullUrl = (path) => {
   if (!path) return null
   if (path.startsWith('http')) return path
   return `${API_BASE_URL}${path}`
+}
+
+const dataURLToBlob = (dataUrl) => {
+  const parts = dataUrl.split(',')
+  const matches = parts[0].match(/:(.*?);/)
+  const mime = matches ? matches[1] : ''
+  const binary = atob(parts[1])
+  const len = binary.length
+  const buffer = new Uint8Array(len)
+  for (let i = 0; i < len; i += 1) {
+    buffer[i] = binary.charCodeAt(i)
+  }
+  return new Blob([buffer], { type: mime })
+}
+
+const restoreReceiptFromStorage = () => {
+  const stored = localStorage.getItem(RECEIPT_STORAGE_KEY)
+  if (!stored) return
+
+  try {
+    const parsed = JSON.parse(stored)
+    if (!parsed?.dataUrl) return
+
+    const blob = dataURLToBlob(parsed.dataUrl)
+    paymentReceipt.value = new File([blob], parsed.name || 'receipt.png', {
+      type: parsed.type || 'image/png',
+    })
+    receiptPreview.value = parsed.dataUrl
+    receiptFileName.value = parsed.name || ''
+    paymentMethod.value = 'qr'
+  } catch (err) {
+    console.error('Unable to restore saved receipt:', err)
+  }
+}
+
+const saveReceiptToStorage = (file, dataUrl) => {
+  try {
+    localStorage.setItem(
+      RECEIPT_STORAGE_KEY,
+      JSON.stringify({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dataUrl,
+      }),
+    )
+  } catch (err) {
+    console.warn('Unable to persist receipt to localStorage:', err)
+  }
+}
+
+const clearStoredReceipt = () => {
+  paymentReceipt.value = null
+  receiptPreview.value = ''
+  receiptFileName.value = ''
+  localStorage.removeItem(RECEIPT_STORAGE_KEY)
 }
 
 /* --------------------------
@@ -564,7 +627,18 @@ const handleExpiry = (e) => {
 const handleReceiptUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
-  paymentReceipt.value = file
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    const dataUrl = reader.result
+    if (!dataUrl || typeof dataUrl !== 'string') return
+
+    paymentReceipt.value = file
+    receiptPreview.value = dataUrl
+    receiptFileName.value = file.name
+    saveReceiptToStorage(file, dataUrl)
+  }
+  reader.readAsDataURL(file)
 }
 
 /* --------------------------
@@ -585,37 +659,46 @@ const confirmOrder = async () => {
 
     // Group items dynamically by their provider ID to structure your `ProviderOrders` layout
     const providerGroups = orderItems.value.reduce((groups, item) => {
-      const pId = item.provider_id || item.providerId
+      const pId = Number(
+        item.provider_id ||
+        item.providerId ||
+        item.provider?.user_id ||
+        item.provider?.id ||
+        item.provider?.provider_id ||
+        0,
+      )
+      if (!pId) return groups
+
       if (!groups[pId]) {
         groups[pId] = {
-          providerId: pId,
+          provider_id: pId,
           subtotal: 0,
           items: []
         }
       }
+
       const itemCost = itemTotal(item)
       groups[pId].subtotal += itemCost
       groups[pId].items.push({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        unitPrice: Number(item.unitPrice || item.price || 0),
-        totalPrice: itemCost
+        product_id: Number(item.id || item.product_id || item.productId || 0),
+        quantity: Number(item.quantity || 0),
       })
+
       return groups
     }, {})
 
     // Convert object to flat array for easy backend loop consumption
     const providerOrdersPayload = Object.values(providerGroups)
-    console.log('first item:', orderItems.value[0])        // ← ADD
-    console.log('providerGroups:', providerOrdersPayload)  // ← ADD
-    console.log('customer_id:', userStore.user?.id)         // ← ADD
-    console.log('providerOrders:', providerOrdersPayload)   // ← ADD
-    console.log('orderItems:', orderItems.value)            // ← ADD
+
+    if (providerOrdersPayload.length === 0) {
+      errors.providerOrders = 'Unable to determine provider for cart items. Please refresh your cart or re-add items.'
+      loading.value = false
+      return
+    }
 
     const formData = new FormData()
     formData.append('shipping', JSON.stringify(shipping))
-    formData.append('paymentMethod', paymentMethod.value)
+    formData.append('payment_method', paymentMethod.value)
     formData.append('total', total.value)
     formData.append('subtotal', subtotal.value)
     formData.append('shippingFee', shippingFee.value)
@@ -624,7 +707,12 @@ const confirmOrder = async () => {
     // Pass standard global list & mapped vendor suborders for backend processing
     formData.append('items', JSON.stringify(orderItems.value))
     formData.append('providerOrders', JSON.stringify(providerOrdersPayload))
-    formData.append('customer_id', String(userStore.user?.id || ''))
+
+    const customerId = Number(userStore.user?.id ?? userStore.user?.user_id ?? 0)
+    if (!customerId) {
+      throw new Error('Unable to determine authenticated customer id.')
+    }
+    formData.append('customer_id', String(customerId))
 
     if (paymentMethod.value === 'qr' && paymentReceipt.value) {
       formData.append('receipt', paymentReceipt.value)
@@ -640,7 +728,8 @@ const confirmOrder = async () => {
 
     orderResult.value = 'success'
     orderMessage.value = 'Order placed successfully!'
-    cartStore.clearCart() 
+    clearStoredReceipt()
+    cartStore.clearCart()
   } catch (err) {
     console.error(err)
     console.error('Response data:', err.response?.data)  // ← shows exact backend error
@@ -679,6 +768,7 @@ watch(
 
 onMounted(async () => {
   await loadUserData()
+  restoreReceiptFromStorage()
   await cartStore.fetchCartFromBackend()  // ← ADD THIS
   await loadProviderPayments()
   
@@ -735,12 +825,22 @@ onMounted(async () => {
   z-index: 2;
 }
 
-.checkout-grid {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 20px;
+.receipt-preview-block {
+  margin-top: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  padding: 12px;
 }
 
+.receipt-preview-img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 12px;
+  margin-top: 8px;
+  display: block;
+}
 .checkout-left {
   display: flex;
   flex-direction: column;

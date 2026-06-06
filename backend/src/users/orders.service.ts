@@ -4,12 +4,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 
 import { orders, OrderStatus, PaymentStatus } from './orders.entity';
 import { orderItems } from './order-items.entity';
 import { Product } from '../product/product.entity';
-import { Customer } from '../customer/customer.entity';import { ReportService } from '../report/report.service';
+import { Customer, CustomerStatus } from '../customer/customer.entity';
+import { users } from '../users/users.entity';
+import { ReportService } from '../report/report.service';
 import { CreateOrderDto, UpdateOrderDto } from './dto/orders.dto';
 
 @Injectable()
@@ -26,98 +28,257 @@ export class OrdersService {
 
     @InjectRepository(Customer)
     private customerRepo: Repository<Customer>,
+    @InjectRepository(users)
+    private usersRepo: Repository<users>,
 
     private readonly reportService: ReportService,
     private dataSource: DataSource,
   ) {}
 
+  private async ensureCustomerExists(customerId: number) {
+    const customer = await this.customerRepo.findOne({
+      where: { user_id: customerId },
+    });
+
+    if (customer) return customer;
+
+    // Try to create a Customer record based on existing users table
+    const user = await this.usersRepo.findOne({ where: { id: customerId } });
+    if (!user) {
+      throw new BadRequestException(
+        `Customer record not found for user id ${customerId}. Please register or contact support.`,
+      );
+    }
+
+    const newCustomer = this.customerRepo.create({
+      user_id: customerId,
+      name: user.name || 'Customer',
+      phone: user.phone ?? undefined,
+      status: CustomerStatus.ACTIVE,
+    });
+
+    try {
+      return await this.customerRepo.save(newCustomer);
+    } catch (err) {
+      console.error('Failed to auto-create customer record:', err);
+      throw new BadRequestException(
+        `Customer record not found for user id ${customerId}. Please register or contact support.`,
+      );
+    }
+  }
+
+  private async getExistingCustomer(customerId: number) {
+    const customer = await this.customerRepo.findOne({
+      where: { user_id: customerId },
+    });
+
+    if (!customer) {
+      throw new BadRequestException(
+        `Customer record not found for user id ${customerId}. Please register or contact support.`,
+      );
+    }
+
+    return customer;
+  }
+
   // =========================
   // CREATE ORDER
   // =========================
-async create(dto: CreateOrderDto, paymentProof?: string) {
-  return this.dataSource.transaction(async (manager) => {
-    const orderRepo = manager.getRepository(orders);
-    const itemRepo = manager.getRepository(orderItems);
-    const productRepo = manager.getRepository(Product);
+  async create(dto: CreateOrderDto, paymentProof?: string) {
+    return this.dataSource.transaction(async (manager) => {
+      const orderRepo = manager.getRepository(orders);
+      const itemRepo = manager.getRepository(orderItems);
+      const productRepo = manager.getRepository(Product);
 
-    const items = dto.items ?? [];
+      const items = dto.items ?? [];
 
-    if (items.length === 0) {
-      throw new BadRequestException('Order must have items');
-    }
-
-    const productIds = items.map(i => i.product_id);
-
-    const products = await productRepo.find({
-      where: { id: In(productIds) },
-    });
-
-    if (products.length !== productIds.length) {
-      throw new NotFoundException('Some products not found');
-    }
-
-    const productMap = new Map(products.map(p => [p.id, p]));
-
-    let total = 0;
-
-    for (const item of items) {
-      const product = productMap.get(item.product_id);
-
-      if (!product) continue;
-
-      if (Number(product.stock) < item.quantity) {
-        throw new BadRequestException(`${product.name} out of stock`);
+      if (items.length === 0) {
+        throw new BadRequestException('Order must have items');
       }
 
-      total += Number(product.price) * item.quantity;
-    }
+      const productIds = items.map((i) => i.product_id);
 
-    const order = orderRepo.create({
-      order_code: `ORD-${Date.now()}`,
-      customer_id: dto.customer_id,
-      provider_id: dto.provider_id,
-      status: OrderStatus.PENDING,
-      total,
-      payment_method: dto.payment_method,
-      payment_status: dto.payment_status ?? PaymentStatus.PENDING,
-      payment_proof: paymentProof ?? null,
-    });
+      const products = await productRepo.find({
+        where: { id: In(productIds) },
+      });
 
-    const savedOrder = await orderRepo.save(order);
-
-    const orderItemsEntities = items.map(i =>
-      itemRepo.create({
-        order: { id: savedOrder.id },
-        product: { id: i.product_id },
-        quantity: i.quantity,
-        price: productMap.get(i.product_id)!.price,
-      }),
-    );
-
-    await itemRepo.save(orderItemsEntities);
-
-    for (const item of items) {
-      const product = productMap.get(item.product_id);
-      if (product) {
-        product.stock = Number(product.stock) - item.quantity;
+      if (products.length !== productIds.length) {
+        throw new NotFoundException('Some products not found');
       }
-    }
 
-    await productRepo.save(products);
+      const productMap = new Map(products.map((p) => [p.id, p]));
 
-    try {
-      await this.reportService.updateForOrder(savedOrder);
-    } catch (error) {
-      console.error('Failed to update report after order creation:', error);
-    }
+      let total = 0;
 
-    return {
-      message: 'Order created successfully',
-      data: savedOrder,
-    };
-  });
-}
+      for (const item of items) {
+        const product = productMap.get(item.product_id);
 
+        if (!product) continue;
+
+        if (Number(product.stock) < item.quantity) {
+          throw new BadRequestException(`${product.name} out of stock`);
+        }
+
+        total += Number(product.price) * item.quantity;
+      }
+
+      await this.ensureCustomerExists(dto.customer_id);
+
+      const order = orderRepo.create({
+        order_code: `ORD-${Date.now()}`,
+        customer_id: dto.customer_id,
+        provider_id: dto.provider_id,
+        status: OrderStatus.PENDING,
+        total,
+        item: items.length,
+        payment_method: dto.payment_method,
+        payment_status: dto.payment_status ?? PaymentStatus.PENDING,
+        payment_proof: paymentProof ?? null,
+      });
+
+      const savedOrder = await orderRepo.save(order);
+
+      const orderItemsEntities = items.map((i) =>
+        itemRepo.create({
+          order: { id: savedOrder.id },
+          product: { id: i.product_id },
+          quantity: i.quantity,
+          price: productMap.get(i.product_id)!.price,
+        }),
+      );
+
+      await itemRepo.save(orderItemsEntities);
+
+      for (const item of items) {
+        const product = productMap.get(item.product_id);
+        if (product) {
+          product.stock = Number(product.stock) - item.quantity;
+        }
+      }
+
+      await productRepo.save(products);
+
+      try {
+        await this.reportService.updateForOrder(savedOrder);
+      } catch (error) {
+        console.error('Failed to update report after order creation:', error);
+      }
+
+      return {
+        message: 'Order created successfully',
+        data: savedOrder,
+      };
+    });
+  }
+
+  async createMany(dtos: CreateOrderDto[], paymentProof?: string) {
+    return this.dataSource.transaction(async (manager) => {
+      const orderRepo = manager.getRepository(orders);
+      const itemRepo = manager.getRepository(orderItems);
+      const productRepo = manager.getRepository(Product);
+
+      const allItems = dtos.flatMap((dto) => dto.items ?? []);
+
+      if (allItems.length === 0) {
+        throw new BadRequestException('Order must have items');
+      }
+
+      if (dtos.length === 0) {
+        throw new BadRequestException('No orders provided');
+      }
+
+      await this.ensureCustomerExists(dtos[0].customer_id);
+
+      const productIds = [...new Set(allItems.map((i) => i.product_id))];
+
+      const products = await productRepo.find({
+        where: { id: In(productIds) },
+      });
+
+      if (products.length !== productIds.length) {
+        throw new NotFoundException('Some products not found');
+      }
+
+      const productMap = new Map(products.map((p) => [p.id, p]));
+
+      const totalQuantities = new Map<number, number>();
+      for (const item of allItems) {
+        if (!item.product_id || item.quantity <= 0) continue;
+        totalQuantities.set(
+          item.product_id,
+          (totalQuantities.get(item.product_id) || 0) + item.quantity,
+        );
+      }
+
+      for (const [productId, quantity] of totalQuantities.entries()) {
+        const product = productMap.get(productId);
+        if (!product) continue;
+        if (Number(product.stock) < quantity) {
+          throw new BadRequestException(`${product.name} out of stock`);
+        }
+      }
+
+      const savedOrders = [] as any[];
+
+      for (const dto of dtos) {
+        const items = dto.items ?? [];
+        let total = 0;
+
+        for (const item of items) {
+          const product = productMap.get(item.product_id);
+          if (!product) continue;
+          total += Number(product.price) * item.quantity;
+        }
+
+        const order = orderRepo.create({
+          order_code: `ORD-${Date.now()}-${dto.provider_id || '0'}`,
+          customer_id: dto.customer_id,
+          provider_id: dto.provider_id,
+          status: dto.status ?? OrderStatus.PENDING,
+          total,
+          item: items.length,
+          payment_method: dto.payment_method,
+          payment_status: dto.payment_status ?? PaymentStatus.PENDING,
+          payment_proof: paymentProof ?? null,
+        });
+
+        const savedOrder = await orderRepo.save(order);
+
+        const orderItemsEntities = items.map((item) =>
+          itemRepo.create({
+            order: { id: savedOrder.id },
+            product: { id: item.product_id },
+            quantity: item.quantity,
+            price: productMap.get(item.product_id)!.price,
+          }),
+        );
+
+        await itemRepo.save(orderItemsEntities);
+        savedOrders.push(savedOrder);
+      }
+
+      for (const [productId, quantity] of totalQuantities.entries()) {
+        const product = productMap.get(productId);
+        if (!product) continue;
+        product.stock = Number(product.stock) - quantity;
+      }
+
+      await productRepo.save(products);
+
+      for (const savedOrder of savedOrders) {
+        try {
+          await this.reportService.updateForOrder(savedOrder);
+        } catch (error) {
+          console.error('Failed to update report after order creation:', error);
+        }
+      }
+
+      return {
+        message: 'Orders created successfully',
+        data: savedOrders,
+      };
+    });
+  }
   // =========================
   // GET ALL
   // =========================
@@ -169,29 +330,33 @@ async create(dto: CreateOrderDto, paymentProof?: string) {
       order: { id: 'DESC' },
     });
 
-    const totalOrders = orders.length
+    const totalOrders = orders.length;
     const totalRevenue = orders.reduce(
       (sum, order) => sum + Number(order.total || 0),
       0,
-    )
-    const pendingOrders = orders.filter((order) => order.status === OrderStatus.PENDING).length
-    const completedOrders = orders.filter((order) => order.status === OrderStatus.COMPLETED).length
+    );
+    const pendingOrders = orders.filter(
+      (order) => order.status === OrderStatus.PENDING,
+    ).length;
+    const completedOrders = orders.filter(
+      (order) => order.status === OrderStatus.COMPLETED,
+    ).length;
 
-    const now = new Date()
-    const currentYear = now.getFullYear()
-    const currentMonth = now.getMonth()
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
 
     const monthOrders = orders.filter((order) => {
-      const created = new Date(order.created_at)
+      const created = new Date(order.created_at);
       return (
         created.getFullYear() === currentYear &&
         created.getMonth() === currentMonth
-      )
-    })
+      );
+    });
     const monthRevenue = monthOrders.reduce(
       (sum, order) => sum + Number(order.total || 0),
       0,
-    )
+    );
 
     return {
       totalOrders,
@@ -201,7 +366,7 @@ async create(dto: CreateOrderDto, paymentProof?: string) {
       monthOrders: monthOrders.length,
       monthRevenue: Number(monthRevenue.toFixed(2)),
       revenueOrders: totalOrders,
-    }
+    };
   }
 
   // =========================

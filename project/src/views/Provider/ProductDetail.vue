@@ -280,7 +280,7 @@ const deleteProduct = async () => {
   flex-shrink: 0;
   padding: 0;
   height: 100%;
-  magin: 0;
+  margin: 0;
 }
 
 .main-viewport-content {
