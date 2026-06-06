@@ -1,11 +1,14 @@
 <script setup>
-import { ref, watch } from "vue"
+import { ref, watch, computed } from "vue"
 import { useProviderStore } from "@/stores/providerStore"
 import axios from "axios"
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 const store = useProviderStore()
+const providerId = computed(() =>
+  store.provider.user_id || store.provider.id || store.provider.user?.id || null
+)
 
 // ===================================
 // STATE
@@ -140,14 +143,17 @@ async function handleQrUpload(e, index) {
       String(index)
     )
 
+    const token = localStorage.getItem('token')
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined
+
+    if (!providerId.value) {
+      throw new Error('Provider ID is missing. Please refresh the page and try again.')
+    }
+
     const res = await axios.put(
-      `${BASE}/providers/${store.provider.user_id}/bank-qr`,
+      `${BASE}/providers/${providerId.value}/bank-qr`,
       formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      { headers }
     )
 
     localBanks.value[index].qr =

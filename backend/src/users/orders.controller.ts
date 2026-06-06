@@ -43,10 +43,7 @@ export class OrdersController {
       }),
     }),
   )
-  async create(
-    @Body() body: any,
-    @UploadedFile() file?: MulterFile,
-  ) {
+  async create(@Body() body: any, @UploadedFile() file?: MulterFile) {
     try {
       const dto: CreateOrderDto = {
         customer_id: Number(body.customer_id),
@@ -107,10 +104,7 @@ export class OrdersController {
   // UPDATE ORDER
   // =========================
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateOrderDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateOrderDto) {
     return this.ordersService.update(id, dto);
   }
 

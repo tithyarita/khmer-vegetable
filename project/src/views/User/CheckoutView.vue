@@ -162,7 +162,7 @@
                         class="bank-payment-item"
                       >
                         <img
-                          :src="`http://localhost:3000${bank.qr}`"
+                          :src="fullUrl(bank.qr)"
                           class="bank-qr"
                           alt="QR Payment"
                         />
@@ -428,6 +428,12 @@ const toggleSection = (section) => {
   activeSection.value = activeSection.value === section ? '' : section
 }
 
+const fullUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return `${API_BASE_URL}${path}`
+}
+
 /* --------------------------
     USER DATA
 -------------------------- */
@@ -492,7 +498,10 @@ const loadProviderPayments = async () => {
     providerPayments.value = responses.map(res => ({
       providerId: res.data.user_id,
       providerName: res.data.provider_name,
-      banks: res.data.banks || [],
+      banks: (res.data.banks || []).map((bank) => ({
+        ...bank,
+        qr: fullUrl(bank.qr),
+      })),
     }))
   } catch (err) {
     console.error("Failed to load provider payments:", err)
@@ -626,7 +635,6 @@ const confirmOrder = async () => {
     await axios.post(`${API_BASE_URL}/orders`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
       },
     })
 

@@ -20,10 +20,10 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { useProviderStore } from '@/stores/providerStore'
+import { useUserStore } from '@/stores/userStore'
 
 const router = useRouter()
-const store = useProviderStore()
+const userStore = useUserStore()
 
 const email = ref('')
 const password = ref('')
@@ -39,19 +39,12 @@ async function handleLogin(e) {
       email: email.value,
       password: password.value
     })
+    const access_token = res.data.access_token || res.data?.token || ''
     const user = res.data.user
     if (!user || user.role !== 'provider') {
       throw new Error('Not a provider account')
     }
-    // Save provider info to store and localStorage
-    store.updateProfile({
-      name: user.name,
-      location: user.location || '',
-      id: user.id || '',
-      joined: user.created_at ? new Date(user.created_at).toLocaleDateString() : '',
-      idNumber: user.idNumber || '',
-      // Add more fields as needed
-    })
+    userStore.setUser(user, access_token)
     router.push('/provider/profile')
   } catch (err) {
     error.value = err.response?.data?.message || err.message

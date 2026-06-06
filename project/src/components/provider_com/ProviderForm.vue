@@ -111,7 +111,7 @@ const saveProvider = async () => {
         <label>Provider ID</label>
 
         <input
-          :value="store.provider.user_id"
+          :value="store.provider.user_id || store.provider.id || store.provider.user?.id"
           type="text"
           readonly
           class="readonly-input"

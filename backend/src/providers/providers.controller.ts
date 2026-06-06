@@ -39,16 +39,16 @@ interface UpdateProviderBody {
   id_number?: string;
 }
 
-interface MulterFile {
-  fieldname: string;
-  originalname: string;
-  encoding: string;
-  mimetype: string;
-  size: number;
-  destination: string;
-  filename: string;
-  path: string;
-}
+// interface MulterFile {
+//   fieldname: string;
+//   originalname: string;
+//   encoding: string;
+//   mimetype: string;
+//   size: number;
+//   destination: string;
+//   filename: string;
+//   path: string;
+// }
 
 @Controller('providers')
 export class ProvidersController {
@@ -69,7 +69,7 @@ export class ProvidersController {
   async getProvider(@Param('id') id: string): Promise<Provider | null> {
     return this.providerRepo.findOne({
       where: { user_id: Number(id) },
-      relations: ['user', 'banks', 'reviews'],
+      relations: ['user', 'banks'],
     });
   }
 
@@ -121,7 +121,7 @@ export class ProvidersController {
 
     return this.providerRepo.findOne({
       where: { user_id: userId },
-      relations: ['user', 'banks', 'reviews'],
+      relations: ['user', 'banks'],
     });
   }
 
@@ -129,49 +129,59 @@ export class ProvidersController {
   // UPLOAD AVATAR
   // ========================================
   @Put(':id/avatar')
-  @UseInterceptors(
-    FileInterceptor('avatar', { storage: memoryStorage() }),
-  )
+  @UseInterceptors(FileInterceptor('avatar', { storage: memoryStorage() }))
   async uploadAvatar(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File | undefined,
   ): Promise<{ avatar: string } | { message: string }> {
     if (!file) return { message: 'No file uploaded' };
-    const avatar = await uploadToCloudinary(file.buffer, 'providers/avatars');
-    await this.providerRepo.update(
-      { user_id: Number(id) },
-      { avatar },
-    );
-    return { avatar };
+    try {
+      const avatar = await uploadToCloudinary(
+        file.buffer,
+        'providers/avatars',
+        file.originalname,
+      );
+      await this.providerRepo.update({ user_id: Number(id) }, { avatar });
+      return { avatar };
+    } catch (err) {
+      console.error('AVATAR UPLOAD ERROR:', err);
+      throw new BadRequestException(
+        'Failed to upload avatar. Please try again.',
+      );
+    }
   }
 
   // ========================================
   // UPLOAD FARM IMAGE
   // ========================================
   @Put(':id/farm-image')
-  @UseInterceptors(
-    FileInterceptor('farm', { storage: memoryStorage() }),
-  )
+  @UseInterceptors(FileInterceptor('farm', { storage: memoryStorage() }))
   async uploadFarmImage(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File | undefined,
   ): Promise<{ farm_image: string } | { message: string }> {
     if (!file) return { message: 'No file uploaded' };
-    const farm_image = await uploadToCloudinary(file.buffer, 'providers/farms');
-    await this.providerRepo.update(
-      { user_id: Number(id) },
-      { farm_image },
-    );
-    return { farm_image };
+    try {
+      const farm_image = await uploadToCloudinary(
+        file.buffer,
+        'providers/farms',
+        file.originalname,
+      );
+      await this.providerRepo.update({ user_id: Number(id) }, { farm_image });
+      return { farm_image };
+    } catch (err) {
+      console.error('FARM IMAGE UPLOAD ERROR:', err);
+      throw new BadRequestException(
+        'Failed to upload farm image. Please try again.',
+      );
+    }
   }
 
   // ========================================
   // UPLOAD BANK QR
   // ========================================
   @Put(':id/bank-qr')
-  @UseInterceptors(
-    FileInterceptor('qr', { storage: memoryStorage() }),
-  )
+  @UseInterceptors(FileInterceptor('qr', { storage: memoryStorage() }))
   async uploadBankQr(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File | undefined,

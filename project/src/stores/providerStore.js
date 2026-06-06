@@ -52,13 +52,28 @@ export const useProviderStore = defineStore('provider', {
       }
     },
 
+    getProviderId() {
+      return this.provider.user_id || this.provider.id || this.provider.user?.id || null
+    },
+
     // ========================================
     // UPDATE PROVIDER
     // ========================================
     async updateProvider(data) {
+      const providerId = this.getProviderId()
+      if (!providerId) {
+        throw new Error('Provider ID is required to update provider data.')
+      }
+
+      const token = localStorage.getItem('token')
+      const headers = token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined
+
       const res = await axios.put(
-        `${BASE}/providers/${this.provider.user_id}`,
-        data
+        `${BASE}/providers/${providerId}`,
+        data,
+        { headers },
       )
       const d = res.data
 

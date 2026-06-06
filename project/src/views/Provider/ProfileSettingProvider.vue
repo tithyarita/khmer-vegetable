@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, computed } from "vue"
 import { useProviderStore } from "@/stores/providerStore"
+import { useProviderOrderStore } from "@/stores/providerOrderStore"
 
 import SideBar from '../../components/provider_com/sideBar.vue'
 import PageHeader from '../../components/provider_com/pageHeader.vue'
@@ -11,8 +12,10 @@ import BankAccount  from "../../components/provider_com/BankAccount.vue"
 // 1. Import your newly created Customer Feedback component
 import CustomerFeedback from "../../components/provider_com/CustomerFeedback.vue"
 
-const store       = useProviderStore()
-const currentUser = JSON.parse(localStorage.getItem("user"))
+const store = useProviderStore()
+const providerOrderStore = useProviderOrderStore()
+const currentUser = JSON.parse(localStorage.getItem("user") || 'null')
+const providerId = currentUser?.id || currentUser?.user_id || null
 
 // 2. Calculate dynamic average rating from your backend feedbacks array
 const dynamicRating = computed(() => {
@@ -24,19 +27,40 @@ const dynamicRating = computed(() => {
   return `${average.toFixed(1)} ★`
 })
 
+const activeServices = computed(() => {
+  if (!providerOrderStore.orders?.length) return 0
+  return providerOrderStore.orders.filter(order => {
+    const status = String(order.status || '').toLowerCase()
+    return status !== 'cancelled' && status !== 'rejected'
+  }).length
+})
+
+const totalBookings = computed(() => providerOrderStore.orders?.length || 0)
+
+const totalRevenue = computed(() => {
+  return providerOrderStore.orders.reduce((sum, order) => {
+    return sum + (Number(order.total) || 0)
+  }, 0)
+})
+
 // 3. Keep stats dynamic by turning it into a computed property
 const stats = computed(() => [
-  { title: "Active Services", value: 12,        icon: "ri-briefcase-line"           },
-  { title: "Bookings",        value: 89,        icon: "ri-calendar-check-line"      },
-  { title: "Revenue",         value: "$4,320",  icon: "ri-money-dollar-circle-line" },
-  // Linked directly to your real database feedback rating
-  { title: "Rating",          value: dynamicRating.value,  icon: "ri-star-smile-line" },
+  { title: "Active Services", value: activeServices.value, icon: "🛠️" },
+  { title: "Bookings",        value: totalBookings.value, icon: "📅" },
+  { title: "Revenue",         value: `$${totalRevenue.value.toLocaleString()}`, icon: "💰" },
+  { title: "Rating",          value: dynamicRating.value, icon: "⭐" },
 ])
 
 onMounted(async () => {
-  if (!currentUser) return
-  // This automatically loads both the provider data and their feedbacks
-  await store.loadProvider(currentUser.id)
+  if (!providerId) {
+    console.warn('Provider profile cannot load: missing authenticated user id.')
+    return
+  }
+  // Load provider profile, feedbacks, and provider orders for stats
+  await Promise.all([
+    store.loadProvider(providerId),
+    providerOrderStore.fetchProviderOrders(providerId),
+  ])
 })
 </script>
 
@@ -57,7 +81,7 @@ onMounted(async () => {
       <section class="stats-grid section-pad">
         <div v-for="(item, i) in stats" :key="i" class="stats-card">
           <div class="stats-icon">
-            <i :class="item.icon"></i>
+            <span class="stats-icon-text">{{ item.icon }}</span>
           </div>
           <h2>{{ item.value }}</h2>
           <p>{{ item.title }}</p>
@@ -154,9 +178,9 @@ onMounted(async () => {
   margin-bottom: 16px;
 }
 
-.stats-icon i {
-  color: #16a34a;
-  font-size: 1.3rem;
+.stats-icon-text {
+  font-size: 1.2rem;
+  line-height: 1;
 }
 
 .stats-card h2 {

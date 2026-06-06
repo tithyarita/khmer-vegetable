@@ -252,7 +252,7 @@ async function saveProfile() {
       formData.append('avatar', editForm.value.avatar)
     }
     const res = await axios.put(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.id}`, formData, {
-      headers: { Authorization: `Bearer ${userStore.token}`, 'Content-Type': 'multipart/form-data' }
+      headers: { Authorization: `Bearer ${userStore.token}` }
     })
     userStore.setUser(res.data, userStore.token)
     editingProfile.value = false

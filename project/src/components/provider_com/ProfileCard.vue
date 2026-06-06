@@ -7,6 +7,10 @@ const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 const store = useProviderStore()
 
+const providerId = computed(() =>
+  store.provider.user_id || store.provider.id || store.provider.user?.id || null
+)
+
 const token = localStorage.getItem("token")
 
 const avatarInput = ref(null)
@@ -20,15 +24,19 @@ const localIdNumber = ref(
 
 async function saveIdNumber() {
   try {
-    await axios.put(
-      `${BASE}/providers/${store.provider.user_id}`,
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined
+
+    if (!providerId.value) {
+      throw new Error('Provider ID is missing. Please refresh the page and try again.')
+    }
+
+    const res = await axios.put(
+      `${BASE}/providers/${providerId.value}`,
       {
         id_number: localIdNumber.value,
       },
       {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
       }
     )
 
@@ -87,14 +95,21 @@ async function handleAvatar(e) {
 
     formData.append("avatar", file)
 
+    const headers = token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : undefined
+
+    if (!providerId.value) {
+      throw new Error('Provider ID is missing. Please refresh the page and try again.')
+    }
+
     const res = await axios.put(
-      `${BASE}/providers/${store.provider.user_id}/avatar`,
+      `${BASE}/providers/${providerId.value}/avatar`,
       formData,
       {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
       }
     )
 
@@ -128,14 +143,21 @@ async function handleFarm(e) {
 
     formData.append("farm", file)
 
+    const headers = token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : undefined
+
+    if (!providerId.value) {
+      throw new Error('Provider ID is missing. Please refresh the page and try again.')
+    }
+
     const res = await axios.put(
-      `${BASE}/providers/${store.provider.user_id}/farm-image`,
+      `${BASE}/providers/${providerId.value}/farm-image`,
       formData,
       {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
       }
     )
 
@@ -197,7 +219,7 @@ async function handleFarm(e) {
       <div class="id-meta">
         <div class="meta-item">
           <span class="meta-lbl">Provider ID</span>
-          <span class="meta-val">{{ store.provider.user_id || "—" }}</span>
+          <span class="meta-val">{{ providerId || "—" }}</span>
         </div>
         <div class="meta-item">
           <span class="meta-lbl">Joined</span>
@@ -387,13 +409,21 @@ async function handleFarm(e) {
 .farm-bg {
   position: absolute;
   inset: 0;
-  background: #f3f4f3;
+  overflow: hidden;
+
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+.farm-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  image-rendering: auto;
   transition: transform 0.35s ease;
 }
-.farm-card:hover .farm-bg { transform: scale(1.05); }
+.farm-card:hover .farm-bg img { transform: scale(1.05); }
 
 .farm-gradient {
   position: absolute;
