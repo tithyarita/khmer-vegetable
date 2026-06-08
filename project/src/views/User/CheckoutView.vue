@@ -546,26 +546,41 @@ const loadProviderPayments = async () => {
 
     const providerIds = [
       ...new Set(
-        orderItems.value.map(
-          item => item.provider_id || item.providerId
-        )
+        orderItems.value
+          .map(
+            item =>
+              item.provider_id ||
+              item.providerId ||
+              item.provider?.user_id ||
+              item.provider?.id ||
+              item.provider?.provider_id
+          )
+          .filter(Boolean)
       ),
     ]
 
     const responses = await Promise.all(
-      providerIds.map(id =>
-        axios.get(`${API_BASE_URL}/providers/${id}`)
-      )
+      providerIds.map(async (id) => {
+        try {
+          const res = await axios.get(`${API_BASE_URL}/providers/${id}`)
+          return res.data
+        } catch (e) {
+          console.error(`Failed to load payment details for provider ${id}`, e)
+          return null
+        }
+      })
     )
 
-    providerPayments.value = responses.map(res => ({
-      providerId: res.data.user_id,
-      providerName: res.data.provider_name,
-      banks: (res.data.banks || []).map((bank) => ({
-        ...bank,
-        qr: fullUrl(bank.qr),
-      })),
-    }))
+    providerPayments.value = responses
+      .filter(Boolean)
+      .map(data => ({
+        providerId: data.user_id,
+        providerName: data.provider_name,
+        banks: (data.banks || []).map((bank) => ({
+          ...bank,
+          qr: fullUrl(bank.qr),
+        })),
+      }))
   } catch (err) {
     console.error("Failed to load provider payments:", err)
   }

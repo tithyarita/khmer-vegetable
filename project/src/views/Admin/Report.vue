@@ -318,6 +318,7 @@ import axios from 'axios'
 import { io } from 'socket.io-client'
 
 import ReportMetricCard from '../../components/Admin/Reportmetriccard.vue'
+import RevenueTrendChart from '../../components/Admin/Revenuetrendchart.vue'
 
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
@@ -430,6 +431,7 @@ const filteredOrdersByTimeframe = computed(() => {
     if (activePeriod.value === 'Weekly') {
       const oneWeekAgo = new Date()
       oneWeekAgo.setDate(now.getDate() - 7)
+      oneWeekAgo.setHours(0, 0, 0, 0)
       return orderDate >= oneWeekAgo && orderDate <= now
     }
 
@@ -529,6 +531,7 @@ const filteredReports = computed(() => {
     if (activePeriod.value === 'Weekly') {
       const oneWeekAgo = new Date()
       oneWeekAgo.setDate(now.getDate() - 7)
+      oneWeekAgo.setHours(0, 0, 0, 0)
       return rDate >= oneWeekAgo && rDate <= now
     }
     if (activePeriod.value === 'Monthly') {

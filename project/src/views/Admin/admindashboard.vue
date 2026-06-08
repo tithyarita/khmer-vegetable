@@ -298,9 +298,7 @@ const executeFilteringEngine = () => {
       processed = processed.filter(o => o.createdAt >= referenceStart)
     } 
     else if (activePeriod.value === "Weekly") {
-      const currentDay = now.getDay() 
-      const distanceToSunday = currentDay // assuming week starts on Sunday
-      referenceStart.setDate(now.getDate() - distanceToSunday)
+      referenceStart.setDate(now.getDate() - 7)
       referenceStart.setHours(0, 0, 0, 0)
       processed = processed.filter(o => o.createdAt >= referenceStart)
     } 

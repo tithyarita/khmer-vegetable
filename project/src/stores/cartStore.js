@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import router from '@/router'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
@@ -106,6 +107,15 @@ export const useCartStore = defineStore('cart', () => {
 
   // ================= ACTIONS =================
   const addToCart = async (product) => {
+    const user = JSON.parse(localStorage.getItem('user') || 'null')
+    const userId = Number(user?.id ?? user?.user_id ?? 0)
+
+    if (!userId) {
+      alert('You need to login first to add items to your cart.')
+      router.push('/user/login')
+      return
+    }
+
     const stockValue = product?.stock
     if (stockValue !== undefined && stockValue !== null) {
       const availableStock = Number(stockValue)
@@ -128,8 +138,6 @@ export const useCartStore = defineStore('cart', () => {
       'Unknown'
     const quantityToAdd = Number(product.quantity ?? 1) || 1
     const productId = Number(product.id ?? product.product_id ?? product.productId ?? 0)
-    const user = JSON.parse(localStorage.getItem('user') || 'null')
-    const userId = Number(user?.id ?? user?.user_id ?? 0)
 
     if (userId && productId) {
       syncAddToCart(userId, productId, quantityToAdd).catch((err) => {

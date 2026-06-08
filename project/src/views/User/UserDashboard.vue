@@ -184,13 +184,13 @@ const router = useRouter()
 const userStore = useUserStore()
 const cartStore = useCartStore()
 const activeMenu = ref('dashboard')
-const user = userStore.user
+const user = computed(() => userStore.user)
 const orders = ref([])
 const loading = ref(true)
 
 const userInitials = computed(() => {
-  if (!user?.name) return '?'
-  return user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+  if (!user.value?.name) return '?'
+  return user.value.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
 })
 
 const isSidebarOpen = ref(false)
@@ -215,10 +215,10 @@ function onAvatarChange(e) {
 
 function startEdit() {
   editForm.value = {
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    address: user?.address || '',
+    name: user.value?.name || '',
+    email: user.value?.email || '',
+    phone: user.value?.phone || '',
+    address: user.value?.address || '',
     avatar: null,
     avatarPreview: ''
   }
@@ -251,7 +251,7 @@ async function saveProfile() {
     if (editForm.value.avatar) {
       formData.append('avatar', editForm.value.avatar)
     }
-    const res = await axios.put(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.id}`, formData, {
+    const res = await axios.put(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.value.id}`, formData, {
       headers: { Authorization: `Bearer ${userStore.token}` }
     })
     userStore.setUser(res.data, userStore.token)
@@ -263,13 +263,27 @@ async function saveProfile() {
 }
 
 onMounted(async () => {
-  if (user && user.id) {
+  if (user.value && user.value.id) {
     try {
-      // Replace with your actual backend endpoint
-      const res = await axios.get(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.id}/orders`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.value.id}/orders`, {
         headers: { Authorization: `Bearer ${userStore.token}` }
       })
-      orders.value = res.data
+      orders.value = res.data.map(order => {
+        const items = Array.isArray(order.order_items) ? order.order_items : []
+        const products = items.map(item => ({
+          id: item.product?.id,
+          name: item.product?.name || 'Product',
+          description: item.product?.description || '',
+          quantity: item.quantity || 1,
+        }))
+        return {
+          id: order.id,
+          products: products,
+          totalPrice: Number(order.total || 0),
+          status: order.status || 'pending',
+          createdAt: order.created_at || new Date(),
+        }
+      })
     } catch (e) {
       orders.value = []
     }

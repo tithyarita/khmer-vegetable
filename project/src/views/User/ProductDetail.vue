@@ -526,9 +526,9 @@ const applyProduct = (data) => {
   Object.assign(product, {
     id: data.id,
     name: data.name || 'Untitled product',
-    price,
-    discount,
-    originalPrice,
+    price: Number(data.price || 0),
+    discount: Number(data.discount || 0),
+    originalPrice: Number(data.originalPrice || data.price || 0),
     stock: Number(data.stock ?? 0),
     providerId: data.provider?.user_id || data.provider_id || data.providerId || null,
     providerName: data.provider?.provider_name || data.providerName || data.provider?.name || 'Unknown',
@@ -554,9 +554,10 @@ const applyProduct = (data) => {
 }
 
 const loadProduct = async () => {
-  try {
-    const id = route.params.id
+  const id = route.params.id
+  if (!id) return
 
+  try {
     const data =
       await productStore.fetchProductById(id)
 
@@ -566,37 +567,18 @@ const loadProduct = async () => {
   } catch (err) {
     console.error(err)
   }
-
-  const availableStock = Number(product.stock ?? 0)
-  if (availableStock <= 0) {
-    alert('This product is out of stock.')
-    return
-  }
-
-  if (qty.value > availableStock) {
-    alert(`Only ${availableStock} in stock.`)
-    return
-  }
-
-  cartStore.addToCart({
-    ...product,
-    unitPrice: Number(product.price ?? 0),
-    originalPrice: Number(product.originalPrice ?? product.price ?? 0),
-    quantity: qty.value,
-    unit: product.unit || 'item',
-    provider_id: product.providerId,
-    providerName: product.providerName || 'Unknown',
-  });
+}
 
 const loadReviews = async () => {
+  const id = route.params.id
+  if (!id) return
+
   try {
-    const id = route.params.id
     const data = await reviewStore.fetchReviewsByProduct(id)
     reviews.value = data
   } catch (err) {
     console.error('Failed to load reviews:', err)
   }
-}
 }
 
 watch(
@@ -659,11 +641,25 @@ const addToCart = () => {
     return
   }
 
+  const availableStock = Number(product.stock ?? 0)
+  if (availableStock <= 0) {
+    alert('This product is out of stock.')
+    return
+  }
+
+  if (qty.value > availableStock) {
+    alert(`Only ${availableStock} in stock.`)
+    return
+  }
+
   cartStore.addToCart({
     ...product,
+    unitPrice: Number(product.price ?? 0),
+    originalPrice: Number(product.originalPrice ?? product.price ?? 0),
     quantity: qty.value,
+    unit: product.unit || 'item',
     provider_id: product.providerId,
-    providerName: product.providerName,
+    providerName: product.providerName || 'Unknown',
   })
 
   showToast(

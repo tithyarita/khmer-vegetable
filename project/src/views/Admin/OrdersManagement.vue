@@ -10,11 +10,13 @@
         <button class="time-btn" :class="{ active: timeframe === 'today' }" @click="setTimeframe('today')">Today</button>
         <button class="time-btn" :class="{ active: timeframe === 'weekly' }" @click="setTimeframe('weekly')">Weekly</button>
         <button class="time-btn" :class="{ active: timeframe === 'monthly' }" @click="setTimeframe('monthly')">Monthly</button>
+        <button class="time-btn" :class="{ active: timeframe === 'yearly' }" @click="setTimeframe('yearly')">Yearly</button>
         <button class="time-btn" :class="{ active: timeframe === 'custom' }" @click="setTimeframe('custom')">Custom Range</button>
         <button class="export-btn" @click="exportReport">Export Report</button>
       </div>
     </div>
 
+    <!-- Metrics Matrix Section Breakdown -->
     <div class="summary-row">
       <div class="summary-card">
         <div class="icon-box"><span>📦</span></div>
@@ -43,10 +45,18 @@
       <div class="summary-card revenue">
         <div class="icon-box"><span>💰</span></div>
         <div>
-          <div class="summary-label">TOTAL REVENUE</div>
+          <div class="summary-label">REVENUE ({{ timeframe.toUpperCase() }})</div>
           <div class="summary-value">{{ totalRevenue }}</div>
         </div>
       </div>
+    </div>
+
+    <!-- Quick Analytics Real-Time Sidebar Strip -->
+    <div class="revenue-overview-strip">
+      <div class="strip-item"><b>Today:</b> {{ todayRevenue }}</div>
+      <div class="strip-item"><b>7 Days:</b> {{ weeklyRevenue }}</div>
+      <div class="strip-item"><b>30 Days:</b> {{ monthlyRevenue }}</div>
+      <div class="strip-item"><b>12 Months:</b> {{ yearlyRevenue }}</div>
     </div>
 
     <div class="filter-bar">
@@ -235,7 +245,7 @@ import axios from 'axios'
 
 const API_BASE_URL = 'http://localhost:3000'
 const status = ref('All Statuses')
-const timeframe = ref('all') // Options: 'all', 'today', 'weekly', 'monthly', 'custom'
+const timeframe = ref('all') 
 const startDate = ref('')
 const endDate = ref('')
 
@@ -301,18 +311,23 @@ const fetchOrders = async () => {
   }
 }
 
-// --- Polling Lifecycle Configuration Engine ---
+// --- Polling Lifecycle Engine ---
 let pollInterval = null
 onMounted(() => {
   fetchOrders()
-  pollInterval = setInterval(fetchOrders, 10000) // Polls every 10 seconds to auto-refresh live views
+  pollInterval = setInterval(fetchOrders, 10000) 
 })
 
 onUnmounted(() => {
   if (pollInterval) clearInterval(pollInterval)
 })
 
-// --- Business Analytics Engine Filters (Timeframe Scope) ---
+// --- Currency Formatter Utility ---
+const formatCurrency = (amount) => {
+  return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+// --- Strict Calendar-Bound Filtering Windows ---
 const dateFilteredOrders = computed(() => {
   const now = new Date()
   
@@ -320,19 +335,25 @@ const dateFilteredOrders = computed(() => {
     const orderDate = new Date(order.createdAt)
     
     if (timeframe.value === 'today') {
-      return orderDate.toDateString() === now.toDateString()
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+      return orderDate >= startOfToday
     }
     
     if (timeframe.value === 'weekly') {
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(now.getDate() - 7)
-      return orderDate >= sevenDaysAgo
+      const currentDay = now.getDay()
+      const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1
+      const startOfThisWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - distanceToMonday, 0, 0, 0, 0)
+      return orderDate >= startOfThisWeek
     }
     
     if (timeframe.value === 'monthly') {
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(now.getDate() - 30)
-      return orderDate >= thirtyDaysAgo
+      const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+      return orderDate >= startOfThisMonth
+    }
+
+    if (timeframe.value === 'yearly') {
+      const startOfThisYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
+      return orderDate >= startOfThisYear
     }
     
     if (timeframe.value === 'custom') {
@@ -350,20 +371,64 @@ const dateFilteredOrders = computed(() => {
       return withinBounds
     }
     
-    return true // 'all' context catch
+    return true 
   })
 })
 
-// --- Dashboard KPI Calculators based on selected time window ---
+// --- Independent Calendar-Bound Revenue Timeframe Aggregators ---
+// --- Strict "Today is Today" Calendar Isolation ---
+
+const todayRevenue = computed(() => {
+  const now = new Date()
+  // Format current date to a clean, timezone-safe 'YYYY-MM-DD' string
+  const todayString = now.toISOString().split('T')[0] 
+  
+  const sum = orders.value
+    .filter(order => {
+      const orderDateString = new Date(order.createdAt).toISOString().split('T')[0]
+      return orderDateString === todayString
+    })
+    .reduce((acc, curr) => acc + curr.rawPrice, 0)
+    
+  return formatCurrency(sum)
+})
+
+const weeklyRevenue = computed(() => {
+  const now = new Date()
+  const currentDay = now.getDay()
+  const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1
+  const startOfThisWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - distanceToMonday, 0, 0, 0, 0)
+  
+  const sum = orders.value
+    .filter(o => new Date(o.createdAt) >= startOfThisWeek)
+    .reduce((acc, curr) => acc + curr.rawPrice, 0)
+  return formatCurrency(sum)
+})
+
+const monthlyRevenue = computed(() => {
+  const now = new Date()
+  const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+  
+  const sum = orders.value
+    .filter(o => new Date(o.createdAt) >= startOfThisMonth)
+    .reduce((acc, curr) => acc + curr.rawPrice, 0)
+  return formatCurrency(sum)
+})
+
+const yearlyRevenue = computed(() => {
+  const now = new Date()
+  const startOfThisYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
+  
+  const sum = orders.value
+    .filter(o => new Date(o.createdAt) >= startOfThisYear)
+    .reduce((acc, curr) => acc + curr.rawPrice, 0)
+  return formatCurrency(sum)
+})
+
+// --- Active Dashboard KPIs ---
 const totalOrdersCount = computed(() => dateFilteredOrders.value.length)
-
-const pendingOrdersCount = computed(() => {
-  return dateFilteredOrders.value.filter(o => o.status.toLowerCase() === 'pending').length
-})
-
-const completedOrdersCount = computed(() => {
-  return dateFilteredOrders.value.filter(o => o.status.toLowerCase() === 'completed').length
-})
+const pendingOrdersCount = computed(() => dateFilteredOrders.value.filter(o => o.status.toLowerCase() === 'pending').length)
+const completedOrdersCount = computed(() => dateFilteredOrders.value.filter(o => o.status.toLowerCase() === 'completed').length)
 
 const completedPercentage = computed(() => {
   if (totalOrdersCount.value === 0) return '0.0%'
@@ -372,10 +437,10 @@ const completedPercentage = computed(() => {
 
 const totalRevenue = computed(() => {
   const sum = dateFilteredOrders.value.reduce((acc, current) => acc + current.rawPrice, 0)
-  return `$${sum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return formatCurrency(sum)
 })
 
-// --- Table Structural Sorting Filters (Combines Timeframe context with Status Selection) ---
+// --- Sorting, Filters and Pagination ---
 const filteredOrders = computed(() => {
   let result = dateFilteredOrders.value
   if (status.value !== 'All Statuses') {
@@ -391,17 +456,12 @@ const paginatedOrders = computed(() => {
 })
 
 const selectedOrder = ref(null)
-function selectOrder(order) {
-  selectedOrder.value = order
-}
-
-function closeModal() {
-  selectedOrder.value = null
-}
+function selectOrder(order) { selectedOrder.value = order }
+function closeModal() { selectedOrder.value = null }
 
 const setTimeframe = (type) => {
   timeframe.value = type
-  page.value = 1 // Reset navigation index context mapping
+  page.value = 1 
 }
 
 const resetFilters = () => {
@@ -427,14 +487,11 @@ const exportReport = () => {
   showToast(`Exporting data matrix layout for ${timeframe.value.toUpperCase()} scope.`, 'success')
 }
 
-// --- Mutate Order Pipeline Status Engine ---
+// --- Status State Mutation Pipeline ---
 const updateStatus = async (order, newStatus) => {
   try {
-    await axios.patch(`${API_BASE_URL}/orders/${order.id}/status`, {
-      status: newStatus
-    })
+    await axios.patch(`${API_BASE_URL}/orders/${order.id}/status`, { status: newStatus })
     
-    // Optimistic UI internal structural data state sync update
     const local = orders.value.find(o => o.id === order.id)
     if (local) {
       local.status = newStatus
@@ -448,7 +505,7 @@ const updateStatus = async (order, newStatus) => {
 
     showToast(`Order status updated to ${newStatus}`, 'success')
   } catch (err) {
-    console.error('Database write execution mutation failure pipeline error:', err)
+    console.error('Database write execution failure:', err)
     showToast('Failed to change workflow tracking status', 'error')
   }
 }
@@ -493,9 +550,7 @@ const updateStatus = async (order, newStatus) => {
   cursor: pointer;
   transition: all 0.2s ease;
 }
-.time-btn:hover {
-  background: #e2e8f0;
-}
+.time-btn:hover { background: #e2e8f0; }
 .time-btn.active {
   background: #14532d;
   color: #fff;
@@ -510,9 +565,26 @@ const updateStatus = async (order, newStatus) => {
   cursor: pointer;
   transition: opacity 0.15s;
 }
-.export-btn:hover {
-  opacity: 0.9;
+.export-btn:hover { opacity: 0.9; }
+
+.revenue-overview-strip {
+  display: flex;
+  gap: 2rem;
+  background: #ffffff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  border: 1px solid #f1f5f9;
 }
+.strip-item {
+  font-size: 0.9rem;
+  color: #475569;
+}
+.strip-item b {
+  color: #14532d;
+}
+
 .summary-row {
   display: flex;
   gap: 1.5rem;
@@ -544,42 +616,35 @@ const updateStatus = async (order, newStatus) => {
   justify-content: center;
   font-size: 1.7rem;
 }
-.summary-card.revenue .icon-box {
-  background: rgba(255,255,255,0.15);
-}
+.summary-card.revenue .icon-box { background: rgba(255,255,255,0.15); }
 .summary-label {
   color: #64748b;
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.05em;
 }
-.summary-card.revenue .summary-label {
-  color: rgba(255,255,255,0.8);
-}
+.summary-card.revenue .summary-label { color: rgba(255,255,255,0.8); }
 .summary-value {
   color: #14532d;
   font-size: 1.5rem;
   font-weight: 700;
   margin-top: 0.1rem;
 }
-.summary-card.revenue .summary-value {
-  color: #fff;
-}
+.summary-card.revenue .summary-value { color: #fff; }
 .summary-pending {
   color: #ea580c;
   font-size: 0.85rem;
   font-weight: 600;
   margin-left: 0.5rem;
 }
-.summary-value.pending {
-  color: #ea580c;
-}
+.summary-value.pending { color: #ea580c; }
 .summary-sub {
   color: #64748b;
   font-size: 0.85rem;
   font-weight: 500;
   margin-left: 0.5rem;
 }
+
 .filter-bar {
   display: flex;
   align-items: flex-end;
@@ -613,9 +678,7 @@ const updateStatus = async (order, newStatus) => {
   outline: none;
   min-width: 160px;
 }
-.status-filter:focus, .date-filter:focus {
-  border-color: #14532d;
-}
+.status-filter:focus, .date-filter:focus { border-color: #14532d; }
 .custom-date-container {
   display: flex;
   align-items: flex-end;
@@ -637,13 +700,9 @@ const updateStatus = async (order, newStatus) => {
   margin-left: auto;
   transition: background 0.2s;
 }
-.clear-filter-btn:hover {
-  background: #ffe4e6;
-}
-.main-content {
-  display: flex;
-  gap: 2rem;
-}
+.clear-filter-btn:hover { background: #ffe4e6; }
+
+.main-content { display: flex; gap: 2rem; }
 .table-section {
   flex: 1;
   background: #fff;
@@ -676,9 +735,7 @@ const updateStatus = async (order, newStatus) => {
   background: #f8fafc;
   cursor: pointer;
 }
-.orders-table tr.selected {
-  background: #f1f5f9;
-}
+.orders-table tr.selected { background: #f1f5f9; }
 .order-id {
   font-weight: 600;
   color: #14532d;
@@ -728,9 +785,7 @@ const updateStatus = async (order, newStatus) => {
   background: #e2e8f0;
   color: #334155;
 }
-.btn-view:hover {
-  background: #cbd5e1;
-}
+.btn-view:hover { background: #cbd5e1; }
 .done-text {
   font-size: 0.8rem;
   font-weight: 700;
@@ -765,7 +820,6 @@ const updateStatus = async (order, newStatus) => {
   border-color: #14532d;
 }
 
-/* Modal Popup Window Styles */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -806,9 +860,7 @@ const updateStatus = async (order, newStatus) => {
   align-items: center;
   justify-content: center;
 }
-.modal-close-btn:hover {
-  background: #e2e8f0;
-}
+.modal-close-btn:hover { background: #e2e8f0; }
 .details-header {
   display: flex;
   align-items: center;
@@ -852,9 +904,7 @@ const updateStatus = async (order, newStatus) => {
   color: #64748b;
   font-size: 0.95rem;
 }
-.details-provider {
-  margin-bottom: 1.5rem;
-}
+.details-provider { margin-bottom: 1.5rem; }
 .provider-label {
   color: #64748b;
   font-size: 0.85rem;
@@ -889,9 +939,7 @@ const updateStatus = async (order, newStatus) => {
   font-weight: 700;
   margin-bottom: 1.5rem;
 }
-.details-total {
-  color: #14532d;
-}
+.details-total { color: #14532d; }
 .details-timeline {
   margin-bottom: 1.5rem;
   background: #f8fafc;
@@ -920,10 +968,7 @@ const updateStatus = async (order, newStatus) => {
   color: #16a34a;
   font-weight: 600;
 }
-.details-actions {
-  display: flex;
-  gap: 1rem;
-}
+.details-actions { display: flex; gap: 1rem; }
 .print-btn, .cancel-btn {
   flex: 1;
   background: #f1f5f9;
@@ -940,7 +985,6 @@ const updateStatus = async (order, newStatus) => {
   color: #dc2626;
 }
 
-/* Transitions System styling */
 .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 

@@ -69,14 +69,13 @@
 <script setup>
 import { ref, provide } from 'vue'
 import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useCustomerOrderStore } from '@/stores/customerOrderStore'
 import DashboardSidebar from '../../components/Customer/sidebarUser.vue'
 
 const router = useRouter()
 const customerOrderStore = useCustomerOrderStore()
-const orders = customerOrderStore.orders
-const loading = customerOrderStore.loading
-const error = customerOrderStore.error
+const { orders, loading, error } = storeToRefs(customerOrderStore)
 
 const isSidebarOpen = ref(false)
 const closeSidebar = () => { isSidebarOpen.value = false }
