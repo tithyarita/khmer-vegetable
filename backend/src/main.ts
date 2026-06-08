@@ -13,6 +13,7 @@ async function bootstrap() {
       'http://localhost:5173',
       'http://localhost:5174',
       'http://143.198.91.135',
+      'http://www.prave-vinuth.online',
     ],
     credentials: true,
   });
