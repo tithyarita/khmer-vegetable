@@ -45,6 +45,12 @@ export class ReviewController {
     return this.reviewService.findByProvider(req.user.id);
   }
 
+  // GET AGGREGATE RATINGS FOR ALL PRODUCTS
+  @Get('ratings')
+  getAllRatings() {
+    return this.reviewService.getAllRatings();
+  }
+
   // GET ONE REVIEW
   @Get(':id')
   findOne(@Param('id') id: string) {

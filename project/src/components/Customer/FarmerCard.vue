@@ -24,10 +24,50 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { farmers } from '../../data/farmers'
+import { useProductStore } from '@/stores/productStore'
 
 const router = useRouter()
+const productStore = useProductStore()
+
+const farmers = ref([])
+
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+
+function resolveImage(url) {
+  if (!url) return 'https://via.placeholder.com/80'
+  if (url.startsWith('http')) return url
+  return `${API_BASE_URL}/uploads/${url.replace(/^\/?(images\/|uploads\/)?/, '')}`
+}
+
+async function loadFarmers() {
+  const products = await productStore.fetchAllProducts()
+  if (!products.length) return
+
+  const map = new Map()
+
+  for (const p of products) {
+    const provider = p.provider
+    if (!provider) continue
+
+    const id = provider.user_id
+    if (map.has(id)) continue
+
+    const name = provider.provider_name || provider.name || `Provider #${id}`
+    map.set(id, {
+      id,
+      name,
+      farm: provider.farm_name || name,
+      image: resolveImage(provider.avatar),
+      desc: provider.story || `Fresh produce from ${name}.`,
+    })
+  }
+
+  farmers.value = Array.from(map.values())
+}
+
+onMounted(loadFarmers)
 
 function goToFarmer(id) {
   router.push(`/farmer/${id}`)
@@ -35,14 +75,12 @@ function goToFarmer(id) {
 </script>
 
 <style scoped>
-/* RESET */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* SECTION */
 .farmers-section {
   width: 100%;
   padding: 24px 0;
@@ -50,14 +88,12 @@ function goToFarmer(id) {
   color: #1c1c1e;
 }
 
-/* GRID */
 .farmers-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
 }
 
-/* CARD */
 .farmer-card {
   background: #fff;
   border-radius: 12px;
@@ -76,7 +112,6 @@ function goToFarmer(id) {
   transform: translateY(-8px);
 }
 
-/* AVATAR (FIXED) */
 .avatar {
   width: 80px;
   height: 80px;
@@ -91,7 +126,6 @@ function goToFarmer(id) {
   object-fit: cover;
 }
 
-/* TEXT */
 .farmer-name {
   font-size: 15px;
   font-weight: 700;
@@ -119,7 +153,6 @@ function goToFarmer(id) {
   line-height: 1.6;
 }
 
-/* ANIMATION */
 @keyframes fadeUp {
   from {
     opacity: 0;
@@ -131,7 +164,6 @@ function goToFarmer(id) {
   }
 }
 
-/* RESPONSIVE */
 @media (max-width: 1024px) {
   .farmers-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

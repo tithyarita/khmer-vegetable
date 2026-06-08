@@ -78,6 +78,26 @@ export class ReviewService {
       .getMany();
   }
 
+  // GET AGGREGATE RATINGS FOR ALL PRODUCTS
+  async getAllRatings() {
+    try {
+      const result = await this.reviewRepository.query(
+        `SELECT product_id AS productId, ROUND(AVG(rating), 1) AS average, COUNT(id) AS count
+         FROM review
+         WHERE product_id IS NOT NULL
+         GROUP BY product_id`
+      );
+      return result.map((r: any) => ({
+        productId: Number(r.productId),
+        average: Number(r.average),
+        count: Number(r.count),
+      }));
+    } catch (err) {
+      console.error('getAllRatings error:', err);
+      return [];
+    }
+  }
+
   // GET ONE REVIEW
   async findOne(id: number) {
     const review = await this.reviewRepository.findOne({

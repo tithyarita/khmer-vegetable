@@ -34,13 +34,12 @@
           @click.stop="toggleFavorite(product)"
           :class="{ active: isFavorite(product.id) }"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <svg width="20" height="20" viewBox="0 0 24 24">
             <path
               d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.08C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 12 21 12 21Z"
-              :stroke="isFavorite(product.id) ? 'transparent' : '#2D7A3A'"
-              :fill="isFavorite(product.id) ? '#2D7A3A' : 'none'"
               stroke-width="1.8"
               stroke-linejoin="round"
+              :class="{ filled: isFavorite(product.id) }"
             />
           </svg>
         </button>
@@ -49,16 +48,11 @@
       <div class="card-body">
         <p class="category">{{ product.category || t('product') }}</p>
         <h3 class="product-name">{{ product.name }}</h3>
-        <p class="provider-owner">
-          {{ t('provider') }}: {{ product.providerName }}
-          <span v-if="product.providerId">(#{{ product.providerId }})</span>
-        </p>
+        <p class="provider-owner">{{ product.providerName }}</p>
 
         <div class="rating">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="#8B6914">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-          <span class="rating-text">({{ product.rating ?? 0 }})</span>
+          <i class="bi bi-star-fill"></i>
+          <span class="rating-text">{{ getProductRating(product.id) }}</span>
         </div>
 
         <div class="price-row">
@@ -71,7 +65,7 @@
             class="btn-add"
             @click.stop="addToCart(product)"
           >
-            <span class="plus">+</span> {{ t('Add') }}
+            <span class="plus">+</span> {{ t('add') }}
           </button>
         </div>
       </div>
@@ -84,11 +78,12 @@ import { useLanguageStore } from '@/stores/languageStore.js'
 import { messages } from '@/lang/index.js'
 const languageStore = useLanguageStore()
 const t = (key) => messages[languageStore.language][key] || key
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cartStore'
 import { useProductStore } from '../../stores/productStore'
 import { useFavoriteStore } from '../../stores/favoriteStore'
+import axios from 'axios'
 
 const props = defineProps({
   product: {
@@ -123,9 +118,8 @@ const normalizeProduct = product => ({
   ...product,
   price: Number(product?.price ?? 0),
   discount: Number(product?.discount ?? 0),
-  rating: Number(product?.rating ?? 0),
   providerId: Number(product?.providerId ?? product?.provider_id ?? product?.provider?.user_id ?? 0) || null,
-  providerName: product?.providerName || product?.provider?.provider_name || product?.provider?.name || 'Unknown',
+  providerName: product?.providerName || product?.provider?.farm_name || product?.provider?.provider_name || `Farm #${product?.provider?.user_id || '?'}`,
   image: resolveImage(product?.image || product?.imageUrl || ''),
   stock: Number(product?.stock ?? 0),
 })
@@ -170,7 +164,7 @@ const addToCart = product => {
     unitPrice: Number(product.price ?? 0),
     unit: product.unit || 'item',
     provider_id: product.provider_id ?? product.provider?.user_id ?? product.providerId ?? null,
-    providerName: product.providerName || product.provider?.provider_name || 'Unknown',
+    providerName: product.providerName || product.provider?.farm_name || product.provider?.provider_name || `Farm #${product.provider?.user_id || '?'}`,
   })
 }
 
@@ -186,6 +180,31 @@ const isFavorite = productId => {
   return favoriteStore.isFavorite(productId)
 }
 
+const ratingsMap = ref({})
+
+const getProductRating = (productId) => {
+  if (!productId) return 0
+  const entry = ratingsMap.value[Number(productId)]
+  return entry ? Number(entry.average) : 0
+}
+
+const fetchRatings = async () => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/reviews/ratings`)
+    console.log('Ratings API response:', res.data)
+    const map = {}
+    const data = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+    for (const r of data) {
+      const pid = Number(r.productId ?? r.product_id ?? r.product?.id)
+      if (!pid) continue
+      map[pid] = { average: r.average ?? r.avg ?? 0, count: r.count ?? 0 }
+    }
+    ratingsMap.value = map
+  } catch (err) {
+    console.error('Failed to fetch ratings:', err)
+  }
+}
+
 const goToProductDetail = productId => {
   router.push(`/product/${productId}`)
 }
@@ -194,6 +213,7 @@ onMounted(async () => {
   if (!props.product && !(Array.isArray(props.products) && props.products.length > 0) && !productStore.products.length) {
     await productStore.fetchAllProducts()
   }
+  fetchRatings()
 })
 </script>
 
@@ -289,11 +309,18 @@ onMounted(async () => {
 }
 
 .btn-favorite.active {
-  background: #2D7A3A;
+  background: #e85a2d;
 }
 
-.btn-favorite.active svg {
+.btn-favorite svg path {
+  fill: none;
+  stroke: #2D7A3A;
+  transition: none;
+}
+
+.btn-favorite.active svg path.filled {
   fill: #fff;
+  stroke: transparent;
 }
 
 .card-body {
@@ -321,13 +348,15 @@ onMounted(async () => {
 .rating {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   margin-bottom: 10px;
+  color: #f5a623;
+  font-size: 13px;
 }
 
 .rating-text {
-  font-size: 12px;
-  color: #8B6914;
+  font-weight: 600;
+  color: #4b5563;
 }
 
 .price-row {
