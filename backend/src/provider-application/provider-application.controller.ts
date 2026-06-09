@@ -8,6 +8,7 @@ import {
   UseInterceptors,
   ParseIntPipe,
   BadRequestException,
+  ConflictException,
   Patch,
   Query,
 } from '@nestjs/common';
@@ -24,6 +25,19 @@ import { uploadToCloudinary } from '../cloudinary';
 @Controller('api/applications')
 export class ApplicationsController {
   constructor(private readonly service: ApplicationsService) {}
+  @Get('check-email')
+  async checkEmail(
+    @Query('email') email?: string,
+  ): Promise<{ exists: boolean }> {
+    const formattedEmail = (email || '').trim().toLowerCase();
+
+    if (!formattedEmail) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const exists = await this.service.checkEmailExists(formattedEmail);
+    return { exists };
+  }
 
   /**
    * POST /api/applications
@@ -61,6 +75,15 @@ export class ApplicationsController {
     status: string;
     submitted_at: Date | null;
   }> {
+    const email = (body.contact_email || '').trim().toLowerCase();
+    if (email) {
+      const emailExists = await this.service.checkEmailExists(email);
+      if (emailExists) {
+        throw new ConflictException(
+          'An application has already been submitted with this email address.',
+        );
+      }
+    }
     const dto = plainToInstance(CreateApplicationDto, body);
     const validationErrors = await validate(dto);
     if (validationErrors.length) {
@@ -70,16 +93,33 @@ export class ApplicationsController {
       throw new BadRequestException(messages);
     }
 
-    const uploadFile = async (f: Express.Multer.File[] | undefined, folder: string) =>
-      f?.[0] ? await uploadToCloudinary(f[0].buffer, folder) : undefined
+    const uploadFile = async (
+      f: Express.Multer.File[] | undefined,
+      folder: string,
+    ) => (f?.[0] ? await uploadToCloudinary(f[0].buffer, folder) : undefined);
 
     const fileUrls = {
-      id_document_path: await uploadFile(files.id_document, 'applications/id_document'),
-      profile_photo_path: await uploadFile(files.profile_photo, 'applications/profile_photo'),
-      farm_angle1_path: await uploadFile(files.farm_angle1, 'applications/farm_angle1'),
-      farm_angle2_path: await uploadFile(files.farm_angle2, 'applications/farm_angle2'),
-      farm_angle3_path: await uploadFile(files.farm_angle3, 'applications/farm_angle3'),
-    }
+      id_document_path: await uploadFile(
+        files.id_document,
+        'applications/id_document',
+      ),
+      profile_photo_path: await uploadFile(
+        files.profile_photo,
+        'applications/profile_photo',
+      ),
+      farm_angle1_path: await uploadFile(
+        files.farm_angle1,
+        'applications/farm_angle1',
+      ),
+      farm_angle2_path: await uploadFile(
+        files.farm_angle2,
+        'applications/farm_angle2',
+      ),
+      farm_angle3_path: await uploadFile(
+        files.farm_angle3,
+        'applications/farm_angle3',
+      ),
+    };
 
     const saved = await this.service.create(dto, fileUrls);
     return {
@@ -95,7 +135,6 @@ export class ApplicationsController {
     @Body('status') status: string,
     @Body('staffId') staffId?: number,
   ): Promise<ProviderApplication> {
-    // staffId from body is a string, coerce to number
     return this.service.updateStatus(
       id,
       status,

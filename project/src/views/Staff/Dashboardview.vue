@@ -107,7 +107,9 @@ const recentApplications = computed(() =>
       status:     normalizeStatus(a.application_status),
       score:      a.id_document_path ? 80 : 40,
       logoUrl: a.profile_photo_path
-        ? `${API_BASE}/images/${a.profile_photo_path.replace(/\\/g, '/').replace('uploads/', '')}`
+        ? (a.profile_photo_path.startsWith('http')
+            ? a.profile_photo_path 
+            : `${API_BASE}/images/${a.profile_photo_path.replace(/\\/g, '/').replace('uploads/', '')}`)
         : null,
       logoStyle: { background: '#f0f4f8' },
     }))

@@ -110,8 +110,8 @@
           <div class="compact-row"><b>📞</b> {{ selectedProvider.phone }}</div>
           <div class="compact-row"><b>🧑‍💼</b> {{ selectedProvider.role }}</div>
           <div class="compact-row"><b>🆔</b> User ID: {{ selectedProvider.id }}</div>
-          <div class="compact-row"><b>📊</b> {{ selectedProvider.status || 'N/A' }}</div>
-          <div class="compact-row"><b>🏠</b> {{ selectedProvider.address || 'N/A' }}</div>
+          <div class="compact-row"><b>📊</b> {{ selectedProvider.providerStatus }}</div>
+          <div class="compact-row"><b>🏠</b> {{ selectedProvider.farmAddress }}</div>
           <div class="compact-row"><b>✅</b> Approved by: <strong>{{ selectedProvider.approvedBy }}</strong></div>
         </div>
 
@@ -218,7 +218,8 @@ const fallbackAvatar = (id) =>
 
 function buildImageUrl(path) {
   if (!path) return null
-  const clean = path.replace(/\\/g, '/').replace('uploads/', '')
+    if (path.startsWith('http')) return path
+      const clean = path.replace(/\\/g, '/').replace('uploads/', '')
   return `${IMG_BASE}/${clean}`
 }
 
@@ -301,6 +302,11 @@ const fetchProviders = async () => {
         approvedBy:   staff
           ? `${staff.name} (ID: ${staff.user_id})`
           : '—',
+        farmAddress: app
+          ? [app.village, app.commune, app.district, app.city_province]
+              .filter(Boolean).join(', ') || '—'
+          : '—',
+        providerStatus: u.status || 'active',         
       }
     })
 
