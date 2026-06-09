@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:3000'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 export const useReviewStore = defineStore('review', () => {
   const reviews = ref([])
@@ -144,6 +144,8 @@ export const useReviewStore = defineStore('review', () => {
     const colors = ['#2d6a3f', '#a3c585', '#e8a87c', '#6b8e6b', '#c9a87c']
     const color = colors[Math.floor(Math.random() * colors.length)]
 
+    const date = review.createdAt ? new Date(review.createdAt) : new Date()
+
     return {
       id: review.id,
       rating: review.rating,
@@ -151,10 +153,10 @@ export const useReviewStore = defineStore('review', () => {
       author: userName,
       initials: initials,
       color: color,
-      date: new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      createdAt: date.toISOString(),
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       location: 'Phnom Penh, KH',
       verified: true,
-      title: 'Customer Review',
       body: review.feedback,
       userId: review.user?.id,
       productId: review.product?.id,

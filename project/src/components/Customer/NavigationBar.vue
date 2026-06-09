@@ -159,6 +159,7 @@ import { useCartStore } from '../../stores/cartStore'
 import { useSearchStore } from '../../stores/searchStore'
 import { useUserStore } from '../../stores/userStore'
 import { useLocationStore } from '../../stores/locationStore'
+import { useFavoriteStore } from '../../stores/favoriteStore'
 
 export default {
   name: 'NavigationBar',
@@ -211,7 +212,8 @@ export default {
     const searchStore = useSearchStore()
     const userStore = useUserStore()
     const locationStore = useLocationStore()
-    return { cartStore, searchStore, userStore, locationStore }
+    const favoriteStore = useFavoriteStore()
+    return { cartStore, searchStore, userStore, locationStore, favoriteStore }
   },
   data() {
     return {
@@ -244,7 +246,7 @@ export default {
       return this.cartStore.cartCount
     },
     favoriteCount() {
-      return 0
+      return this.favoriteStore.favoriteCount
     },
     userInitials() {
       if (!this.user.name) return '?'
@@ -332,6 +334,7 @@ export default {
   mounted() {
     document.addEventListener('click', this.handleOutsideClick)
     this.syncActiveCategory()
+    this.favoriteStore.fetchFavoritesFromBackend()
   },
   beforeUnmount() {
     document.removeEventListener('click', this.handleOutsideClick)
