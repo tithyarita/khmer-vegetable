@@ -17,16 +17,10 @@
         <div class="pd-top">
           <!-- GALLERY -->
           <div class="pd-gallery">
-            <div
-              class="pd-main"
-              @mousemove="onZoomMove"
-              @mouseleave="zoom = false"
-              @mouseenter="zoom = true"
-            >
+            <div class="pd-main">
               <img
                 :src="product.images[activeIdx]"
                 :alt="product.name"
-                :class="{ zoomed: zoom }"
                 ref="mainImg"
               />
               <span class="pd-seasonal">{{ t('seasonalPick') }}</span>
@@ -96,7 +90,8 @@
               class="pd-provider-chip"
             >
               <span class="pc-avatar">
-                <i v-if="!providerInitial || providerInitial.startsWith('#')" class="bi bi-person-fill"></i>
+                <img v-if="product.providerImage" :src="product.providerImage" :alt="product.providerName" class="pc-img" />
+                <i v-else-if="!providerInitial || providerInitial.startsWith('#')" class="bi bi-person-fill"></i>
                 <span v-else class="pc-initial">{{ providerInitial }}</span>
               </span>
               <span class="pc-body">
@@ -392,6 +387,14 @@ const favoriteStore = useFavoriteStore()
 
 const placeholderImage = 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?auto=format&fit=crop&q=80&w=800'
 
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+
+function resolveProviderImage(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return `${API_BASE}/uploads/${url.replace(/^\/?(images\/|uploads\/)?/, '')}`
+}
+
 const product = reactive({
   id: null,
   name: 'Loading...',
@@ -401,6 +404,7 @@ const product = reactive({
   stock: 0,
   providerId: null,
   providerName: 'Unknown',
+  providerImage: '',
   weight: 'N/A',
   description: '',
   culinaryBody: '',
@@ -416,7 +420,6 @@ const filterStar = ref(null)
 const showReviewForm = ref(false)
 const sortBy = ref('newest')
 const hoverStar = ref(0)
-const zoom = ref(false)
 const mainImg = ref(null)
 
 const toast = reactive({
@@ -469,6 +472,7 @@ const applyProduct = (data) => {
     stock: Number(data.stock ?? 0),
     providerId: data.provider?.user_id || data.provider_id || data.providerId || null,
     providerName: data.provider?.farm_name || data.provider?.provider_name || data.providerName || `Farm #${data.provider?.user_id || '?'}`,
+    providerImage: resolveProviderImage(data.provider?.avatar || data.provider?.image || ''),
     weight: data.weight || 'N/A',
     description: data.description || '',
     culinaryBody: data.description || 'Fresh vegetables from local farms.',
@@ -621,13 +625,6 @@ const submitReview = async () => {
   }
 }
 
-const onZoomMove = (e) => {
-  if (!zoom.value || !mainImg.value) return
-  const rect = mainImg.value.getBoundingClientRect()
-  const x = ((e.clientX - rect.left) / rect.width) * 100
-  const y = ((e.clientY - rect.top) / rect.height) * 100
-  mainImg.value.style.transformOrigin = `${x}% ${y}%`
-}
 </script>
 
 <style scoped>
@@ -652,7 +649,7 @@ const onZoomMove = (e) => {
   --r: 16px;
   --tr: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
-  font-family: 'Poppins', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   background: var(--gp);
   min-height: 100vh;
 }
@@ -669,30 +666,17 @@ const onZoomMove = (e) => {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 24px;
   font-size: 13px;
-}
-
-.breadcrumb a {
-  color: var(--gm);
-  text-decoration: none;
-  transition: color var(--tr);
-  font-weight: 500;
-}
-
-.breadcrumb a:hover {
-  color: var(--gd);
-}
-
-.sep {
   color: var(--t3);
-  font-size: 16px;
+  margin-bottom: 24px;
+  padding: 0;
 }
 
-.cur {
-  color: var(--t1);
-  font-weight: 600;
-}
+.breadcrumb a { color: var(--t2); text-decoration: none; transition: color 0.2s; }
+.breadcrumb a:hover { color: var(--t1); }
+.breadcrumb .sep { color: #c8d5cc; }
+.breadcrumb .cur { color: var(--t3); font-weight: 500; }
+.sep { color: #c8d5cc; }
 
 /* ---- Product Card ---- */
 .pd-card {
@@ -704,7 +688,7 @@ const onZoomMove = (e) => {
 
 .pd-top {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 550px 1fr;
   gap: 0;
 }
 
@@ -726,11 +710,6 @@ const onZoomMove = (e) => {
   width: 100%;
   display: block;
   border-radius: 10px;
-  transition: transform 0.3s ease;
-}
-
-.pd-main img.zoomed {
-  transform: scale(1.8);
 }
 
 .pd-seasonal {
@@ -780,10 +759,11 @@ const onZoomMove = (e) => {
 
 /* ---- Product Info ---- */
 .pd-info {
-  padding: 36px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .pd-farm {
@@ -802,7 +782,7 @@ const onZoomMove = (e) => {
 }
 
 .pd-name {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 32px;
   font-weight: 700;
   color: var(--t1);
@@ -976,11 +956,18 @@ const onZoomMove = (e) => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .pc-avatar svg {
   width: 22px;
   height: 22px;
+}
+
+.pc-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .pc-initial {
@@ -1231,7 +1218,7 @@ const onZoomMove = (e) => {
 }
 
 .cul-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: var(--t1);
@@ -1349,7 +1336,7 @@ const onZoomMove = (e) => {
 
 .rev-num {
   font-size: 44px;
-  font-family: 'Playfair Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-weight: 700;
   color: var(--t1);
   line-height: 1;
@@ -1599,7 +1586,7 @@ const onZoomMove = (e) => {
 }
 
 .rf-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: var(--t1);
@@ -1791,7 +1778,7 @@ const onZoomMove = (e) => {
 }
 
 .see-all {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   color: var(--gm);
   text-decoration: none;
   font-size: 1.2rem;
@@ -1806,9 +1793,21 @@ const onZoomMove = (e) => {
    RESPONSIVE
    ============================================ */
 
+@media (max-width: 1024px) {
+  .pd-top {
+    grid-template-columns: 1fr;
+  }
+
+  .pd-gallery {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
+
 @media (max-width: 768px) {
   .page {
-    padding: 16px;
+    padding: 12px;
   }
 
   .pd-top {
@@ -1816,7 +1815,8 @@ const onZoomMove = (e) => {
   }
 
   .pd-gallery {
-    padding: 16px;
+    width: 100%;
+    padding: 12px;
   }
 
   .pd-thumb {
@@ -1825,7 +1825,7 @@ const onZoomMove = (e) => {
   }
 
   .pd-info {
-    padding: 20px;
+    padding: 16px;
     gap: 10px;
   }
 
@@ -1837,17 +1837,30 @@ const onZoomMove = (e) => {
     font-size: 26px;
   }
 
+  .pd-provider-chip {
+    padding: 10px 14px;
+  }
+
+  .pc-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
   .tab-nav {
-    padding: 0 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 0;
+    padding: 0 12px;
   }
 
   .tab-btn {
     padding: 14px 16px;
     font-size: 13px;
+    white-space: nowrap;
   }
 
   .tab-pane {
-    padding: 20px;
+    padding: 16px;
   }
 
   .cul-grid {
@@ -1858,13 +1871,13 @@ const onZoomMove = (e) => {
   .rev-summary {
     grid-template-columns: 1fr;
     gap: 16px;
-    padding: 20px;
+    padding: 16px;
   }
 
   .rev-toolbar {
     flex-direction: column;
     gap: 10px;
-    align-items: flex-start;
+    align-items: stretch;
   }
 
   .write-review-btn {
@@ -1877,17 +1890,60 @@ const onZoomMove = (e) => {
   }
 
   .card-container {
-    padding: 0 16px 40px;
+    padding: 0 12px 32px;
   }
 }
 
 @media (max-width: 480px) {
-  .breadcrumb {
-    font-size: 11px;
+  .page {
+    padding: 8px;
   }
 
-  .pd-main img.zoomed {
-    transform: none;
+  .pd-gallery {
+    padding: 8px;
+  }
+
+  .pd-thumbs {
+    gap: 6px;
+  }
+
+  .pd-thumb {
+    width: 48px;
+    height: 48px;
+  }
+
+  .pd-info {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .pd-name {
+    font-size: 18px;
+  }
+
+  .pd-price {
+    font-size: 22px;
+  }
+
+  .pd-orig {
+    font-size: 14px;
+  }
+
+  .pd-provider-chip {
+    padding: 8px 12px;
+  }
+
+  .pc-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .pc-name {
+    font-size: 13px;
+  }
+
+  .breadcrumb {
+    font-size: 11px;
   }
 
   .pd-actions {
@@ -1906,6 +1962,7 @@ const onZoomMove = (e) => {
   .add-btn {
     height: 38px;
     font-size: 13px;
+    flex: 1;
   }
 
   .wish-btn {
@@ -1915,10 +1972,25 @@ const onZoomMove = (e) => {
 
   .pd-certs {
     flex-direction: column;
+    gap: 6px;
+  }
+
+  .cert {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .tab-btn {
+    padding: 12px 14px;
+    font-size: 12px;
+  }
+
+  .tab-pane {
+    padding: 12px;
   }
 
   .rev-card {
-    padding: 14px;
+    padding: 12px;
   }
 
   .avatar {
@@ -1929,6 +2001,10 @@ const onZoomMove = (e) => {
 
   .rev-num {
     font-size: 36px;
+  }
+
+  .card-container {
+    padding: 0 8px 24px;
   }
 }
 </style>
