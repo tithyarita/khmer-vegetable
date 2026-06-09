@@ -63,13 +63,13 @@
         <!-- Checkout Button -->
         <div class="checkout-section">
           <button
+            v-if="hasCartItems"
             class="checkout-btn"
-            :disabled="!hasCartItems"
             @click="proceedToCheckout"
           >
             {{ t('proceedToCheckout') }}
           </button>
-          <p v-if="!hasCartItems" class="empty-cart-hint">Add items to your cart before checkout.</p>
+          <p v-else class="empty-cart-hint">Add items to your cart before checkout.</p>
         </div>
       </div>
     </section>
