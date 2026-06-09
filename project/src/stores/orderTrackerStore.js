@@ -1,114 +1,181 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import Broccoli from '../assets/images/broccoli.png'
-import Corn from '../assets/images/corn.png'
-import Tomato from '../assets/images/Tomato3.png'
+import axios from 'axios'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+
+function productImage(url) {
+  if (!url) return ''
+  if (url.startsWith('http') || url.startsWith('data:')) return url
+  return `${API_BASE_URL}${url}`
+}
+
+function formatTime(value) {
+  if (!value) return '—'
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+function buildSteps(status, createdAt, completedAt) {
+  const normalized = String(status || 'pending').toLowerCase()
+
+  const placedState = 'done'
+  const deliveryState =
+    normalized === 'pending' ? 'pending' : normalized === 'delivering' ? 'active' : 'done'
+  const completedState = normalized === 'completed' ? 'done' : 'pending'
+
+  return [
+    {
+      label: 'Order Placed',
+      time: formatTime(createdAt),
+      state: placedState,
+      icon: 'check',
+    },
+    {
+      label: 'Out for Delivery',
+      time: normalized === 'delivering' ? 'In transit' : normalized === 'completed' ? 'Delivered en route' : 'Waiting',
+      state: deliveryState,
+      icon: 'truck',
+    },
+    {
+      label: 'Completed',
+      time: normalized === 'completed' ? formatTime(completedAt) : 'Pending',
+      state: completedState,
+      icon: 'gift',
+    },
+  ]
+}
+
+function mapOrder(order) {
+  if (!order) return null
+
+  const items = Array.isArray(order.order_items) ? order.order_items : []
+  const status = String(order.status || 'pending').toLowerCase()
+
+  return {
+    id: order.id,
+    orderCode: order.order_code || `ORD-${order.id}`,
+    status,
+    statusLabel:
+      status === 'completed' ? 'Completed' : status === 'delivering' ? 'Out for Delivery' : 'Pending',
+    arrivalTime:
+      status === 'completed'
+        ? `Delivered ${formatTime(order.completed_at || order.created_at)}`
+        : status === 'delivering'
+          ? 'On the way to you'
+          : 'Preparing your order',
+    createdAt: order.created_at,
+    completedAt: order.completed_at,
+    total: Number(order.total || 0),
+    paymentMethod: order.payment_method || '—',
+    paymentStatus: order.payment_status || 'pending',
+    providerName: order.provider?.provider_name || 'Provider',
+    customerName: order.customer?.name || 'Customer',
+    steps: buildSteps(status, order.created_at, order.completed_at),
+    details: [
+      {
+        label: 'Provider',
+        value: order.provider?.provider_name || '—',
+        sub: order.provider?.farm_name || 'Fresh produce partner',
+        icon: 'user',
+      },
+      {
+        label: 'Payment',
+        value: (order.payment_method || '—').toUpperCase(),
+        sub: `Status: ${order.payment_status || 'pending'}`,
+        icon: 'box',
+      },
+    ],
+    items: items.map((entry) => ({
+      id: entry.id,
+      name: entry.product?.name || 'Product',
+      quantity: Number(entry.quantity || 1),
+      price: Number(entry.price || entry.product?.price || 0),
+      image: productImage(entry.product?.imageUrl),
+      category: entry.product?.category || '',
+    })),
+    deliveryFee: 0,
+    raw: order,
+  }
+}
 
 export const useOrderTrackerStore = defineStore('orderTracker', () => {
-  // ================= STATE =================
   const currentOrder = ref(null)
+  const customerOrders = ref([])
   const loading = ref(false)
   const error = ref(null)
 
-  // Sample order data (replace with API call)
-  const mockOrders = {
-    'EG-92841': {
-      id: 'EG-92841',
-      status: 'in-delivery',
-      arrivalTime: 'Today, 5:00 PM',
-      steps: [
-        { label: 'Order Placed', time: '9:45 AM', state: 'done', icon: 'check' },
-        { label: 'On the Way', time: 'Live tracking', state: 'active', icon: 'truck' },
-        { label: 'Delivered', time: 'Pending', state: 'pending', icon: 'gift' },
-      ],
-      details: [
-        { label: 'Assigned Courier', value: 'Vannak S.', sub: '<span style="color:#e9a830">★</span> 4.9 (2,400+ deliveries)', icon: 'user' },
-        { label: 'Package Size', value: '2 Eco-Friendly Boxes', sub: 'Chilled packaging included', icon: 'box' },
-      ],
-      items: [
-        { name: 'Organic Curly Kale', weight: '250g', tag: 'Farm Direct', price: 3.50, image: Broccoli },
-        { name: 'Heirloom Carrots', weight: '500g', tag: 'Mixed Colors', price: 4.20, image: Corn },
-        { name: 'Baby Bok Choy', weight: '300g', tag: 'Local Growth', price: 2.80, image: Broccoli },
-      ],
-      deliveryFee: 1.50,
-      farmCoords: [11.4700, 104.8800],
-      destCoords: [11.5564, 104.9282],
-      riderName: 'Vannak S.',
-      riderEmoji: '🛵',
-    },
-    'EG-81722': {
-      id: 'EG-81722',
-      status: 'delivered',
-      arrivalTime: 'Oct 19, 2024, 3:45 PM',
-      steps: [
-        { label: 'Order Placed', time: '9:00 AM', state: 'done', icon: 'check' },
-        { label: 'On the Way', time: '2:30 PM', state: 'done', icon: 'truck' },
-        { label: 'Delivered', time: '3:45 PM', state: 'done', icon: 'gift' },
-      ],
-      details: [
-        { label: 'Assigned Courier', value: 'Thea M.', sub: '<span style="color:#e9a830">★</span> 5.0 (1,200+ deliveries)', icon: 'user' },
-        { label: 'Package Size', value: '3 Eco-Friendly Boxes', sub: 'Express delivery', icon: 'box' },
-      ],
-      items: [
-        { name: 'Weekly Harvest Box', weight: '5kg', tag: 'Mixed Veggies', price: 24.00, image: Broccoli },
-        { name: 'Artisan Sourdough', weight: '500g', tag: 'Local Bakery', price: 6.50, image: Tomato },
-      ],
-      deliveryFee: 2.00,
-      farmCoords: [11.5100, 104.8600],
-      destCoords: [11.5700, 104.9400],
-      riderName: 'Thea M.',
-      riderEmoji: '🛵',
-    },
-  }
-
-  // ================= COMPUTED =================
   const subtotal = computed(() => {
     if (!currentOrder.value) return 0
-    return currentOrder.value.items.reduce((sum, item) => sum + item.price, 0)
+    return currentOrder.value.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    )
   })
 
   const total = computed(() => {
     if (!currentOrder.value) return 0
-    return subtotal.value + currentOrder.value.deliveryFee
+    return subtotal.value + (currentOrder.value.deliveryFee || 0)
   })
 
-  // ================= ACTIONS =================
   const fetchOrder = async (orderId) => {
     loading.value = true
     error.value = null
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300))
-
-      // In real app, replace with actual API call
-      if (mockOrders[orderId]) {
-        currentOrder.value = mockOrders[orderId]
-      } else {
+      const res = await axios.get(`${API_BASE_URL}/orders/${orderId}`)
+      currentOrder.value = mapOrder(res.data)
+      if (!currentOrder.value) {
         error.value = 'Order not found'
-        currentOrder.value = null
       }
     } catch (err) {
-      error.value = err.message
+      error.value = err.response?.data?.message || 'Order not found'
       currentOrder.value = null
     } finally {
       loading.value = false
     }
   }
 
-  const updateOrderStatus = (newStatus) => {
-    if (currentOrder.value) {
-      currentOrder.value.status = newStatus
+  const refreshOrder = async (orderId) => {
+    if (!orderId) return
+    try {
+      const res = await axios.get(`${API_BASE_URL}/orders/${orderId}`)
+      currentOrder.value = mapOrder(res.data)
+    } catch {
+      // silent refresh failure
+    }
+  }
+
+  const fetchCustomerOrders = async (customerId) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const res = await axios.get(`${API_BASE_URL}/orders/customer/${customerId}`)
+      const list = Array.isArray(res.data) ? res.data : []
+      customerOrders.value = list.map(mapOrder).filter(Boolean)
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to load orders'
+      customerOrders.value = []
+    } finally {
+      loading.value = false
     }
   }
 
   return {
     currentOrder,
+    customerOrders,
     loading,
     error,
     subtotal,
     total,
     fetchOrder,
-    updateOrderStatus,
+    refreshOrder,
+    fetchCustomerOrders,
+    mapOrder,
   }
 })

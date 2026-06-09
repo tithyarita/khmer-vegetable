@@ -45,7 +45,23 @@ export class ReportController {
   async findByDateRange(
     @Query('start') start: string,
     @Query('end') end: string,
+    @Query('period') period?: string,
   ) {
+    if (period) {
+      const periodMap: { [key: string]: string } = {
+        'today': 'Daily',
+        'daily': 'Daily',
+        'day': 'Daily',
+        'weekly': 'Weekly',
+        'week': 'Weekly',
+        'monthly': 'Monthly',
+        'month': 'Monthly',
+        'yearly': 'Yearly',
+        'year': 'Yearly',
+      };
+      const mappedPeriod = periodMap[period.toLowerCase()] || 'Monthly';
+      return this.reportService.findByPeriod(mappedPeriod);
+    }
     return this.reportService.findByDateRange(start, end);
   }
 

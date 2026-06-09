@@ -1,184 +1,284 @@
 <template>
   <div class="dashboard-layout">
     <DashboardSidebar :activeMenu="activeMenu" @navigate="handleNavigate" />
-    <!-- Main Content -->
+
     <main class="main-content">
-      <!-- Top Bar -->
       <header class="topbar">
         <button class="menu-toggle" @click="toggleSidebar" aria-label="Toggle menu">
           <i class="bi bi-list"></i>
         </button>
-        <div class="user-info">
-          <div class="avatar">
-            <img v-if="user?.avatar" :src="user.avatar" alt="avatar" class="avatar-img" />
-            <span v-else class="avatar-initials">{{ userInitials }}</span>
-          </div>
-          <div>
-            <div class="name">{{ user?.name || user?.email }}</div>
-            <div class="role">Verified Customer</div>
-          </div>
+        <div class="topbar-title">
+          <h1>My Profile</h1>
+          <p>Manage your account details and delivery address</p>
         </div>
       </header>
 
-      <!-- Dashboard Overview -->
-      <template v-if="activeMenu === 'dashboard'">
-        <!-- Profile Card -->
-        <section class="profile-card">
-          <div class="profile-avatar">
-            <img v-if="user?.avatar" :src="user.avatar" alt="avatar" class="avatar-img" />
-            <span v-else class="avatar-initials">{{ userInitials }}</span>
+      <!-- Profile Hero -->
+      <section class="profile-hero">
+        <div class="hero-avatar">
+          <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" class="avatar-img" />
+          <span v-else class="avatar-initials">{{ userInitials }}</span>
+          <label v-if="editingAvatar" class="avatar-upload-btn" for="avatar-input">
+            <i class="bi bi-camera"></i>
+          </label>
+          <input id="avatar-input" type="file" accept="image/*" @change="onAvatarChange" hidden />
+        </div>
+        <div class="hero-info">
+          <h2>{{ user?.name || 'Customer' }}</h2>
+          <span class="role-badge"><i class="bi bi-patch-check-fill"></i> Verified Customer</span>
+          <p class="hero-email">{{ user?.email }}</p>
+        </div>
+        <button v-if="!editingAvatar" class="ghost-btn" type="button" @click="editingAvatar = true">
+          <i class="bi bi-camera"></i> Change Photo
+        </button>
+        <div v-else class="avatar-actions">
+          <button class="primary-btn sm" type="button" :disabled="savingAvatar" @click="saveAvatar">
+            {{ savingAvatar ? 'Saving...' : 'Save Photo' }}
+          </button>
+          <button class="ghost-btn sm" type="button" @click="cancelAvatarEdit">Cancel</button>
+        </div>
+      </section>
+
+      <div v-if="toast.message" :class="['toast', toast.type]">{{ toast.message }}</div>
+
+      <!-- Info Cards -->
+      <div class="profile-grid">
+        <!-- Personal Info -->
+        <section class="info-card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="bi bi-person-circle"></i>
+              <div>
+                <h3>Personal Information</h3>
+                <p>Your name and contact number</p>
+              </div>
+            </div>
+            <button
+              v-if="!editingPersonal"
+              class="edit-link"
+              type="button"
+              @click="startPersonalEdit"
+            >
+              <i class="bi bi-pencil"></i> Edit
+            </button>
           </div>
-          <div class="profile-info">
-            <template v-if="!editingProfile">
-              <h2>{{ user?.name || user?.email }}</h2>
-              <div class="email">{{ user?.email }}</div>
-              <div class="phone">{{ user?.phone || '-' }}</div>
-              <div class="address">{{ user?.address || '-' }}</div>
-              <button class="edit-btn" @click="editingProfile = true">Edit Profile</button>
-            </template>
-            <template v-else>
-              <form @submit.prevent="saveProfile" class="edit-profile-form">
-                <div class="avatar-upload">
-                  <label for="avatar-input" class="avatar-upload-label">
-                    <img v-if="editForm.avatarPreview || user?.avatar" :src="editForm.avatarPreview || user?.avatar" alt="avatar" class="avatar-img" />
-                    <span v-else class="avatar-initials">{{ userInitials }}</span>
-                    <span class="avatar-overlay"><i class="bi bi-camera"></i></span>
-                  </label>
-                  <input id="avatar-input" type="file" accept="image/*" @change="onAvatarChange" hidden />
-                </div>
-                <input v-model="editForm.name" name="name" id="profile-name" placeholder="Name" autocomplete="name" />
-                <input v-model="editForm.email" name="email" id="profile-email" placeholder="Email" type="email" autocomplete="email" />
-                <input v-model="editForm.phone" name="phone" id="profile-phone" placeholder="Phone" autocomplete="tel" />
-                <input v-model="editForm.address" name="address" id="profile-address" placeholder="Address" autocomplete="street-address" />
-                <div class="edit-actions">
-                  <button class="edit-btn" type="submit" :disabled="savingProfile">Save</button>
-                  <button class="edit-btn cancel" type="button" @click="cancelEdit" :disabled="savingProfile">Cancel</button>
-                </div>
-              </form>
-            </template>
+
+          <div v-if="!editingPersonal" class="card-body">
+            <div class="info-row">
+              <span class="label">Full Name</span>
+              <span class="value">{{ user?.name || '—' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Email</span>
+              <span class="value locked">
+                {{ user?.email || '—' }}
+                <span class="lock-tag"><i class="bi bi-lock-fill"></i> Cannot be changed</span>
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="label">Phone</span>
+              <span class="value">{{ user?.phone || '—' }}</span>
+            </div>
           </div>
+
+          <form v-else class="card-body edit-form" @submit.prevent="savePersonal">
+            <div class="field">
+              <label for="profile-name">Full Name</label>
+              <input id="profile-name" v-model="personalForm.name" type="text" placeholder="Your full name" required />
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input :value="user?.email" type="email" disabled class="disabled-input" />
+              <small class="hint">Email address is linked to your account and cannot be changed.</small>
+            </div>
+            <div class="field">
+              <label for="profile-phone">Phone Number</label>
+              <input id="profile-phone" v-model="personalForm.phone" type="tel" placeholder="012 345 678" required />
+            </div>
+            <div class="form-actions">
+              <button class="primary-btn" type="submit" :disabled="savingPersonal">
+                {{ savingPersonal ? 'Saving...' : 'Save Changes' }}
+              </button>
+              <button class="ghost-btn" type="button" @click="cancelPersonalEdit">Cancel</button>
+            </div>
+          </form>
         </section>
 
-        <!-- Order Summary Cards -->
-        <section class="order-summary">
-          <div class="summary-card">
-            <div class="summary-title">Total Orders</div>
-            <div class="summary-value">{{ orders.length }} <span class="summary-change up">+2</span></div>
+        <!-- Address -->
+        <section class="info-card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="bi bi-geo-alt"></i>
+              <div>
+                <h3>Shipping Address</h3>
+                <p>Where we deliver your orders</p>
+              </div>
+            </div>
+            <button
+              v-if="!editingAddress"
+              class="edit-link"
+              type="button"
+              @click="startAddressEdit"
+            >
+              <i class="bi bi-pencil"></i> Edit
+            </button>
           </div>
-          <div class="summary-card">
-            <div class="summary-title">Pending Orders</div>
-            <div class="summary-value">{{ orders.filter(o => o.status === 'pending').length }} <span class="summary-change warn">Requires Action</span></div>
-          </div>
-          <div class="summary-card">
-            <div class="summary-title">Completed Orders</div>
-            <div class="summary-value">{{ orders.filter(o => o.status === 'delivered').length }} <span class="summary-change ok">HEALTHY</span></div>
-          </div>
-          <div class="summary-card">
-            <div class="summary-title">Items in Cart</div>
 
-            <div class="summary-value">{{ userStore.cart.length }} <span class="summary-change">items waiting</span></div>
-            <div class="summary-value">{{ cartStore.cartCount }} <span class="summary-change">items waiting</span></div>
+          <div v-if="!editingAddress" class="card-body">
+            <div v-if="hasAddress" class="address-display">
+              <p class="address-line">{{ addressDisplay.street }}</p>
+              <p class="address-line muted">
+                {{ [addressDisplay.city, addressDisplay.state, addressDisplay.zip].filter(Boolean).join(', ') }}
+              </p>
+              <p v-if="addressDisplay.country" class="address-line muted">{{ addressDisplay.country }}</p>
+            </div>
+            <div v-else class="empty-state">
+              <i class="bi bi-house"></i>
+              <p>No address saved yet</p>
+              <button class="primary-btn sm" type="button" @click="startAddressEdit">Add Address</button>
+            </div>
           </div>
+
+          <form v-else class="card-body edit-form" @submit.prevent="saveAddress">
+            <div class="field">
+              <label for="addr-street">Street Address</label>
+              <input id="addr-street" v-model="addressForm.street" type="text" placeholder="House no., street, commune" required />
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="addr-city">City</label>
+                <input id="addr-city" v-model="addressForm.city" type="text" placeholder="Phnom Penh" required />
+              </div>
+              <div class="field">
+                <label for="addr-state">Province / State</label>
+                <input id="addr-state" v-model="addressForm.state" type="text" placeholder="Kandal" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="addr-zip">ZIP / Postal</label>
+                <input id="addr-zip" v-model="addressForm.zip" type="text" placeholder="12000" />
+              </div>
+              <div class="field">
+                <label for="addr-country">Country</label>
+                <select id="addr-country" v-model="addressForm.country">
+                  <option value="Cambodia">Cambodia</option>
+                  <option value="Thailand">Thailand</option>
+                  <option value="Vietnam">Vietnam</option>
+                  <option value="Laos">Laos</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="primary-btn" type="submit" :disabled="savingAddress">
+                {{ savingAddress ? 'Saving...' : 'Save Address' }}
+              </button>
+              <button class="ghost-btn" type="button" @click="cancelAddressEdit">Cancel</button>
+            </div>
+          </form>
         </section>
+      </div>
 
-        <!-- Recent Orders Table -->
-        <section class="recent-orders">
-          <div class="section-header">
-            <h3>Recent Orders</h3>
-            <a class="view-all" @click="activeMenu = 'orders'">View All History</a>
+      <!-- Password -->
+      <section class="info-card security-card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="bi bi-shield-lock"></i>
+            <div>
+              <h3>Password & Security</h3>
+              <p>Update your login password</p>
+            </div>
           </div>
-          <table class="orders-table">
-            <thead>
-              <tr>
-                <th>ORDER ID</th>
-                <th>PRODUCTS</th>
-                <th>QUANTITY</th>
-                <th>TOTAL PRICE</th>
-                <th>STATUS</th>
-                <th>DATE</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="order in orders.slice(0,3)" :key="order.id">
-                <td class="order-id">#ORD-{{ order.id }}</td>
-                <td>
-                  {{ order.products.map(p => p.name).join(', ') }}<br />
-                  <span class="product-desc">{{ order.products[0]?.description || '' }}</span>
-                </td>
-                <td>{{ order.products.reduce((sum, p) => sum + (p.quantity || 1), 0) }} kg</td>
-                <td>${{ order.totalPrice.toFixed(2) }}</td>
-                <td>
-                  <span :class="['status', order.status]">
-                    {{ order.status.charAt(0).toUpperCase() + order.status.slice(1) }}
-                  </span>
-                </td>
-                <td>{{ new Date(order.createdAt).toLocaleDateString() }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
+          <button
+            v-if="!editingPassword"
+            class="edit-link"
+            type="button"
+            @click="editingPassword = true"
+          >
+            <i class="bi bi-key"></i> Change Password
+          </button>
+        </div>
 
-        <!-- Promo Section -->
-        <section class="promo">
-          <div class="promo-content">
-            <h4>Exclusive Seasonal Harvests</h4>
-            <p>Based on your previous orders, we've reserved fresh Battambang Lotus Roots just for you. Grab them before they sell out!</p>
+        <div v-if="!editingPassword" class="card-body">
+          <p class="security-hint">Your password is hidden for security. Click "Change Password" to update it.</p>
+        </div>
+
+        <form v-else class="card-body edit-form" @submit.prevent="savePassword">
+          <div class="field">
+            <label for="current-pw">Current Password</label>
+            <input id="current-pw" v-model="passwordForm.current" type="password" placeholder="Enter current password" required />
           </div>
-          <button class="promo-btn">Explore Today's Fresh Picks</button>
-        </section>
-      </template>
-
-      <!-- Profile Section -->
-      <template v-if="activeMenu === 'profile'">
-        <section class="profile-card">
-          <div class="profile-avatar">
-            <img v-if="user?.avatar" :src="user.avatar" alt="avatar" class="avatar-img" />
-            <span v-else class="avatar-initials">{{ userInitials }}</span>
+          <div class="field-row">
+            <div class="field">
+              <label for="new-pw">New Password</label>
+              <input id="new-pw" v-model="passwordForm.new" type="password" placeholder="At least 6 characters" required minlength="6" />
+            </div>
+            <div class="field">
+              <label for="confirm-pw">Confirm New Password</label>
+              <input id="confirm-pw" v-model="passwordForm.confirm" type="password" placeholder="Repeat new password" required />
+            </div>
           </div>
-          <div class="profile-info">
-            <template v-if="!editingProfile">
-              <h2>{{ user?.name || user?.email }}</h2>
-              <div class="email">{{ user?.email }}</div>
-              <div class="phone">{{ user?.phone || '-' }}</div>
-              <div class="address">{{ user?.address || '-' }}</div>
-              <button class="edit-btn" @click="editingProfile = true">Edit Profile</button>
-            </template>
-            <template v-else>
-              <form @submit.prevent="saveProfile" class="edit-profile-form">
-                <div class="avatar-upload">
-                  <label for="avatar-input2" class="avatar-upload-label">
-                    <img v-if="editForm.avatarPreview || user?.avatar" :src="editForm.avatarPreview || user?.avatar" alt="avatar" class="avatar-img" />
-                    <span v-else class="avatar-initials">{{ userInitials }}</span>
-                    <span class="avatar-overlay"><i class="bi bi-camera"></i></span>
-                  </label>
-                  <input id="avatar-input2" type="file" accept="image/*" @change="onAvatarChange" hidden />
-                </div>
-                <input v-model="editForm.name" name="name" id="profile-name" placeholder="Name" autocomplete="name" />
-                <input v-model="editForm.email" name="email" id="profile-email" placeholder="Email" type="email" autocomplete="email" />
-                <input v-model="editForm.phone" name="phone" id="profile-phone" placeholder="Phone" autocomplete="tel" />
-                <input v-model="editForm.address" name="address" id="profile-address" placeholder="Address" autocomplete="street-address" />
-                <div class="edit-actions">
-                  <button class="edit-btn" type="submit" :disabled="savingProfile">Save</button>
-                  <button class="edit-btn cancel" type="button" @click="cancelEdit" :disabled="savingProfile">Cancel</button>
-                </div>
-              </form>
-            </template>
+          <p v-if="passwordError" class="error-text">{{ passwordError }}</p>
+          <div class="form-actions">
+            <button class="primary-btn" type="submit" :disabled="savingPassword">
+              {{ savingPassword ? 'Updating...' : 'Update Password' }}
+            </button>
+            <button class="ghost-btn" type="button" @click="cancelPasswordEdit">Cancel</button>
           </div>
-        </section>
-      </template>
+        </form>
+      </section>
 
+      <!-- Quick Stats -->
+      <section class="stats-row">
+        <div class="stat-card">
+          <span class="stat-label">Total Orders</span>
+          <span class="stat-value">{{ orders.length }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Pending</span>
+          <span class="stat-value warn">{{ orders.filter(o => o.status === 'pending').length }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Delivered</span>
+          <span class="stat-value ok">{{ orders.filter(o => o.status === 'delivered').length }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Cart Items</span>
+          <span class="stat-value">{{ cartStore.cartCount }}</span>
+        </div>
+      </section>
 
+      <section v-if="orders.length" class="recent-orders">
+        <div class="section-header">
+          <h3>Recent Orders</h3>
+          <router-link to="/myorder" class="view-all">View all</router-link>
+        </div>
+        <div class="orders-list">
+          <div v-for="order in orders.slice(0, 3)" :key="order.id" class="order-item">
+            <div>
+              <span class="order-id">#ORD-{{ order.id }}</span>
+              <p class="order-products">{{ order.products.map(p => p.name).join(', ') }}</p>
+            </div>
+            <div class="order-meta">
+              <span :class="['status', order.status]">{{ order.status }}</span>
+              <span class="order-total">${{ order.totalPrice.toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, provide, computed, onMounted } from 'vue'
+import { ref, provide, computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { useCartStore } from '@/stores/cartStore'
 import DashboardSidebar from '@/components/Customer/sidebarUser.vue'
 import axios from 'axios'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -186,11 +286,19 @@ const cartStore = useCartStore()
 const activeMenu = ref('dashboard')
 const user = computed(() => userStore.user)
 const orders = ref([])
-const loading = ref(true)
 
 const userInitials = computed(() => {
   if (!user.value?.name) return '?'
   return user.value.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+})
+
+const avatarUrl = computed(() => {
+  const src = editingAvatar.value && avatarPreview.value
+    ? avatarPreview.value
+    : user.value?.avatar
+  if (!src) return ''
+  if (src.startsWith('http') || src.startsWith('data:')) return src
+  return `${API_BASE_URL}${src}`
 })
 
 const isSidebarOpen = ref(false)
@@ -199,96 +307,272 @@ const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value }
 provide('isSidebarOpen', isSidebarOpen)
 provide('closeSidebar', closeSidebar)
 
-// Profile editing state
-const editingProfile = ref(false)
-const savingProfile = ref(false)
-const editForm = ref({ name: '', email: '', phone: '', address: '', avatar: null, avatarPreview: '' })
+const toast = reactive({ message: '', type: 'success' })
+let toastTimer = null
+
+function showToast(message, type = 'success') {
+  toast.message = message
+  toast.type = type
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toast.message = '' }, 3500)
+}
+
+// Avatar
+const editingAvatar = ref(false)
+const savingAvatar = ref(false)
+const avatarFile = ref(null)
+const avatarPreview = ref('')
 
 function onAvatarChange(e) {
-  const file = e.target.files[0]
+  const file = e.target.files?.[0]
   if (!file) return
-  editForm.value.avatar = file
+  avatarFile.value = file
   const reader = new FileReader()
-  reader.onload = (ev) => { editForm.value.avatarPreview = ev.target.result }
+  reader.onload = (ev) => { avatarPreview.value = ev.target.result }
   reader.readAsDataURL(file)
 }
 
-function startEdit() {
-  editForm.value = {
-    name: user.value?.name || '',
-    email: user.value?.email || '',
-    phone: user.value?.phone || '',
-    address: user.value?.address || '',
-    avatar: null,
-    avatarPreview: ''
+function cancelAvatarEdit() {
+  editingAvatar.value = false
+  avatarFile.value = null
+  avatarPreview.value = ''
+}
+
+async function saveAvatar() {
+  if (!avatarFile.value) {
+    showToast('Please select a photo first', 'error')
+    return
   }
-  editingProfile.value = true
+  savingAvatar.value = true
+  try {
+    const formData = new FormData()
+    formData.append('name', user.value.name)
+    formData.append('avatar', avatarFile.value)
+    const res = await axios.put(`${API_BASE_URL}/users/${user.value.id}`, formData, {
+      headers: { Authorization: `Bearer ${userStore.token}` },
+    })
+    userStore.setUser(res.data, userStore.token)
+    cancelAvatarEdit()
+    showToast('Profile photo updated')
+  } catch {
+    showToast('Failed to update photo', 'error')
+  } finally {
+    savingAvatar.value = false
+  }
 }
 
-function cancelEdit() {
-  editingProfile.value = false
+// Personal info
+const editingPersonal = ref(false)
+const savingPersonal = ref(false)
+const personalForm = ref({ name: '', phone: '' })
+
+function startPersonalEdit() {
+  personalForm.value = {
+    name: user.value?.name || '',
+    phone: user.value?.phone || '',
+  }
+  editingPersonal.value = true
 }
 
-function logout() {
-  userStore.logout()
-  router.push('/user/login')
+function cancelPersonalEdit() {
+  editingPersonal.value = false
+}
+
+async function savePersonal() {
+  savingPersonal.value = true
+  try {
+    const formData = new FormData()
+    formData.append('name', personalForm.value.name.trim())
+    formData.append('phone', personalForm.value.phone.trim())
+    const res = await axios.put(`${API_BASE_URL}/users/${user.value.id}`, formData, {
+      headers: { Authorization: `Bearer ${userStore.token}` },
+    })
+    userStore.setUser(res.data, userStore.token)
+    editingPersonal.value = false
+    showToast('Personal information updated')
+  } catch {
+    showToast('Failed to update profile', 'error')
+  } finally {
+    savingPersonal.value = false
+  }
+}
+
+// Address
+const editingAddress = ref(false)
+const savingAddress = ref(false)
+const addressForm = ref({
+  street: '',
+  city: '',
+  state: '',
+  zip: '',
+  country: 'Cambodia',
+})
+const addressDisplay = ref({
+  street: '',
+  city: '',
+  state: '',
+  zip: '',
+  country: '',
+})
+
+const hasAddress = computed(() => Boolean(addressDisplay.value.street?.trim()))
+
+async function loadAddress() {
+  const token = userStore.token || localStorage.getItem('token')
+  if (!token) return
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/address`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) return
+
+    const text = await res.text()
+    if (!text) return
+
+    const data = JSON.parse(text)
+    if (!data?.id) return
+
+    addressDisplay.value = {
+      street: data.street || '',
+      city: data.city || '',
+      state: data.state || '',
+      zip: data.zip || '',
+      country: data.country || '',
+    }
+  } catch (err) {
+    console.error('Failed to load address:', err)
+  }
+}
+
+function startAddressEdit() {
+  addressForm.value = { ...addressDisplay.value, country: addressDisplay.value.country || 'Cambodia' }
+  editingAddress.value = true
+}
+
+function cancelAddressEdit() {
+  editingAddress.value = false
+}
+
+async function saveAddress() {
+  savingAddress.value = true
+  try {
+    const nameParts = (user.value?.name || '').trim().split(/\s+/)
+    const token = userStore.token || localStorage.getItem('token')
+
+    const res = await axios.post(
+      `${API_BASE_URL}/address`,
+      {
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        street: addressForm.value.street.trim(),
+        city: addressForm.value.city.trim(),
+        state: addressForm.value.state.trim(),
+        zip: addressForm.value.zip.trim(),
+        country: addressForm.value.country,
+        phone: user.value?.phone || '',
+        email: user.value?.email || '',
+      },
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+
+    addressDisplay.value = {
+      street: res.data.street || addressForm.value.street,
+      city: res.data.city || addressForm.value.city,
+      state: res.data.state || addressForm.value.state,
+      zip: res.data.zip || addressForm.value.zip,
+      country: res.data.country || addressForm.value.country,
+    }
+    editingAddress.value = false
+    showToast('Address saved successfully')
+  } catch {
+    showToast('Failed to save address', 'error')
+  } finally {
+    savingAddress.value = false
+  }
+}
+
+// Password
+const editingPassword = ref(false)
+const savingPassword = ref(false)
+const passwordError = ref('')
+const passwordForm = ref({ current: '', new: '', confirm: '' })
+
+function cancelPasswordEdit() {
+  editingPassword.value = false
+  passwordError.value = ''
+  passwordForm.value = { current: '', new: '', confirm: '' }
+}
+
+async function savePassword() {
+  passwordError.value = ''
+
+  if (passwordForm.value.new !== passwordForm.value.confirm) {
+    passwordError.value = 'New passwords do not match'
+    return
+  }
+  if (passwordForm.value.new.length < 6) {
+    passwordError.value = 'Password must be at least 6 characters'
+    return
+  }
+
+  savingPassword.value = true
+  try {
+    await axios.patch(
+      `${API_BASE_URL}/users/${user.value.id}/password`,
+      {
+        currentPassword: passwordForm.value.current,
+        newPassword: passwordForm.value.new,
+      },
+      { headers: { Authorization: `Bearer ${userStore.token}` } },
+    )
+    cancelPasswordEdit()
+    showToast('Password updated successfully')
+  } catch (err) {
+    passwordError.value = err.response?.data?.message || 'Failed to update password'
+  } finally {
+    savingPassword.value = false
+  }
 }
 
 function handleNavigate(section) {
   if (section === 'orders') router.push('/myorder')
-  else if (section === 'track') router.push('/myorder') 
+  else if (section === 'track') router.push('/order-tracker')
   else activeMenu.value = section
 }
 
-async function saveProfile() {
-  savingProfile.value = true
+async function loadOrders() {
+  if (!user.value?.id) return
   try {
-    const formData = new FormData()
-    formData.append('name', editForm.value.name)
-    formData.append('email', editForm.value.email)
-    formData.append('phone', editForm.value.phone)
-    formData.append('address', editForm.value.address)
-    if (editForm.value.avatar) {
-      formData.append('avatar', editForm.value.avatar)
-    }
-    const res = await axios.put(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.value.id}`, formData, {
-      headers: { Authorization: `Bearer ${userStore.token}` }
+    const res = await axios.get(`${API_BASE_URL}/users/${user.value.id}/orders`, {
+      headers: { Authorization: `Bearer ${userStore.token}` },
     })
-    userStore.setUser(res.data, userStore.token)
-    editingProfile.value = false
-  } catch (e) {
-    alert('Failed to update profile')
+    orders.value = res.data.map(order => {
+      const items = Array.isArray(order.order_items) ? order.order_items : []
+      const products = items.map(item => ({
+        id: item.product?.id,
+        name: item.product?.name || 'Product',
+        quantity: item.quantity || 1,
+      }))
+      return {
+        id: order.id,
+        products,
+        totalPrice: Number(order.total || 0),
+        status: order.status || 'pending',
+        createdAt: order.created_at || new Date(),
+      }
+    })
+  } catch {
+    orders.value = []
   }
-  savingProfile.value = false
 }
 
 onMounted(async () => {
-  if (user.value && user.value.id) {
-    try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/users/${user.value.id}/orders`, {
-        headers: { Authorization: `Bearer ${userStore.token}` }
-      })
-      orders.value = res.data.map(order => {
-        const items = Array.isArray(order.order_items) ? order.order_items : []
-        const products = items.map(item => ({
-          id: item.product?.id,
-          name: item.product?.name || 'Product',
-          description: item.product?.description || '',
-          quantity: item.quantity || 1,
-        }))
-        return {
-          id: order.id,
-          products: products,
-          totalPrice: Number(order.total || 0),
-          status: order.status || 'pending',
-          createdAt: order.created_at || new Date(),
-        }
-      })
-    } catch (e) {
-      orders.value = []
-    }
+  if (!user.value?.id) {
+    router.push('/user/login?redirect=/profile')
+    return
   }
-  loading.value = false
+  await Promise.all([loadAddress(), loadOrders(), cartStore.fetchCartFromBackend()])
 })
 </script>
 
@@ -298,8 +582,9 @@ onMounted(async () => {
   height: 100vh;
   overflow: hidden;
   width: 100%;
-  background: #f7f9fa;
+  background: #f4f7f5;
 }
+
 .menu-toggle {
   display: none;
   background: none;
@@ -309,48 +594,61 @@ onMounted(async () => {
   cursor: pointer;
   padding: 4px;
 }
+
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 32px 48px;
-  max-width: 1280px;
+  padding: 28px 40px 48px;
+  max-width: 1100px;
   width: 100%;
 }
+
 .topbar {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 32px;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
 }
-.user-info {
+
+.topbar-title h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a2e1f;
+}
+
+.topbar-title p {
+  margin: 4px 0 0;
+  color: #6b7c72;
+  font-size: 0.92rem;
+}
+
+/* Hero */
+.profile-hero {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, #2d7a3a 0%, #4a9e5c 100%);
+  border-radius: 20px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(45, 122, 58, 0.2);
 }
-.avatar,
-.profile-avatar {
+
+.hero-avatar {
+  position: relative;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #d0ecda;
-  color: #2D7A3A;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  font-size: 16px;
-}
-
-.profile-avatar {
-  width: 80px;
-  height: 80px;
-  margin-right: 32px;
-  font-size: 32px;
+  flex-shrink: 0;
+  border: 3px solid rgba(255, 255, 255, 0.5);
+  overflow: hidden;
 }
 
 .avatar-img {
@@ -360,219 +658,499 @@ onMounted(async () => {
 }
 
 .avatar-initials {
+  font-size: 2rem;
   font-weight: 700;
-  color: #2D7A3A;
+  color: #fff;
 }
 
-.avatar-upload {
-  text-align: center;
-  margin-bottom: 12px;
-}
-
-.avatar-upload-label {
-  position: relative;
-  display: inline-block;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  overflow: hidden;
-  cursor: pointer;
-  background: #d0ecda;
-}
-
-.avatar-upload-label .avatar-initials {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-size: 28px;
-}
-
-.avatar-overlay {
+.avatar-upload-btn {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.4);
-  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  opacity: 0;
-  transition: opacity 0.15s;
+  cursor: pointer;
+  font-size: 1.4rem;
 }
 
-.avatar-upload-label:hover .avatar-overlay {
-  opacity: 1;
-}
-.name {
-  font-weight: 600;
-  font-size: 16px;
-}
-.role {
-  font-size: 13px;
-  color: #7ca982;
-}
-.profile-card {
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border-radius: 16px;
-  padding: 28px 32px;
-  margin-bottom: 32px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-}
-.profile-info {
+.hero-info {
   flex: 1;
+  min-width: 180px;
 }
-.profile-info h2 {
-  margin: 0 0 8px 0;
-  font-size: 22px;
-}
-.profile-info .email, .profile-info .phone, .profile-info .address {
-  font-size: 15px;
-  color: #666;
-  margin-bottom: 2px;
-}
-.edit-btn {
-  background: #7ca982;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 15px;
-  cursor: pointer;
-}
-.order-summary {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 32px;
-}
-.summary-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px 28px;
-  flex: 1;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-}
-.summary-title {
-  font-size: 14px;
-  color: #888;
-  margin-bottom: 8px;
-}
-.summary-value {
-  font-size: 22px;
+
+.hero-info h2 {
+  margin: 0 0 6px;
+  font-size: 1.5rem;
   font-weight: 700;
 }
-.summary-change {
-  font-size: 13px;
-  margin-left: 8px;
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
 }
-.summary-change.up {
-  color: #4caf50;
+
+.hero-email {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
 }
-.summary-change.warn {
-  color: #e53;
+
+.avatar-actions {
+  display: flex;
+  gap: 8px;
 }
-.summary-change.ok {
-  color: #7ca982;
+
+/* Toast */
+.toast {
+  padding: 12px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
+
+.toast.success {
+  background: #e8f5ec;
+  color: #2d7a3a;
+  border: 1px solid #b8dfc4;
+}
+
+.toast.error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* Cards */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.info-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e8ede9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+.security-card {
+  margin-bottom: 24px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+  gap: 12px;
+}
+
+.card-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.card-title > i {
+  font-size: 1.4rem;
+  color: #2d7a3a;
+  margin-top: 2px;
+}
+
+.card-title h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2e1f;
+}
+
+.card-title p {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: #8a9a90;
+}
+
+.edit-link {
+  background: none;
+  border: none;
+  color: #2d7a3a;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.edit-link:hover {
+  background: #eaf5ee;
+}
+
+.card-body {
+  padding: 16px 24px 24px;
+}
+
+.info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f4f1;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row .label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a9a90;
+}
+
+.info-row .value {
+  font-size: 0.95rem;
+  color: #1a2e1f;
+  font-weight: 500;
+}
+
+.info-row .value.locked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.lock-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: #8a9a90;
+  background: #f4f7f5;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.address-display .address-line {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  color: #1a2e1f;
+}
+
+.address-display .address-line.muted {
+  color: #6b7c72;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 20px 0;
+  color: #8a9a90;
+}
+
+.empty-state i {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 8px;
+  color: #c5d4ca;
+}
+
+.empty-state p {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+}
+
+.security-hint {
+  margin: 0;
+  color: #6b7c72;
+  font-size: 0.9rem;
+}
+
+/* Forms */
+.edit-form .field {
+  margin-bottom: 14px;
+}
+
+.edit-form .field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.edit-form label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4a5c50;
+  margin-bottom: 6px;
+}
+
+.edit-form input,
+.edit-form select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #dde5df;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  color: #1a2e1f;
+  background: #fafcfa;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.edit-form input:focus,
+.edit-form select:focus {
+  outline: none;
+  border-color: #2d7a3a;
+  box-shadow: 0 0 0 3px rgba(45, 122, 58, 0.12);
+}
+
+.disabled-input {
+  background: #f0f4f1 !important;
+  color: #8a9a90 !important;
+  cursor: not-allowed;
+}
+
+.hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.75rem;
+  color: #8a9a90;
+}
+
+.error-text {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin: 0 0 10px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* Buttons */
+.primary-btn {
+  background: #2d7a3a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: #246830;
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.primary-btn.sm {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
+.ghost-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+
+.ghost-btn.sm {
+  padding: 8px 14px;
+}
+
+.ghost-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.info-card .ghost-btn,
+.form-actions .ghost-btn {
+  background: #f4f7f5;
+  color: #4a5c50;
+  border-color: #dde5df;
+}
+
+.info-card .ghost-btn:hover,
+.form-actions .ghost-btn:hover {
+  background: #eaf0eb;
+}
+
+/* Stats */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px 20px;
+  border: 1px solid #e8ede9;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: #8a9a90;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a2e1f;
+}
+
+.stat-value.warn { color: #d97706; }
+.stat-value.ok { color: #2d7a3a; }
+
+/* Recent orders */
 .recent-orders {
   background: #fff;
   border-radius: 16px;
-  padding: 28px 32px;
-  margin-bottom: 32px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  border: 1px solid #e8ede9;
+  padding: 22px 24px;
 }
+
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
-.orders-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.orders-table th, .orders-table td {
-  padding: 12px 8px;
-  text-align: left;
-  font-size: 15px;
-}
-.orders-table th {
-  color: #888;
-  font-weight: 500;
-  border-bottom: 1px solid #eee;
-}
-.orders-table .order-id {
-  color: #7ca982;
-  font-weight: 600;
-}
-.orders-table .product-desc {
-  color: #888;
-  font-size: 13px;
-}
-.status {
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-}
-.status.delivered {
-  background: #eaf5ee;
-  color: #4caf50;
-}
-.status.shipped {
-  background: #e3eafc;
-  color: #1976d2;
-}
-.promo {
-  background: #eaf5ee;
-  border-radius: 16px;
-  padding: 28px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.promo-content h4 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-}
-.promo-content p {
-  color: #666;
-  font-size: 15px;
+
+.section-header h3 {
   margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2e1f;
 }
+
 .view-all {
-  color: #2d7a4f;
-  font-size: 14px;
+  color: #2d7a3a;
+  font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none;
-  cursor: pointer;
 }
+
 .view-all:hover {
   text-decoration: underline;
 }
-.promo-btn {
-  background: #7ca982;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 15px;
-  cursor: pointer;
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-@media (max-width: 1024px) {
-  .main-content {
-    padding: 24px;
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: #f9fbf9;
+  border-radius: 12px;
+  gap: 12px;
+}
+
+.order-id {
+  font-weight: 700;
+  color: #2d7a3a;
+  font-size: 0.88rem;
+}
+
+.order-products {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: #6b7c72;
+}
+
+.order-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.order-total {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1a2e1f;
+}
+
+.status {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: #f0f4f1;
+  color: #6b7c72;
+}
+
+.status.delivered {
+  background: #e8f5ec;
+  color: #2d7a3a;
+}
+
+.status.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status.shipped {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+@media (max-width: 900px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
   }
-  .order-summary {
-    flex-wrap: wrap;
-  }
-  .summary-card {
-    flex: 1 1 calc(50% - 12px);
-    min-width: 200px;
+
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -582,55 +1160,53 @@ onMounted(async () => {
     align-items: center;
     justify-content: center;
   }
-  .profile-card {
+
+  .main-content {
+    padding: 20px 16px 32px;
+  }
+
+  .profile-hero {
     flex-direction: column;
     text-align: center;
-    padding: 20px;
+    padding: 24px 20px;
   }
-  .profile-avatar {
-    margin-right: 0;
-    margin-bottom: 16px;
+
+  .avatar-actions {
+    width: 100%;
+    justify-content: center;
   }
-  .order-summary {
+
+  .edit-form .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
     flex-direction: column;
   }
-  .summary-card {
-    flex: 1 1 auto;
-  }
-  .recent-orders {
-    padding: 16px;
-    overflow-x: auto;
-  }
-  .orders-table {
-    min-width: 600px;
-  }
-  .promo {
-    flex-direction: column;
+
+  .form-actions .primary-btn,
+  .form-actions .ghost-btn {
+    width: 100%;
     text-align: center;
-    gap: 16px;
-    padding: 20px;
+    justify-content: center;
+  }
+
+  .order-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .order-meta {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
   }
 }
 
 @media (max-width: 480px) {
-  .summary-card {
-    padding: 16px 20px;
-  }
-  .summary-value {
-    font-size: 18px;
-  }
-  .profile-avatar {
-    width: 60px;
-    height: 60px;
-  }
-  .profile-info h2 {
-    font-size: 18px;
-  }
-  .edit-btn {
-    width: 100%;
-  }
-  .edit-actions {
-    flex-direction: column;
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
   }
 }
 </style>

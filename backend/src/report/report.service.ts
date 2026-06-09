@@ -49,23 +49,29 @@ export class ReportService {
 
       const d = new Date(o.created_at);
 
-      switch (period) {
-        case 'Daily':
+      switch (period.toLowerCase()) {
+        case 'daily':
+        case 'today':
+        case 'day':
           return d.toDateString() === now.toDateString();
 
-        case 'Weekly': {
+        case 'weekly':
+        case 'week': {
           const weekAgo = new Date();
           weekAgo.setDate(now.getDate() - 7);
+          weekAgo.setHours(0, 0, 0, 0);
           return d >= weekAgo;
         }
 
-        case 'Monthly':
+        case 'monthly':
+        case 'month':
           return (
             d.getMonth() === now.getMonth() &&
             d.getFullYear() === now.getFullYear()
           );
 
-        case 'Yearly':
+        case 'yearly':
+        case 'year':
           return d.getFullYear() === now.getFullYear();
 
         default:
@@ -348,7 +354,7 @@ export class ReportService {
         order: { created_at: 'DESC' },
       });
 
-      if (!period || period === 'All') return allReports;
+      if (!period || period.toLowerCase() === 'all') return allReports;
 
       const now = new Date();
 
@@ -359,23 +365,29 @@ export class ReportService {
 
         const d = new Date(report.created_at);
 
-        switch (period) {
-          case 'Daily':
+        switch (period.toLowerCase()) {
+          case 'daily':
+          case 'today':
+          case 'day':
             return d.toDateString() === now.toDateString();
 
-          case 'Weekly': {
+          case 'weekly':
+          case 'week': {
             const weekAgo = new Date();
             weekAgo.setDate(now.getDate() - 7);
+            weekAgo.setHours(0, 0, 0, 0);
             return d >= weekAgo;
           }
 
-          case 'Monthly':
+          case 'monthly':
+          case 'month':
             return (
               d.getMonth() === now.getMonth() &&
               d.getFullYear() === now.getFullYear()
             );
 
-          case 'Yearly':
+          case 'yearly':
+          case 'year':
             return d.getFullYear() === now.getFullYear();
 
           default:

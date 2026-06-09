@@ -25,6 +25,12 @@ export class ReviewController {
     return this.reviewService.create(body, req.user.id);
   }
 
+  // GET AVERAGE RATINGS FOR ALL PRODUCTS
+  @Get('ratings')
+  getAllProductRatings() {
+    return this.reviewService.getAllProductRatings();
+  }
+
   // GET ALL REVIEWS FOR A PRODUCT
   @Get('product/:productId')
   findByProduct(@Param('productId') productId: string) {

@@ -14,6 +14,7 @@ import {
   HttpException,
   InternalServerErrorException,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -121,6 +122,26 @@ export class OrdersController {
   @Get('provider/:id')
   async findByProvider(@Param('id', ParseIntPipe) id: number) {
     return await this.ordersService.findByProvider(id);
+  }
+
+  // =========================
+  // GET BY CUSTOMER
+  // =========================
+  @Get('customer/:id')
+  async findByCustomer(@Param('id', ParseIntPipe) id: number) {
+    return await this.ordersService.findByCustomer(id);
+  }
+
+  // =========================
+  // GET TOP PRODUCTS
+  // =========================
+  @Get('top-products')
+  async getTopProducts(
+    @Query('period') period?: string,
+    @Query('providerId') providerId?: string,
+  ) {
+    const parsedProviderId = providerId && !isNaN(Number(providerId)) ? Number(providerId) : undefined;
+    return await this.ordersService.getTopProducts(period, parsedProviderId);
   }
 
   // =========================

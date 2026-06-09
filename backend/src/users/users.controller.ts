@@ -174,6 +174,10 @@ export class UsersController {
   async getUserOrders(@Param('id', ParseIntPipe) id: number) {
     return this.ordersRepository.find({
       where: { customer_id: id },
+      relations: {
+        order_items: { product: true },
+      },
+      order: { id: 'DESC' },
     })
   }
 

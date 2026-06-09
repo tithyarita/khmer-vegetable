@@ -65,6 +65,7 @@ const routes = [
       { path: 'checkout', component: Checkout },
       { path: 'profile', component: Profile },
       { path: 'order-tracker', alias: 'track-order', component: OrderTracker },
+      { path: 'order-tracker/:id', component: OrderTracker, props: true },
       { path: 'product/:id', name: 'publicProductDetail', component: ProductDetailUser, props: true },
       { path: 'products', component: ProductCategory },
       { path: 'category/:type', component: ProductCategory, props: true },

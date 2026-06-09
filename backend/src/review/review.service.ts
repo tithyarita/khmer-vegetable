@@ -48,6 +48,24 @@ export class ReviewService {
     return this.reviewRepository.save(review);
   }
 
+  // GET AVERAGE RATINGS FOR ALL PRODUCTS
+  async getAllProductRatings() {
+    const rows = await this.reviewRepository
+      .createQueryBuilder('review')
+      .leftJoin('review.product', 'product')
+      .select('product.id', 'productId')
+      .addSelect('AVG(review.rating)', 'average')
+      .addSelect('COUNT(review.id)', 'count')
+      .groupBy('product.id')
+      .getRawMany();
+
+    return rows.map((row) => ({
+      productId: Number(row.productId),
+      average: Number(parseFloat(row.average).toFixed(1)) || 0,
+      count: Number(row.count) || 0,
+    }));
+  }
+
   // GET ALL REVIEWS FOR A PRODUCT
   async findByProduct(productId: number) {
     return this.reviewRepository.find({

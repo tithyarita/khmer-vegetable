@@ -11,7 +11,8 @@ export class AddressController {
   @UseGuards(AuthGuard('jwt'))
   @Get()
   async getAddress(@Req() req: { user: { id: number } }) {
-    return await this.addressService.getAddress(req.user.id);
+    const address = await this.addressService.getAddress(req.user.id);
+    return address ?? {};
   }
 
   @UseGuards(AuthGuard('jwt'))

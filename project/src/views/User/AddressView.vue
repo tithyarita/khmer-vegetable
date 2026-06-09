@@ -262,9 +262,14 @@ const loadSavedAddress = async () => {
       return
     }
 
-    const data = await response.json()
+    const text = await response.text()
+    if (!text) {
+      return
+    }
 
-    if (data) {
+    const data = JSON.parse(text)
+
+    if (data && data.id) {
       address.value = {
         firstName: data.first_name || '',
         lastName: data.last_name || '',

@@ -1,155 +1,217 @@
 <template>
   <div class="dashboard-layout">
     <DashboardSidebar activeMenu="track" @navigate="onNavigate" />
+
     <main class="main-content">
-      <div class="topbar">
+      <header class="page-header">
         <button class="menu-toggle" @click="toggleSidebar" aria-label="Toggle menu">
           <i class="bi bi-list"></i>
         </button>
-      </div>
-      <header class="page-header" v-if="orderTrackerStore.currentOrder">
         <div>
-          <h1 class="page-title">Track Your Freshness</h1>
-          <p class="page-subtitle">
-            Order <strong>#{{ orderTrackerStore.currentOrder.id }}</strong> is on its way to your kitchen.
-          </p>
+          <h1>Order Tracker</h1>
+          <p>Follow your order status in real time</p>
         </div>
-        <div class="arrival-badge">
-          <span class="arrival-badge__dot" />
-          {{ orderTrackerStore.currentOrder.arrivalTime }}
-        </div>
+        <button
+          v-if="selectedOrderId"
+          class="refresh-btn"
+          type="button"
+          :disabled="loading"
+          @click="manualRefresh"
+        >
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
       </header>
 
-      <div class="grid">
-        <!-- LEFT -->
-        <div class="col-left">
+      <!-- No order selected: show list -->
+      <template v-if="!selectedOrderId">
+        <div v-if="loading" class="state-card">
+          <div class="spinner"></div>
+          <p>Loading orders...</p>
+        </div>
 
-          <!-- Stepper -->
-          <div class="card stepper-card">
+        <div v-else-if="error" class="state-card error">
+          <i class="bi bi-exclamation-circle"></i>
+          <p>{{ error }}</p>
+        </div>
+
+        <div v-else-if="trackableOrders.length === 0" class="state-card">
+          <i class="bi bi-truck"></i>
+          <h3>No active orders</h3>
+          <p>Place an order to start tracking your delivery.</p>
+          <router-link to="/myorder" class="primary-btn">View My Orders</router-link>
+        </div>
+
+        <div v-else class="order-pick-list">
+          <p class="pick-hint">Select an order to track:</p>
+          <button
+            v-for="order in trackableOrders"
+            :key="order.id"
+            class="pick-card"
+            type="button"
+            @click="goToOrder(order.id)"
+          >
+            <div>
+              <span class="pick-code">{{ order.orderCode }}</span>
+              <span class="pick-provider">{{ order.providerName }}</span>
+            </div>
+            <span :class="['status-badge', statusClass(order.status)]">{{ order.statusLabel }}</span>
+          </button>
+        </div>
+      </template>
+
+      <!-- Single order tracker -->
+      <template v-else>
+        <div v-if="loading && !orderTrackerStore.currentOrder" class="state-card">
+          <div class="spinner"></div>
+          <p>Loading order...</p>
+        </div>
+
+        <div v-else-if="error && !orderTrackerStore.currentOrder" class="state-card error">
+          <i class="bi bi-exclamation-circle"></i>
+          <p>{{ error }}</p>
+          <button class="primary-btn" type="button" @click="router.push('/order-tracker')">Back to list</button>
+        </div>
+
+        <template v-else-if="orderTrackerStore.currentOrder">
+          <div class="tracker-top">
+            <button class="back-link" type="button" @click="router.push('/order-tracker')">
+              <i class="bi bi-arrow-left"></i> All orders
+            </button>
+            <div class="live-badge" :class="liveBadgeClass">
+              <span class="live-dot"></span>
+              {{ orderTrackerStore.currentOrder.statusLabel }}
+            </div>
+          </div>
+
+          <div class="tracker-hero">
+            <h2>{{ orderTrackerStore.currentOrder.orderCode }}</h2>
+            <p>{{ orderTrackerStore.currentOrder.arrivalTime }}</p>
+            <span class="auto-refresh-note">
+              <i class="bi bi-arrow-repeat"></i> Auto-updates every 8 seconds
+            </span>
+          </div>
+
+          <!-- Status stepper -->
+          <section class="card stepper-card">
             <div class="stepper">
               <div
-                v-for="(step, i) in orderTrackerStore.currentOrder?.steps || []"
+                v-for="(step, i) in orderTrackerStore.currentOrder.steps"
                 :key="step.label"
-                class="stepper__item"
+                class="stepper-item"
               >
                 <div :class="['step', step.state]">
-                  <div class="step__icon">
-                    <component :is="getIconComponent(step.icon)" />
+                  <div class="step-icon">
+                    <i :class="stepIcon(step.icon)"></i>
                   </div>
-                  <span class="step__label">{{ step.label }}</span>
-                  <span class="step__time">{{ step.time }}</span>
+                  <span class="step-label">{{ step.label }}</span>
+                  <span class="step-time">{{ step.time }}</span>
                 </div>
                 <div
-                  v-if="i < (orderTrackerStore.currentOrder?.steps.length || 0) - 1"
+                  v-if="i < orderTrackerStore.currentOrder.steps.length - 1"
                   :class="['connector', connectorState(i)]"
                 />
               </div>
             </div>
-          </div>
+          </section>
 
-          <!-- Real Leaflet Map -->
-          <div class="card map-card">
-            <div ref="mapEl" class="map-el" />
+          <div class="tracker-grid">
+            <!-- Order items -->
+            <section class="card items-card">
+              <div class="card-title-row">
+                <h3>Order Items</h3>
+                <span class="item-count">{{ orderTrackerStore.currentOrder.items.length }} products</span>
+              </div>
 
-            <!-- Status pill -->
-            <div class="map-status" :class="mapStatusClass">
-              <span class="map-status__dot" />
-              {{ mapStatusText }}
-            </div>
-
-            <!-- Chat button -->
-            <button class="chat-btn">
-              <IconSend />
-              Chat with Rider
-            </button>
-          </div>
-        </div>
-
-        <!-- RIGHT -->
-        <div class="col-right">
-
-          <!-- Delivery details -->
-          <div class="card detail-card">
-            <h2 class="section-title">Delivery Details</h2>
-            <div class="detail-list">
-              <div class="detail-row" v-for="d in orderTrackerStore.currentOrder?.details || []" :key="d.label">
-                <div class="detail-row__icon">
-                  <component :is="getIconComponent(d.icon)" />
+              <div
+                v-for="item in orderTrackerStore.currentOrder.items"
+                :key="item.id"
+                class="basket-item"
+              >
+                <div class="basket-img">
+                  <img v-if="item.image" :src="item.image" :alt="item.name" />
+                  <span v-else class="img-fallback">{{ item.name.charAt(0) }}</span>
                 </div>
-                <div class="detail-row__body">
-                  <span class="detail-row__label">{{ d.label }}</span>
-                  <span class="detail-row__value">{{ d.value }}</span>
-                  <span class="detail-row__sub" v-html="d.sub" />
+                <div class="basket-info">
+                  <span class="basket-name">{{ item.name }}</span>
+                  <span class="basket-sub">Qty: {{ item.quantity }}</span>
+                </div>
+                <span class="basket-price">${{ (item.price * item.quantity).toFixed(2) }}</span>
+              </div>
+
+              <div class="totals">
+                <div class="totals-row">
+                  <span>Subtotal</span>
+                  <span>${{ orderTrackerStore.subtotal.toFixed(2) }}</span>
+                </div>
+                <div class="totals-row grand">
+                  <span>Total</span>
+                  <span>${{ orderTrackerStore.currentOrder.total.toFixed(2) }}</span>
                 </div>
               </div>
-            </div>
+            </section>
+
+            <!-- Details -->
+            <section class="card details-card">
+              <h3>Delivery Details</h3>
+              <div
+                v-for="detail in orderTrackerStore.currentOrder.details"
+                :key="detail.label"
+                class="detail-row"
+              >
+                <div class="detail-icon"><i :class="detailIcon(detail.icon)"></i></div>
+                <div>
+                  <span class="detail-label">{{ detail.label }}</span>
+                  <span class="detail-value">{{ detail.value }}</span>
+                  <span class="detail-sub">{{ detail.sub }}</span>
+                </div>
+              </div>
+
+              <div class="detail-row">
+                <div class="detail-icon"><i class="bi bi-calendar3"></i></div>
+                <div>
+                  <span class="detail-label">Order Date</span>
+                  <span class="detail-value">{{ formatDate(orderTrackerStore.currentOrder.createdAt) }}</span>
+                </div>
+              </div>
+
+              <div class="detail-row">
+                <div class="detail-icon"><i class="bi bi-credit-card"></i></div>
+                <div>
+                  <span class="detail-label">Payment Status</span>
+                  <span class="detail-value">{{ orderTrackerStore.currentOrder.paymentStatus }}</span>
+                </div>
+              </div>
+            </section>
           </div>
 
-          <!-- Basket -->
-          <div class="card basket-card">
-            <div class="basket-header">
-              <h2 class="section-title">Your Basket</h2>
-              <span class="basket-count">{{ (orderTrackerStore.currentOrder?.items || []).length }} Items</span>
-            </div>
-
-            <div
-              v-for="(item, i) in orderTrackerStore.currentOrder?.items || []"
-              :key="item.name"
-              class="basket-item"
-              :style="{ animationDelay: `${i * 0.08}s` }"
-            >
-              <div class="basket-item__img">
-                <img :src="item.image" :alt="item.name" />
-              </div>
-              <div class="basket-item__info">
-                <span class="basket-item__name">{{ item.name }}</span>
-                <span class="basket-item__sub">{{ item.weight }} · {{ item.tag }}</span>
-              </div>
-              <span class="basket-item__price">${{ item.price.toFixed(2) }}</span>
-            </div>
-
-            <div class="totals">
-              <div class="totals__row">
-                <span>Subtotal</span><span>${{ orderTrackerStore.subtotal.toFixed(2) }}</span>
-              </div>
-              <div class="totals__row">
-                <span>Delivery Fee</span><span>${{ (orderTrackerStore.currentOrder?.deliveryFee || 0).toFixed(2) }}</span>
-              </div>
-              <div class="totals__row totals__row--grand">
-                <span>Total</span>
-                <span class="totals__grand-price">${{ orderTrackerStore.total.toFixed(2) }}</span>
-              </div>
-            </div>
-
+          <div class="bottom-actions">
+            <router-link to="/myorder" class="ghost-btn">
+              <i class="bi bi-bag-check"></i> My Orders
+            </router-link>
           </div>
-
-          <!-- Actions -->
-          <div class="card actions-card">
-            <button class="action-btn action-btn--primary" @click="$router.push('/myorder')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="15 18 9 12 15 6"/>
-              </svg>
-              Back to My Orders
-            </button>
-            <button class="action-btn action-btn--secondary" @click="contactSupport">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.362 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.338 1.85.574 2.81.7A2 2 0 0122 16.92z"/>
-              </svg>
-              Contact Support
-            </button>
-          </div>
-
-        </div>
-      </div>
+        </template>
+      </template>
     </main>
   </div>
 </template>
 
 <script setup>
-import DashboardSidebar from '../../components/Customer/sidebarUser.vue'
-import { ref, provide, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
+import { ref, provide, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useOrderTrackerStore } from '../../stores/orderTrackerStore'
+import { useUserStore } from '@/stores/userStore'
+import DashboardSidebar from '../../components/Customer/sidebarUser.vue'
+
+const props = defineProps({
+  id: { type: [String, Number], default: null },
+})
+
+const route = useRoute()
+const router = useRouter()
+const orderTrackerStore = useOrderTrackerStore()
+const userStore = useUserStore()
+const { loading, error } = storeToRefs(orderTrackerStore)
 
 const isSidebarOpen = ref(false)
 const closeSidebar = () => { isSidebarOpen.value = false }
@@ -157,243 +219,114 @@ const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value }
 provide('isSidebarOpen', isSidebarOpen)
 provide('closeSidebar', closeSidebar)
 
-// ── Inline SVG icons ──────────────────────────────────────────────────────────
-const IconCheck = defineComponent({
-  render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', 'stroke-width': '2.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
-    h('polyline', { points: '20 6 9 17 4 12' })
-  ])
+const selectedOrderId = computed(() => {
+  const raw = props.id || route.params.id
+  return raw ? Number(raw) : null
 })
-const IconTruck = defineComponent({
-  render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
-    h('rect', { x: '1', y: '3', width: '15', height: '13' }),
-    h('polygon', { points: '16 8 20 8 23 11 23 16 16 16 16 8' }),
-    h('circle', { cx: '5.5', cy: '18.5', r: '2.5' }),
-    h('circle', { cx: '18.5', cy: '18.5', r: '2.5' }),
-  ])
-})
-const IconGift = defineComponent({
-  render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
-    h('polyline', { points: '20 12 20 22 4 22 4 12' }),
-    h('rect', { x: '2', y: '7', width: '20', height: '5' }),
-    h('line', { x1: '12', y1: '22', x2: '12', y2: '7' }),
-    h('path', { d: 'M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z' }),
-    h('path', { d: 'M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z' }),
-  ])
-})
-const IconSend = defineComponent({
-  render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
-    h('line', { x1: '22', y1: '2', x2: '11', y2: '13' }),
-    h('polygon', { points: '22 2 15 22 11 13 2 9 22 2' }),
-  ])
-})
-const IconUser = defineComponent({
-  render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
-    h('path', { d: 'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2' }),
-    h('circle', { cx: '12', cy: '7', r: '4' }),
-  ])
-})
-const IconBox = defineComponent({
-  render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
-    h('polyline', { points: '21 8 21 21 3 21 3 8' }),
-    h('rect', { x: '1', y: '3', width: '22', height: '5' }),
-    h('line', { x1: '10', y1: '12', x2: '14', y2: '12' }),
-  ])
-})
-// ── Fixed Phnom Penh coordinates ──────────────────────────────────────────────
-// Default coordinates (will be overridden by store data)
-let FARM_COORDS = [11.4700, 104.8800]
-let DEST_COORDS = [11.5564, 104.9282]
 
-// ── Map refs & state ──────────────────────────────────────────────────────────
-const mapEl       = ref(null)
-const mapStatus   = ref('locating') 
-let leafletMap    = null
-let riderMarker   = null
-let riderTimer    = null
+const trackableOrders = computed(() => {
+  return orderTrackerStore.customerOrders
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+})
 
-const mapStatusText = computed(() => ({
-  locating: 'Getting your location…',
-  live:     'Live — your location detected',
-  denied:   'Showing delivery route',
-}[mapStatus.value]))
+const liveBadgeClass = computed(() => {
+  const status = orderTrackerStore.currentOrder?.status
+  if (status === 'completed') return 'live-completed'
+  if (status === 'delivering') return 'live-delivering'
+  return 'live-pending'
+})
 
-const mapStatusClass = computed(() => ({
-  locating: 'map-status--locating',
-  live:     'map-status--live',
-  denied:   'map-status--denied',
-}[mapStatus.value]))
+let pollTimer = null
 
-// ── Icon factory ──────────────────────────────────────────────────────────────
-function emojiIcon(emoji, bg) {
-  const L = window.L
-  return L.divIcon({
-    className: '',
-    html: `<div style="
-      background:${bg};width:44px;height:44px;border-radius:50%;
-      border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.22);
-      display:flex;align-items:center;justify-content:center;font-size:20px;
-    ">${emoji}</div>`,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
-    popupAnchor: [0, -26],
+function statusClass(status) {
+  if (status === 'completed') return 'badge-completed'
+  if (status === 'delivering') return 'badge-delivering'
+  return 'badge-pending'
+}
+
+function stepIcon(icon) {
+  return ({
+    check: 'bi bi-check-lg',
+    truck: 'bi bi-truck',
+    gift: 'bi bi-gift',
+  })[icon] || 'bi bi-circle'
+}
+
+function detailIcon(icon) {
+  return ({
+    user: 'bi bi-shop',
+    box: 'bi bi-credit-card',
+  })[icon] || 'bi bi-info-circle'
+}
+
+function formatDate(value) {
+  if (!value) return '—'
+  return new Date(value).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
   })
 }
 
-function riderIcon() {
-  const L = window.L
-  const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2d6a4f" width="32" height="32">
-    <path d="M8 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm9-14H1v2h15V2zm6 6h-6v13c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-5h-2v-8z" />
-  </svg>`
-  
-  return L.divIcon({
-    className: '',
-    html: `<div style="
-      background:#2d6a4f;width:50px;height:50px;border-radius:50%;
-      border:3px solid #fff;box-shadow:0 4px 18px rgba(45,106,79,.55);
-      display:flex;align-items:center;justify-content:center;
-    ">${svgIcon}</div>`,
-    iconSize: [50, 50],
-    iconAnchor: [25, 25],
-    popupAnchor: [0, -30],
-  })
+function connectorState(i) {
+  const steps = orderTrackerStore.currentOrder?.steps || []
+  if (steps[i]?.state === 'done' && steps[i + 1]?.state === 'active') return 'half'
+  if (steps[i]?.state === 'done') return 'done'
+  return 'pending'
 }
 
-// ── Build map ─────────────────────────────────────────────────────────────────
-function buildMap(userCoords) {
-  const L = window.L
-
-  // Centre between farm and dest
-  const midLat = (FARM_COORDS[0] + DEST_COORDS[0]) / 2
-  const midLng = (FARM_COORDS[1] + DEST_COORDS[1]) / 2
-
-  leafletMap = L.map(mapEl.value, { zoomControl: true })
-    .setView([midLat, midLng], 12)
-
-  // OSM tile layer
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
-    maxZoom: 19,
-  }).addTo(leafletMap)
-
-  // Dashed route line: farm → dest
-  L.polyline([FARM_COORDS, DEST_COORDS], {
-    color: '#40916c',
-    weight: 3,
-    opacity: 0.75,
-    dashArray: '10 7',
-  }).addTo(leafletMap)
-
-  // Animated rider along route
-  riderMarker = L.marker(FARM_COORDS, { icon: riderIcon() })
-    .addTo(leafletMap)
-    .bindPopup(`<b>${orderTrackerStore.currentOrder?.riderName || 'Rider'} — On the Way!</b><br>Your order is almost there.`)
-
-  let progress = 0.3 // start mid-route
-  riderTimer = setInterval(() => {
-    progress = (progress + 0.0015) % 1
-    const lat = FARM_COORDS[0] + (DEST_COORDS[0] - FARM_COORDS[0]) * progress
-    const lng = FARM_COORDS[1] + (DEST_COORDS[1] - FARM_COORDS[1]) * progress
-    riderMarker.setLatLng([lat, lng])
-  }, 50)
-
-  // Fit all visible points
-  const bounds = userCoords
-    ? [FARM_COORDS, DEST_COORDS, userCoords]
-    : [FARM_COORDS, DEST_COORDS]
-  leafletMap.fitBounds(window.L.latLngBounds(bounds), { padding: [36, 36] })
+function goToOrder(id) {
+  router.push(`/order-tracker/${id}`)
 }
-
-// ── Lazy-load Leaflet then init ───────────────────────────────────────────────
-function loadLeaflet() {
-  return new Promise((resolve) => {
-    if (window.L) { resolve(); return }
-
-    const css = document.createElement('link')
-    css.rel  = 'stylesheet'
-    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'
-    document.head.appendChild(css)
-
-    const js = document.createElement('script')
-    js.src    = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'
-    js.onload = resolve
-    document.head.appendChild(js)
-  })
-}
-
-onMounted(async () => {
-  // Get order ID from route params
-  const route = useRoute()
-  const orderId = route.params.id || 'EG-92841'
-
-  // Fetch order data
-  await orderTrackerStore.fetchOrder(orderId)
-
-  // Update coordinates from store
-  if (orderTrackerStore.currentOrder) {
-    FARM_COORDS = orderTrackerStore.currentOrder.farmCoords
-    DEST_COORDS = orderTrackerStore.currentOrder.destCoords
-  }
-
-  // Initialize map with order coordinates
-  await loadLeaflet()
-
-  if (!navigator.geolocation) {
-    mapStatus.value = 'denied'
-    buildMap(null)
-    return
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      mapStatus.value = 'live'
-      buildMap([pos.coords.latitude, pos.coords.longitude])
-    },
-    () => {
-      mapStatus.value = 'denied'
-      buildMap(null)
-    },
-    { timeout: 7000, maximumAge: 60000, enableHighAccuracy: true }
-  )
-})
-
-onUnmounted(() => {
-  clearInterval(riderTimer)
-  if (leafletMap) leafletMap.remove()
-})
-
-function contactSupport() {
-  alert('Contacting support for order #' + orderTrackerStore.currentOrder?.id)
-}
-
-// ── Store and state setup ────────────────────────────────────────────────────
-const route = useRoute()
-const router = useRouter()
-const orderTrackerStore = useOrderTrackerStore()
 
 function onNavigate(section) {
   if (section === 'dashboard') router.push('/profile')
   else if (section === 'orders') router.push('/myorder')
 }
 
-// ── Helper function to get icon components ───────────────────────────────────
-function getIconComponent(iconName) {
-  const iconMap = {
-    'check': IconCheck,
-    'truck': IconTruck,
-    'gift': IconGift,
-    'user': IconUser,
-    'box': IconBox,
-  }
-  return iconMap[iconName] || IconCheck
+function startPolling() {
+  stopPolling()
+  if (!selectedOrderId.value) return
+  pollTimer = setInterval(() => {
+    orderTrackerStore.refreshOrder(selectedOrderId.value)
+  }, 8000)
 }
 
-// ── Connector state based on store data ─────────────────────────────────────
-const connectorState = (i) => {
-  const steps = orderTrackerStore.currentOrder?.steps || []
-  if (steps[i]?.state === 'done' && steps[i + 1]?.state === 'active') return 'half'
-  if (steps[i]?.state === 'done') return 'done'
-  return 'pending'
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
 }
+
+async function loadTracker() {
+  if (selectedOrderId.value) {
+    await orderTrackerStore.fetchOrder(selectedOrderId.value)
+    startPolling()
+  } else {
+    stopPolling()
+    const userId = userStore.user?.id
+    if (userId) {
+      await orderTrackerStore.fetchCustomerOrders(userId)
+    }
+  }
+}
+
+async function manualRefresh() {
+  if (selectedOrderId.value) {
+    await orderTrackerStore.refreshOrder(selectedOrderId.value)
+  }
+}
+
+watch(selectedOrderId, () => {
+  loadTracker()
+})
+
+onMounted(loadTracker)
+onUnmounted(stopPolling)
 </script>
 
 <style scoped>
@@ -402,257 +335,36 @@ const connectorState = (i) => {
   height: 100vh;
   overflow: hidden;
   width: 100%;
-  background: #f7f9fa;
+  background: #f4f7f5;
 }
+
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 28px 32px 48px;
-  min-width: 0;
+  padding: 28px 36px 48px;
+  max-width: 1000px;
+  width: 100%;
 }
-.dashboard-layout :deep(.sidebar) {
-  background: #fff;
-}
-.sep { color: #c8d5cc; }
 
 .page-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 28px;
-  gap: 20px;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
-.page-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1a2e1a;
+
+.page-header h1 {
   margin: 0;
-}
-.page-subtitle { margin-top: 4px; font-size: 15px; color: #5a7060; margin: 0; }
-.page-subtitle strong { color: #2d6a4f; font-weight: 600; }
-
-.arrival-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #e8f5ee;
-  border-radius: 50px;
-  padding: 10px 18px;
-  font-weight: 600;
-  font-size: 14px;
-  color: #2d6a4f;
-  white-space: nowrap;
-}
-.arrival-badge__dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #2d6a4f;
-  animation: dot-pulse 2s ease-in-out infinite;
-}
-@keyframes dot-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a2e1f;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 24px;
-  align-items: start;
-}
-.col-left, .col-right { display: flex; flex-direction: column; gap: 18px; }
-
-.card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  overflow: hidden;
-}
-
-.stepper-card { padding: 24px; }
-.stepper { display: flex; align-items: center; }
-.stepper__item { display: flex; align-items: center; flex: 1; }
-.stepper__item:last-child { flex: 0; }
-.step { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-
-.step__icon {
-  width: 48px; height: 48px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 8px;
-}
-.step__icon :deep(svg) { width: 20px; height: 20px; }
-
-.step.done .step__icon {
-  background: #2d6a4f;
-}
-.step.done .step__icon :deep(svg) { stroke: white; }
-
-.step.active .step__icon {
-  background: #40916c;
-  animation: icon-pulse 2s ease-in-out infinite;
-}
-.step.active .step__icon :deep(svg) { stroke: white; }
-@keyframes icon-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(45,106,79,.3); }
-  50% { box-shadow: 0 0 0 8px rgba(45,106,79,.1); }
-}
-
-.step.pending .step__icon {
-  background: #ede8e0;
-  border: 2px dashed #c8d5cc;
-}
-.step.pending .step__icon :deep(svg) { stroke: #a0b0a8; }
-
-.step__label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #4a5e52; }
-.step.pending .step__label { color: #a0b0a8; }
-
-.step__time { font-size: 11px; color: #8fa896; margin-top: 2px; }
-
-.connector { flex: 1; height: 2px; margin-bottom: 28px; }
-.connector.done { background: #2d6a4f; }
-.connector.pending { background: #ede8e0; }
-.connector.half { background: linear-gradient(90deg, #2d6a4f 55%, #ede8e0 55%); }
-
-.map-card { position: relative; height: 320px; }
-.map-el { width: 100%; height: 100%; border-radius: 12px; }
-
-:deep(.leaflet-popup-content-wrapper) { border-radius: 10px; font-size: 13px; }
-:deep(.leaflet-popup-tip) { background: white; }
-:deep(.leaflet-control-attribution) { font-size: 10px; }
-
-.map-status {
-  position: absolute;
-  top: 12px; left: 12px;
-  z-index: 500;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255,255,255,.92);
-  border-radius: 50px;
-  padding: 6px 12px;
-  font-size: 12px; font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0,0,0,.1);
-  pointer-events: none;
-}
-.map-status__dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.map-status--locating .map-status__dot { background: #f59e0b; }
-.map-status--live .map-status__dot { background: #2d6a4f; }
-.map-status--denied .map-status__dot { background: #a0b0a8; }
-
-.chat-btn {
-  position: absolute;
-  right: 12px; bottom: 12px;
-  z-index: 500;
-  background: #1a3d2b;
-  color: white;
-  border: none;
-  border-radius: 50px;
-  padding: 10px 18px;
-  display: flex; align-items: center; gap: 6px;
-  font-size: 13px; font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(26,61,43,.35);
-  transition: background .2s;
-}
-.chat-btn:hover { background: #2d6a4f; }
-.chat-btn :deep(svg) { width: 14px; height: 14px; stroke: white; }
-
-.detail-card { padding: 20px; }
-.section-title { font-size: 16px; font-weight: 700; color: #1a2e1a; margin-bottom: 14px; }
-.detail-list { display: flex; flex-direction: column; }
-.detail-row {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 12px 0; border-bottom: 1px solid #ede8e0;
-}
-.detail-row:first-child { padding-top: 0; }
-.detail-row:last-child { border-bottom: none; padding-bottom: 0; }
-.detail-row__icon {
-  width: 36px; height: 36px;
-  background: #e8f5ee;
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.detail-row__icon :deep(svg) { width: 16px; height: 16px; stroke: #2d6a4f; }
-.detail-row__body { display: flex; flex-direction: column; gap: 2px; }
-.detail-row__label { font-size: 10px; color: #8fa896; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-.detail-row__value { font-weight: 600; font-size: 14px; color: #1a2e1a; }
-.detail-row__sub { font-size: 12px; color: #8fa896; }
-
-.basket-card { padding: 18px; }
-.basket-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 4px;
-}
-.basket-header .section-title { margin-bottom: 0; }
-.basket-count {
-  font-size: 12px; font-weight: 600;
-  color: #2d6a4f;
-  background: #e8f5ee;
-  padding: 3px 8px; border-radius: 18px;
-}
-.basket-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 0; border-bottom: 1px solid #ede8e0;
-}
-.basket-item:last-of-type { border-bottom: none; }
-.basket-item__img {
-  width: 44px; height: 44px; border-radius: 10px;
-  background: #e8f5ee;
-  flex-shrink: 0; overflow: hidden;
-}
-.basket-item__img img { width: 100%; height: 100%; object-fit: cover; }
-.basket-item__info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.basket-item__name { font-weight: 600; font-size: 14px; color: #1a2e1a; }
-.basket-item__sub { font-size: 12px; color: #8fa896; }
-.basket-item__price { font-weight: 700; font-size: 14px; color: #2d6a4f; }
-
-.totals {
-  margin-top: 14px; padding-top: 14px;
-  border-top: 1px solid #ede8e0;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.totals__row { display: flex; justify-content: space-between; font-size: 13px; color: #8fa896; }
-.totals__row--grand {
-  font-size: 17px; font-weight: 700;
-  color: #1a2e1a;
-  padding-top: 8px; margin-top: 4px;
-  border-top: 2px solid #e8f5ee;
-}
-.totals__grand-price { color: #2d6a4f; }
-
-.actions-card {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.action-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
-}
-.action-btn--primary { background: #1a3d2b; color: #fff; }
-.action-btn--primary:hover { background: #2d6a4f; }
-.action-btn--secondary { background: transparent; color: #5a7060; border: 1.5px solid #ede8e0; }
-.action-btn--secondary:hover { background: #e8f5ee; border-color: #74c69d; color: #1a3d2b; }
-.action-btn svg { flex-shrink: 0; }
-
-.topbar {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
+.page-header p {
+  margin: 4px 0 0;
+  color: #6b7c72;
+  font-size: 0.92rem;
 }
 
 .menu-toggle {
@@ -662,31 +374,534 @@ const connectorState = (i) => {
   font-size: 24px;
   color: #555;
   cursor: pointer;
-  padding: 4px;
 }
 
-@media (max-width: 1100px) {
-  .grid { grid-template-columns: 1fr 280px; gap: 16px; }
+.refresh-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #dde5df;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5c50;
+  cursor: pointer;
 }
+
+.refresh-btn:hover:not(:disabled) {
+  background: #eaf5ee;
+}
+
+.state-card {
+  text-align: center;
+  padding: 56px 24px;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e8ede9;
+  color: #6b7c72;
+}
+
+.state-card i {
+  font-size: 2.5rem;
+  color: #c5d4ca;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.state-card h3 {
+  margin: 0 0 6px;
+  color: #1a2e1f;
+}
+
+.state-card.error i {
+  color: #f87171;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e8ede9;
+  border-top-color: #2d7a3a;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 14px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #2d7a3a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.order-pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pick-hint {
+  margin: 0 0 8px;
+  color: #6b7c72;
+  font-size: 0.9rem;
+}
+
+.pick-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #e8ede9;
+  border-radius: 14px;
+  padding: 16px 20px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.pick-card:hover {
+  border-color: #b8dfc4;
+  box-shadow: 0 4px 12px rgba(45, 122, 58, 0.08);
+}
+
+.pick-code {
+  display: block;
+  font-weight: 700;
+  color: #1a2e1f;
+  font-size: 0.95rem;
+}
+
+.pick-provider {
+  font-size: 0.82rem;
+  color: #8a9a90;
+}
+
+.status-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badge-pending { background: #fef3c7; color: #d97706; }
+.badge-delivering { background: #dbeafe; color: #2563eb; }
+.badge-completed { background: #e8f5ec; color: #2d7a3a; }
+
+.tracker-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.back-link {
+  background: none;
+  border: none;
+  color: #2d7a3a;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 1.5s ease infinite;
+}
+
+.live-pending { background: #fef3c7; color: #d97706; }
+.live-pending .live-dot { background: #d97706; }
+.live-delivering { background: #dbeafe; color: #2563eb; }
+.live-delivering .live-dot { background: #2563eb; }
+.live-completed { background: #e8f5ec; color: #2d7a3a; }
+.live-completed .live-dot { background: #2d7a3a; animation: none; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.tracker-hero {
+  background: linear-gradient(135deg, #2d7a3a, #4a9e5c);
+  border-radius: 18px;
+  padding: 24px 28px;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.tracker-hero h2 {
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+}
+
+.tracker-hero p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.auto-refresh-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e8ede9;
+  padding: 22px 24px;
+}
+
+.stepper-card {
+  margin-bottom: 20px;
+}
+
+.stepper {
+  display: flex;
+  align-items: flex-start;
+}
+
+.stepper-item {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+}
+
+.stepper-item:last-child {
+  flex: 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 90px;
+}
+
+.step-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.step.done .step-icon {
+  background: #2d7a3a;
+  color: #fff;
+}
+
+.step.active .step-icon {
+  background: #4a9e5c;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(45, 122, 58, 0.2);
+}
+
+.step.pending .step-icon {
+  background: #f0f4f1;
+  color: #a0b0a8;
+  border: 2px dashed #dde5df;
+}
+
+.step-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #4a5c50;
+}
+
+.step.pending .step-label {
+  color: #a0b0a8;
+}
+
+.step-time {
+  font-size: 0.72rem;
+  color: #8a9a90;
+  margin-top: 3px;
+}
+
+.connector {
+  flex: 1;
+  height: 2px;
+  margin-top: 24px;
+  min-width: 20px;
+}
+
+.connector.done { background: #2d7a3a; }
+.connector.pending { background: #e8ede9; }
+.connector.half { background: linear-gradient(90deg, #2d7a3a 55%, #e8ede9 55%); }
+
+.tracker-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.card-title-row h3,
+.details-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2e1f;
+}
+
+.item-count {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #2d7a3a;
+  background: #e8f5ec;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.basket-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f4f1;
+}
+
+.basket-item:last-of-type {
+  border-bottom: none;
+}
+
+.basket-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #e8f5ec;
+  flex-shrink: 0;
+}
+
+.basket-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.img-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-weight: 700;
+  color: #2d7a3a;
+}
+
+.basket-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.basket-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1a2e1f;
+}
+
+.basket-sub {
+  font-size: 0.78rem;
+  color: #8a9a90;
+}
+
+.basket-price {
+  font-weight: 700;
+  color: #2d7a3a;
+}
+
+.totals {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f4f1;
+}
+
+.totals-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  color: #6b7c72;
+  margin-bottom: 6px;
+}
+
+.totals-row.grand {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a2e1f;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 2px solid #e8f5ec;
+}
+
+.detail-row {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f4f1;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-icon {
+  width: 36px;
+  height: 36px;
+  background: #e8f5ec;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2d7a3a;
+  flex-shrink: 0;
+}
+
+.detail-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #8a9a90;
+  letter-spacing: 0.03em;
+}
+
+.detail-value {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1a2e1f;
+}
+
+.detail-sub {
+  display: block;
+  font-size: 0.78rem;
+  color: #8a9a90;
+}
+
+.bottom-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  color: #4a5c50;
+  border: 1.5px solid #dde5df;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ghost-btn:hover {
+  background: #f4f7f5;
+}
+
 @media (max-width: 768px) {
   .menu-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  .main-content { padding: 20px 16px 32px; }
-  .breadcrumb { font-size: 11px; margin-bottom: 12px; }
-  .page-title { font-size: 22px; }
-  .page-header { flex-direction: column; gap: 12px; margin-bottom: 20px; }
-  .grid { grid-template-columns: 1fr; gap: 16px; }
-  .map-card { height: 220px; }
-  .stepper-card { padding: 14px; }
-  .detail-card { padding: 14px; }
-  .basket-card { padding: 12px; }
-}
-@media (max-width: 480px) {
-  .main-content { padding: 14px 12px 24px; }
-  .page-title { font-size: 20px; }
-  .stepper-card { padding: 12px; }
+
+  .main-content {
+    padding: 20px 16px 32px;
+  }
+
+  .tracker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stepper {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .stepper-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .step {
+    flex-direction: row;
+    gap: 12px;
+    text-align: left;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .step-icon {
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .connector {
+    width: 2px;
+    height: 20px;
+    margin: 4px 0 4px 23px;
+    min-width: 0;
+  }
+
+  .connector.half {
+    background: linear-gradient(180deg, #2d7a3a 55%, #e8ede9 55%);
+  }
 }
 </style>

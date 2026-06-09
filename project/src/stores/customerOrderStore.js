@@ -15,9 +15,17 @@ export const useCustomerOrderStore = defineStore('customerOrders', () => {
   }
 
   const formatStatus = (status) => {
-    if (status === 'completed') return 'DELIVERED'
-    if (status === 'delivering') return 'IN PROGRESS'
-    return 'PENDING'
+    const normalized = String(status || 'pending').toLowerCase()
+    if (normalized === 'completed') return 'Completed'
+    if (normalized === 'delivering') return 'Out for Delivery'
+    return 'Pending'
+  }
+
+  const statusClass = (status) => {
+    const normalized = String(status || 'pending').toLowerCase()
+    if (normalized === 'completed') return 'badge-completed'
+    if (normalized === 'delivering') return 'badge-delivering'
+    return 'badge-pending'
   }
 
   const formatDate = (value) => {
@@ -35,20 +43,33 @@ export const useCustomerOrderStore = defineStore('customerOrders', () => {
       .slice(0, 2)
       .map((item) => getInitial(item.product?.name || 'Item'))
 
+    const itemCount = items.reduce((sum, item) => sum + Number(item.quantity || 1), 0)
+
     return {
       id: order.id,
       orderCode: order.order_code || `ORD-${order.id}`,
-      status: order.status || 'pending',
+      status: String(order.status || 'pending').toLowerCase(),
       statusLabel: formatStatus(order.status),
-      statusClass: order.status === 'completed' ? 'badge-delivered' : 'badge-progress',
+      statusClass: statusClass(order.status),
       meta: `Placed on ${formatDate(order.created_at)}`,
       price: Number(order.total || 0).toFixed(2),
-      previewItems: previewItems.length ? previewItems : ['O', 'R'],
+      itemCount,
+      paymentMethod: order.payment_method || '—',
+      paymentStatus: order.payment_status || 'pending',
+      previewItems: previewItems.length ? previewItems : ['?'],
       extraCount: Math.max(items.length - previewItems.length, 0),
       itemsLabel: items.length
         ? items.map((item) => item.product?.name || 'Product').join(', ')
         : 'No items available',
       providerName: order.provider?.provider_name || 'Unknown',
+      items: items.map((item) => ({
+        id: item.id,
+        name: item.product?.name || 'Product',
+        quantity: Number(item.quantity || 1),
+        price: Number(item.price || item.product?.price || 0),
+        image: item.product?.imageUrl || '',
+        category: item.product?.category || '',
+      })),
       raw: order,
     }
   }

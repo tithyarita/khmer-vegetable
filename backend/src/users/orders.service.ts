@@ -322,6 +322,21 @@ export class OrdersService {
   }
 
   // =========================
+  // BY CUSTOMER
+  // =========================
+  async findByCustomer(customerId: number) {
+    return this.ordersRepo.find({
+      where: { customer_id: customerId },
+      relations: {
+        order_items: { product: true },
+        provider: true,
+        customer: true,
+      },
+      order: { id: 'DESC' },
+    });
+  }
+
+  // =========================
   // PROVIDER REVENUE SUMMARY
   // =========================
   async getProviderRevenue(providerId: number) {
@@ -402,6 +417,10 @@ export class OrdersService {
 
     order.status = status;
 
+    if (status === OrderStatus.COMPLETED && !order.completed_at) {
+      order.completed_at = new Date();
+    }
+
     return this.ordersRepo.save(order);
   }
 
@@ -424,5 +443,59 @@ export class OrdersService {
     }
 
     return { message: 'Deleted successfully' };
+  }
+
+  // =========================
+  // GET TOP PRODUCTS
+  // =========================
+  async getTopProducts(period?: string, providerId?: number) {
+    const query = this.orderItemsRepo.createQueryBuilder('item')
+      .innerJoin('item.product', 'product')
+      .innerJoin('item.order', 'order')
+      .select([
+        'product.id AS id',
+        'product.name AS name',
+        'product.price AS price',
+        'product.discount AS discount',
+        'product.imageUrl AS imageUrl',
+        'product.category AS category',
+        'product.description AS description',
+        'SUM(item.quantity) AS totalQuantity',
+        'COUNT(DISTINCT order.id) AS orderCount',
+      ])
+      .groupBy('product.id')
+      .orderBy('SUM(item.quantity)', 'DESC');
+
+    if (providerId) {
+      query.andWhere('order.provider_id = :providerId', { providerId });
+    }
+
+    if (period === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      query.andWhere('order.created_at >= :weekAgo', { weekAgo });
+    } else if (period === 'month') {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      query.andWhere('order.created_at >= :startOfMonth', { startOfMonth });
+    }
+
+    const rawResults = await query.getRawMany();
+
+    const products = rawResults.map((row, index) => ({
+      id: Number(row.id),
+      name: row.name,
+      price: Number(row.price),
+      discount: Number(row.discount || 0),
+      imageUrl: row.imageUrl,
+      image: row.imageUrl,
+      category: row.category,
+      description: row.description,
+      totalQuantity: Number(row.totalQuantity || 0),
+      orderCount: Number(row.orderCount || 0),
+      rank: index + 1,
+    }));
+
+    return { products };
   }
 }
