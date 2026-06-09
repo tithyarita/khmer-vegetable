@@ -197,15 +197,26 @@
           </div>
 
           <div class="details-items">
-            <div class="item-row" v-for="item in selectedOrder.items" :key="item.name">
-              <span>{{ item.name }}</span>
-              <span>{{ item.qty }} x {{ item.price }}</span>
+            <div class="item-row rich" v-for="item in selectedOrder.items" :key="`${item.name}-${item.qty}`">
+              <div class="item-thumb" v-if="item.image">
+                <img :src="adminItemImage(item.image)" :alt="item.name" />
+              </div>
+              <div class="item-main">
+                <span class="item-name">{{ item.name }}</span>
+                <span class="item-meta">{{ item.category || 'Product' }} · {{ item.qty }} x {{ item.price }}</span>
+              </div>
               <span class="item-total">${{ (item.qty * parseFloat(item.price.replace('$', ''))).toFixed(2) }}</span>
             </div>
           </div>
 
+          <div class="details-breakdown">
+            <div class="breakdown-row"><span>Subtotal</span><span>${{ Number(selectedOrder.subtotal || 0).toFixed(2) }}</span></div>
+            <div v-if="Number(selectedOrder.shippingFee) > 0" class="breakdown-row"><span>Shipping</span><span>${{ Number(selectedOrder.shippingFee).toFixed(2) }}</span></div>
+            <div v-if="Number(selectedOrder.serviceFee) > 0" class="breakdown-row"><span>Service Fee</span><span>${{ Number(selectedOrder.serviceFee).toFixed(2) }}</span></div>
+          </div>
+
           <div class="details-total-row">
-            <span>Total</span>
+            <span>Total Paid</span>
             <span class="details-total">{{ selectedOrder.price }}</span>
           </div>
 
@@ -284,6 +295,10 @@ const fetchOrders = async () => {
         .toUpperCase() || `C${customerRawId}`
       
       const rawPrice = parseFloat(order.total) || 0
+      const rawSubtotal = parseFloat(order.subtotal) || rawPrice
+      const rawShipping = parseFloat(order.shipping_fee) || 0
+      const rawService = parseFloat(order.service_fee) || 0
+      const lineItems = Array.isArray(order.order_items) ? order.order_items : []
 
       return {
         id: order.id,
@@ -292,13 +307,26 @@ const fetchOrders = async () => {
         customerInitials: initials,
         customerColor: '#e0e7ff',
         provider: order.provider?.provider_name || `Provider ${order.provider_id}`,
-        rawPrice: rawPrice,
+        rawPrice,
+        subtotal: rawSubtotal,
+        shippingFee: rawShipping,
+        serviceFee: rawService,
         price: `$${rawPrice.toFixed(2)}`,
         status: order.status || 'pending', 
         statusClass: (order.status || 'pending').toLowerCase(),
-        items: order.items || [{ name: 'Default Product Package', qty: 1, price: `$${rawPrice.toFixed(2)}` }], 
-        item: order.item || 1,
+        items: lineItems.length
+          ? lineItems.map((item) => ({
+              name: item.product?.name || 'Product',
+              qty: Number(item.quantity || 1),
+              price: `$${Number(item.price || 0).toFixed(2)}`,
+              image: item.product?.imageUrl || '',
+              category: item.product?.category || '',
+            }))
+          : [{ name: 'Default Product Package', qty: 1, price: `$${rawPrice.toFixed(2)}`, image: '', category: '' }], 
+        item: order.item || lineItems.length || 1,
         orderCode: order.order_code,
+        paymentMethod: order.payment_method || '—',
+        paymentStatus: order.payment_status || 'pending',
         createdAt: new Date(order.created_at),
         completedAt: order.completed_at ? new Date(order.completed_at) : null
       }
@@ -325,6 +353,12 @@ onUnmounted(() => {
 // --- Currency Formatter Utility ---
 const formatCurrency = (amount) => {
   return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+const adminItemImage = (imagePath) => {
+  if (!imagePath) return ''
+  if (imagePath.startsWith('http')) return imagePath
+  return `${API_BASE_URL}${imagePath}`
 }
 
 // --- Strict Calendar-Bound Filtering Windows ---
@@ -916,10 +950,68 @@ const updateStatus = async (order, newStatus) => {
   font-weight: 600;
 }
 .details-items {
+  margin: 16px 0;
+}
+
+.item-row.rich {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f4f1;
+}
+
+.item-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #e8f5ec;
+}
+
+.item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.item-name {
+  font-weight: 700;
+  color: #1a2e1f;
+}
+
+.item-meta {
+  font-size: 0.78rem;
+  color: #8a9a90;
+}
+
+.details-breakdown {
+  border-top: 1px solid #f0f4f1;
+  padding-top: 12px;
+  margin-bottom: 8px;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  color: #6b7c72;
+  padding: 4px 0;
+}
+
+.details-items-block {
   margin-bottom: 1rem;
   border-bottom: 1px dashed #e2e8f0;
   padding-bottom: 0.75rem;
 }
+
 .item-row {
   display: flex;
   justify-content: space-between;

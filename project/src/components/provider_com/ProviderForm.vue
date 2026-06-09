@@ -1,45 +1,57 @@
 <script setup>
-import { ref, watch } from "vue"
+import { ref, watch, computed } from "vue"
 import { useProviderStore } from "@/stores/providerStore"
 
 const store = useProviderStore()
 
 const provider_name = ref("")
-const farm_name     = ref("")
-const location      = ref("")
-const story         = ref("")
-const id_number     = ref("")
-const editing       = ref(false)
+const farm_name = ref("")
+const location = ref("")
+const story = ref("")
+const id_number = ref("")
+const editing = ref(false)
+const saving = ref(false)
 
 watch(
   () => store.provider,
   (p) => {
-    if (!p) return
-
+    if (!p || !Object.keys(p).length) return
     provider_name.value = p.provider_name || ""
-    farm_name.value     = p.farm_name || ""
-    location.value      = p.location || ""
-    story.value         = p.story || ""
-    id_number.value     = p.id_number || ""
+    farm_name.value = p.farm_name || ""
+    location.value = p.location || ""
+    story.value = p.story || ""
+    id_number.value = p.id_number || ""
   },
   { immediate: true, deep: true }
 )
 
-const startEdit = () => {
-  editing.value = true
-}
+const email = computed(() => store.provider.email || "—")
+const status = computed(() => store.provider.status || "—")
+const providerId = computed(() =>
+  store.provider.user_id || store.provider.id || store.provider.user?.id || "—"
+)
+
+const joinedDate = computed(() => {
+  const raw = store.provider.created_at || store.provider.user?.created_at
+  if (!raw) return "—"
+  return new Date(raw).toLocaleDateString("en-US", {
+    day: "numeric", month: "long", year: "numeric",
+  })
+})
+
+const startEdit = () => { editing.value = true }
 
 const cancelEdit = () => {
   provider_name.value = store.provider.provider_name || ""
-  farm_name.value     = store.provider.farm_name || ""
-  location.value      = store.provider.location || ""
-  story.value         = store.provider.story || ""
-  id_number.value     = store.provider.id_number || ""
-
+  farm_name.value = store.provider.farm_name || ""
+  location.value = store.provider.location || ""
+  story.value = store.provider.story || ""
+  id_number.value = store.provider.id_number || ""
   editing.value = false
 }
 
 const saveProvider = async () => {
+  saving.value = true
   try {
     await store.updateProvider({
       provider_name: provider_name.value,
@@ -48,129 +60,88 @@ const saveProvider = async () => {
       story: story.value,
       id_number: id_number.value,
     })
-
-    // update local store immediately
-    store.provider.id_number = id_number.value
-
     editing.value = false
-
-    alert("Profile updated!")
   } catch (err) {
-    alert(
-      "Failed to update profile: " +
-      (err.response?.data?.message || err.message)
-    )
+    alert("Failed to update profile: " + (err.response?.data?.message || err.message))
+  } finally {
+    saving.value = false
   }
 }
 </script>
 
 <template>
   <div class="card">
-    <p class="section-title">Profile Information</p>
+    <div class="card-header">
+      <div>
+        <h2 class="section-title">Profile Information</h2>
+        <p class="section-sub">Manage your public provider details</p>
+      </div>
+      <button v-if="!editing" class="btn-edit" @click="startEdit">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+        Edit
+      </button>
+    </div>
 
     <div class="form-grid">
-
-      <!-- Full Name -->
       <div class="form-field">
         <label>Full Name</label>
-
-        <input
-          v-model="provider_name"
-          type="text"
-          :readonly="!editing"
-          placeholder="Enter your name"
-        />
+        <input v-model="provider_name" type="text" :readonly="!editing" placeholder="Your full name" />
       </div>
 
-      <!-- Farm Name -->
       <div class="form-field">
         <label>Farm Name</label>
-
-        <input
-          v-model="farm_name"
-          type="text"
-          :readonly="!editing"
-          placeholder="Enter farm name"
-        />
+        <input v-model="farm_name" type="text" :readonly="!editing" placeholder="Your farm name" />
       </div>
 
-      <!-- Location -->
       <div class="form-field">
         <label>Location</label>
-
-        <input
-          v-model="location"
-          type="text"
-          :readonly="!editing"
-          placeholder="City / Province"
-        />
+        <input v-model="location" type="text" :readonly="!editing" placeholder="City / Province" />
       </div>
 
-      <!-- Provider ID -->
-      <div class="form-field">
-        <label>Provider ID</label>
-
-        <input
-          :value="store.provider.user_id || store.provider.id || store.provider.user?.id"
-          type="text"
-          readonly
-          class="readonly-input"
-        />
-      </div>
-
-      <!-- ID Number -->
       <div class="form-field">
         <label>ID Number</label>
-
-        <input
-          v-model="id_number"
-          type="text"
-          :readonly="!editing"
-          placeholder="Enter ID number"
-        />
+        <input v-model="id_number" type="text" :readonly="!editing" placeholder="National ID or business ID" />
       </div>
 
-      <!-- Farm Story -->
+      <div class="form-field">
+        <label>Email</label>
+        <input :value="email" type="email" readonly class="readonly-field" />
+      </div>
+
+      <div class="form-field">
+        <label>Account Status</label>
+        <input :value="status" type="text" readonly class="readonly-field status-field" />
+      </div>
+
+      <div class="form-field">
+        <label>Provider ID</label>
+        <input :value="providerId" type="text" readonly class="readonly-field" />
+      </div>
+
+      <div class="form-field">
+        <label>Member Since</label>
+        <input :value="joinedDate" type="text" readonly class="readonly-field" />
+      </div>
+
       <div class="form-field full">
         <label>Farm Story</label>
-
         <textarea
           v-model="story"
           :readonly="!editing"
-          placeholder="Tell customers about your farm..."
+          placeholder="Tell customers about your farm, growing methods, and what makes your produce special..."
+          rows="4"
         />
+        <span class="char-hint">{{ story.length }} characters</span>
       </div>
-
     </div>
 
-    <div class="edit-btns">
-
-      <button
-        v-if="!editing"
-        class="btn-primary"
-        @click="startEdit"
-      >
-        Edit
+    <div v-if="editing" class="edit-actions">
+      <button class="btn-save" :disabled="saving" @click="saveProvider">
+        {{ saving ? "Saving..." : "Save Changes" }}
       </button>
-
-      <template v-else>
-
-        <button
-          class="btn-primary"
-          @click="saveProvider"
-        >
-          Save
-        </button>
-
-        <button
-          class="btn-cancel"
-          @click="cancelEdit"
-        >
-          Cancel
-        </button>
-
-      </template>
-
+      <button class="btn-cancel" :disabled="saving" @click="cancelEdit">Cancel</button>
     </div>
   </div>
 </template>
@@ -179,22 +150,52 @@ const saveProvider = async () => {
 .card {
   background: #fff;
   border-radius: 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #e8ecef;
   padding: 24px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
 }
 
 .section-title {
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 700;
-  color: #2e7d32;
-  margin: 0 0 18px;
+  color: #111827;
+  margin: 0;
 }
+
+.section-sub {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 4px 0 0;
+}
+
+.btn-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-edit:hover { background: #dcfce7; }
 
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
 }
 
 .form-field {
@@ -203,86 +204,91 @@ const saveProvider = async () => {
   gap: 5px;
 }
 
-.form-field.full {
-  grid-column: 1 / -1;
-}
+.form-field.full { grid-column: 1 / -1; }
 
 label {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
-input,
-textarea {
-  border: 1px solid #e0e0e0;
+input, textarea {
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 9px 12px;
-  font-size: 0.95rem;
+  padding: 10px 12px;
+  font-size: 0.9rem;
   background: #fafafa;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s, background 0.15s;
   font-family: inherit;
+  color: #111827;
 }
 
-input:focus,
-textarea:focus {
-  border-color: #2e7d32;
+input:focus, textarea:focus { border-color: #15803d; background: #fff; }
+
+input[readonly], textarea[readonly] {
+  background: #f9fafb;
+  color: #374151;
+  cursor: default;
+  border-color: #f0f0f0;
 }
 
-textarea {
-  resize: vertical;
-  min-height: 90px;
-}
-
-input[readonly],
-textarea[readonly] {
-  background: #f5f5f5;
-  color: #888;
+.readonly-field {
+  background: #f9fafb !important;
+  color: #6b7280 !important;
   cursor: not-allowed;
 }
 
-.readonly-input {
-  background: #f5f5f5;
-  color: #888;
-  cursor: not-allowed;
+.status-field { text-transform: capitalize; }
+
+textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+
+.char-hint {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  text-align: right;
 }
 
-.edit-btns {
+.edit-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
 }
 
-.btn-primary {
-  padding: 9px 22px;
+.btn-save {
+  padding: 10px 24px;
   border-radius: 8px;
   border: none;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  background: #2e7d32;
+  background: #15803d;
   color: #fff;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.15s;
 }
 
-.btn-primary:hover {
-  opacity: 0.88;
-}
+.btn-save:hover:not(:disabled) { opacity: 0.9; }
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn-cancel {
-  padding: 9px 22px;
+  padding: 10px 24px;
   border-radius: 8px;
-  border: none;
-  font-size: 0.9rem;
+  border: 1px solid #e5e7eb;
+  font-size: 0.875rem;
   font-weight: 600;
-  background: #e5e7eb;
+  background: #fff;
   color: #374151;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
-.btn-cancel:hover {
-  background: #d1d5db;
+.btn-cancel:hover:not(:disabled) { background: #f9fafb; }
+
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
 }
 </style>

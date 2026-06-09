@@ -4,431 +4,369 @@ import { useProviderStore } from "@/stores/providerStore"
 import axios from "axios"
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
-
 const store = useProviderStore()
+const token = localStorage.getItem("token")
 
 const providerId = computed(() =>
   store.provider.user_id || store.provider.id || store.provider.user?.id || null
 )
 
-const token = localStorage.getItem("token")
-
 const avatarInput = ref(null)
 const farmInput = ref(null)
-
-const editingId = ref(false)
-
-const localIdNumber = ref(
-  store.provider.id_number || ""
-)
-
-async function saveIdNumber() {
-  try {
-    const headers = token ? { Authorization: `Bearer ${token}` } : undefined
-
-    if (!providerId.value) {
-      throw new Error('Provider ID is missing. Please refresh the page and try again.')
-    }
-
-    const res = await axios.put(
-      `${BASE}/providers/${providerId.value}`,
-      {
-        id_number: localIdNumber.value,
-      },
-      {
-        headers,
-      }
-    )
-
-    // update local store
-    store.provider.id_number =
-      localIdNumber.value
-
-    editingId.value = false
-
-    alert("ID number updated!")
-  } catch (err) {
-    console.error(err)
-
-    alert(
-      "Failed to update ID number: " +
-      (err.response?.data?.message || err.message)
-    )
-  }
-}
+const uploadingAvatar = ref(false)
+const uploadingFarm = ref(false)
 
 function fullUrl(path) {
   if (!path) return null
-
-  if (path.startsWith("http")) {
-    return path
-  }
-
+  if (path.startsWith("http")) return path
   return BASE + path
 }
 
-const avatarSrc = computed(() =>
-  fullUrl(store.provider.avatar)
-)
-
-const farmSrc = computed(() =>
-  fullUrl(store.provider.farm_image)
-)
+const avatarSrc = computed(() => fullUrl(store.provider.avatar))
+const farmSrc = computed(() => fullUrl(store.provider.farm_image))
 
 const initials = computed(() =>
-  store.provider.provider_name
-    ?.slice(0, 2)
-    .toUpperCase() || "SM"
+  (store.provider.provider_name || store.provider.farm_name || "PR")
+    .slice(0, 2)
+    .toUpperCase()
 )
 
-// ===================================
-// UPLOAD AVATAR
-// ===================================
+const joinedDate = computed(() => {
+  const raw = store.provider.created_at || store.provider.user?.created_at
+  if (!raw) return "—"
+  return new Date(raw).toLocaleDateString("en-US", {
+    day: "numeric", month: "short", year: "numeric",
+  })
+})
+
+const statusLabel = computed(() => {
+  const s = String(store.provider.status || "").toLowerCase()
+  if (s === "active" || s === "approved") return { text: "Active", cls: "status-active" }
+  if (s === "pending") return { text: "Pending", cls: "status-pending" }
+  return { text: store.provider.status || "—", cls: "status-default" }
+})
 
 async function handleAvatar(e) {
   const file = e.target.files[0]
-
   if (!file) return
 
+  uploadingAvatar.value = true
   try {
     const formData = new FormData()
-
     formData.append("avatar", file)
 
-    const headers = token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : undefined
-
-    if (!providerId.value) {
-      throw new Error('Provider ID is missing. Please refresh the page and try again.')
-    }
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined
+    if (!providerId.value) throw new Error('Provider ID is missing.')
 
     const res = await axios.put(
       `${BASE}/providers/${providerId.value}/avatar`,
       formData,
-      {
-        headers,
-      }
+      { headers }
     )
 
     store.provider = {
       ...store.provider,
-      avatar: res.data.avatar,
+      avatar: fullUrl(res.data.avatar),
     }
-
-    alert("Avatar uploaded!")
   } catch (err) {
-    console.error(err)
-
-    alert(
-      "Avatar upload failed: " +
-      (err.response?.data?.message || err.message)
-    )
+    alert("Avatar upload failed: " + (err.response?.data?.message || err.message))
+  } finally {
+    uploadingAvatar.value = false
+    e.target.value = ""
   }
 }
 
-// ===================================
-// UPLOAD FARM IMAGE
-// ===================================
-
 async function handleFarm(e) {
   const file = e.target.files[0]
-
   if (!file) return
 
+  uploadingFarm.value = true
   try {
     const formData = new FormData()
-
     formData.append("farm", file)
 
-    const headers = token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : undefined
-
-    if (!providerId.value) {
-      throw new Error('Provider ID is missing. Please refresh the page and try again.')
-    }
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined
+    if (!providerId.value) throw new Error('Provider ID is missing.')
 
     const res = await axios.put(
       `${BASE}/providers/${providerId.value}/farm-image`,
       formData,
-      {
-        headers,
-      }
+      { headers }
     )
 
     store.provider = {
       ...store.provider,
-      farm_image: res.data.farm_image,
+      farm_image: fullUrl(res.data.farm_image),
     }
-
-    alert("Farm image uploaded!")
   } catch (err) {
-    console.error(err)
-
-    alert(
-      "Farm image upload failed: " +
-      (err.response?.data?.message || err.message)
-    )
+    alert("Farm image upload failed: " + (err.response?.data?.message || err.message))
+  } finally {
+    uploadingFarm.value = false
+    e.target.value = ""
   }
 }
 </script>
 
 <template>
-  <div class="profile-grid">
-
-    <!-- ── Provider Card ── -->
-    <div class="provider-card">
-      <div class="verified-badge">
-        <span class="verified-dot" />
-        Verified Provider
-      </div>
-
-      <div class="provider-top">
-        <div class="avatar-wrap" @click="avatarInput?.click()">
+  <div class="profile-hero">
+    <!-- Avatar & identity -->
+    <div class="identity-card">
+      <div class="avatar-section">
+        <div class="avatar-wrap" @click="avatarInput?.click()" :class="{ uploading: uploadingAvatar }">
           <div
             class="avatar-circle"
-            :style="avatarSrc
-              ? { backgroundImage: `url(${avatarSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-              : {}"
+            :style="avatarSrc ? { backgroundImage: `url(${avatarSrc})` } : {}"
           >
             <span v-if="!avatarSrc">{{ initials }}</span>
           </div>
           <div class="avatar-edit">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
               <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
             </svg>
           </div>
+          <div v-if="uploadingAvatar" class="upload-overlay">Uploading...</div>
         </div>
-        <input ref="avatarInput" type="file" accept="image/*" style="display:none" @change="handleAvatar" />
+        <input ref="avatarInput" type="file" accept="image/*" hidden @change="handleAvatar" />
 
-        <div class="provider-info">
-          <p class="provider-name">{{ store.provider.provider_name || "—" }}</p>
-          <p class="provider-sub">📍 {{ store.provider.location || "—" }}</p>
-          <div class="green-badge">
-            <span class="badge-dot" />
-            Organic Certified
+        <div class="identity-info">
+          <div class="name-row">
+            <h1>{{ store.provider.provider_name || "Your Name" }}</h1>
+            <span class="status-badge" :class="statusLabel.cls">{{ statusLabel.text }}</span>
           </div>
+          <p class="farm-label">{{ store.provider.farm_name || "Farm name not set" }}</p>
+          <p class="location">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+              <circle cx="12" cy="9" r="2.5"/>
+            </svg>
+            {{ store.provider.location || "Location not set" }}
+          </p>
         </div>
       </div>
 
-      <div class="id-meta">
+      <div class="meta-grid">
         <div class="meta-item">
-          <span class="meta-lbl">Provider ID</span>
-          <span class="meta-val">{{ providerId || "—" }}</span>
+          <span class="meta-label">Provider ID</span>
+          <span class="meta-value">#{{ providerId || "—" }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-lbl">Joined</span>
-          <span class="meta-val">
-            {{ store.provider.user?.created_at
-              ? new Date(store.provider.user.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })
-              : "—" }}
-          </span>
+          <span class="meta-label">Email</span>
+          <span class="meta-value">{{ store.provider.email || "—" }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-lbl">ID Number</span>
-          <span class="meta-val">{{ store.provider.id_number || "—" }}</span>
+          <span class="meta-label">ID Number</span>
+          <span class="meta-value">{{ store.provider.id_number || "—" }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Member Since</span>
+          <span class="meta-value">{{ joinedDate }}</span>
         </div>
       </div>
     </div>
 
-    <!-- ── Farm Card ── -->
+    <!-- Farm image -->
     <div class="farm-card" @click="farmInput?.click()">
-      <div
-        class="farm-bg"
-        :style="farmSrc ? { backgroundImage: `url(${farmSrc})` } : {}"
-      />
-      <div v-if="farmSrc" class="farm-gradient" />
+      <div class="farm-bg" :style="farmSrc ? { backgroundImage: `url(${farmSrc})` } : {}" />
+      <div v-if="farmSrc" class="farm-overlay" />
       <div v-if="!farmSrc" class="farm-empty">
-        <div class="upload-icon-box">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="1.8">
-            <rect x="3" y="3" width="18" height="18" rx="3" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <path d="M21 15l-5-5L5 21" />
+        <div class="upload-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8">
+            <rect x="3" y="3" width="18" height="18" rx="3"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21"/>
           </svg>
         </div>
         <p>Upload farm photo</p>
-        <span>JPG or PNG recommended</span>
+        <span>JPG or PNG · click to browse</span>
       </div>
-
-      <div class="farm-content">
-        <div class="farm-badge-float">
-          <span class="farm-badge-dot" />
-          Active since {{ store.provider.user?.created_at
-            ? new Date(store.provider.user.created_at).getFullYear()
-            : "—" }}
-        </div>
-        <p class="farm-name-float">{{ store.provider.farm_name || "—" }}</p>
-        <p class="farm-loc-float">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-            <circle cx="12" cy="9" r="2.5" />
-          </svg>
-          {{ store.provider.location || "—" }}
-        </p>
+      <div v-if="farmSrc" class="farm-label-overlay">
+        <p class="farm-name">{{ store.provider.farm_name || "My Farm" }}</p>
+        <button class="change-photo-btn" @click.stop="farmInput?.click()">
+          {{ uploadingFarm ? "Uploading..." : "Change photo" }}
+        </button>
       </div>
-
-      <button v-if="farmSrc" class="change-btn" @click.stop="farmInput?.click()">
-        Change photo
-      </button>
-      <input ref="farmInput" type="file" accept="image/*" style="display:none" @click.stop @change="handleFarm" />
+      <input ref="farmInput" type="file" accept="image/*" hidden @change="handleFarm" />
     </div>
-
   </div>
 </template>
 
 <style scoped>
-.profile-grid {
+.profile-hero {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.2fr 1fr;
   gap: 16px;
 }
 
-/* ── Provider Card ── */
-.provider-card {
+.identity-card {
   background: #fff;
-  border: 1px solid #e8e8e8;
+  border: 1px solid #e8ecef;
   border-radius: 16px;
-  padding: 20px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  gap: 20px;
 }
 
-.verified-badge {
+.avatar-section {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: #1a3d2a;
-  margin-bottom: 14px;
-}
-.verified-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #1a3d2a;
+  gap: 18px;
 }
 
-.provider-top {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
+.avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
 }
 
-.avatar-wrap { position: relative; flex-shrink: 0; cursor: pointer; }
+.avatar-wrap.uploading { pointer-events: none; opacity: 0.7; }
+
 .avatar-circle {
-  width: 60px;
-  height: 60px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  background: #f0f7f0;
-  border: 2px solid #1a3d2a;
+  background: #f0fdf4 center/cover no-repeat;
+  border: 3px solid #15803d;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
-  color: #2d6a4f;
+  color: #15803d;
   overflow: hidden;
   transition: opacity 0.2s;
 }
-.avatar-wrap:hover .avatar-circle { opacity: 0.82; }
+
+.avatar-wrap:hover .avatar-circle { opacity: 0.85; }
+
 .avatar-edit {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 20px;
-  height: 20px;
+  bottom: 2px;
+  right: 2px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #1a3d2a;
+  background: #15803d;
   border: 2px solid #fff;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.provider-info { flex: 1; }
-.provider-name { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 3px; }
-.provider-sub  { font-size: 11px; color: #9ca3af; margin-bottom: 6px; }
+.upload-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
 
-.green-badge {
-  display: inline-flex;
+.identity-info { flex: 1; min-width: 0; }
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.identity-info h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.status-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: capitalize;
+}
+
+.status-active { background: #dcfce7; color: #15803d; }
+.status-pending { background: #fef9c3; color: #a16207; }
+.status-default { background: #f3f4f6; color: #6b7280; }
+
+.farm-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 4px 0 6px;
+}
+
+.location {
+  display: flex;
   align-items: center;
   gap: 4px;
-  background: #f0f7f0;
-  color: #1a3d2a;
-  font-size: 9.5px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 0;
 }
-.badge-dot { width: 4px; height: 4px; border-radius: 50%; background: #1a3d2a; }
 
-.id-meta {
+.meta-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  border-top: 1px solid #e8e8e8;
-  padding-top: 14px;
-  margin-top: auto;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 18px;
 }
-.meta-item { display: flex; flex-direction: column; gap: 3px; }
-.meta-lbl {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.meta-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
   color: #9ca3af;
 }
-.meta-val { font-size: 11px; font-weight: 700; color: #111827; }
 
-/* ── Farm Card ── */
+.meta-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  word-break: break-all;
+}
+
+/* Farm card */
 .farm-card {
   border-radius: 16px;
   overflow: hidden;
   position: relative;
   cursor: pointer;
-  min-height: 220px;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #e8e8e8;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  min-height: 200px;
+  border: 1px solid #e8ecef;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
   transition: box-shadow 0.2s;
 }
+
 .farm-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
 
 .farm-bg {
   position: absolute;
   inset: 0;
-  overflow: hidden;
-
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
-}
-.farm-bg img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  image-rendering: auto;
   transition: transform 0.35s ease;
 }
-.farm-card:hover .farm-bg img { transform: scale(1.05); }
 
-.farm-gradient {
+.farm-card:hover .farm-bg { transform: scale(1.04); }
+
+.farm-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.18) 40%, rgba(0,0,0,0.62) 100%);
+  background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.65) 100%);
 }
 
 .farm-empty {
@@ -439,84 +377,60 @@ async function handleFarm(e) {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #fafbfa;
+  background: #f9fafb;
 }
-.farm-empty p    { font-size: 12px; color: #2d6a4f; font-weight: 600; }
-.farm-empty span { font-size: 10px; color: #9ca3af; }
 
-.upload-icon-box {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: #f0f7f0;
-  border: 1px solid #e8e8e8;
+.farm-empty p { font-size: 0.875rem; color: #15803d; font-weight: 600; margin: 0; }
+.farm-empty span { font-size: 0.75rem; color: #9ca3af; }
+
+.upload-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #f0fdf4;
+  border: 1px dashed #86efac;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.farm-content {
-  position: relative;
+.farm-label-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 18px;
   z-index: 2;
-  margin-top: auto;
-  padding: 16px 18px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.farm-badge-float {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(255,255,255,0.18);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: #fff;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  width: fit-content;
-  margin-bottom: 2px;
-}
-.farm-badge-dot { width: 4px; height: 4px; border-radius: 50%; background: #69f0ae; }
-.farm-name-float {
-  font-size: 18px;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.3);
-  line-height: 1.2;
-}
-.farm-loc-float {
-  font-size: 11px;
-  color: rgba(255,255,255,0.8);
   display: flex;
   align-items: center;
-  gap: 3px;
+  justify-content: space-between;
 }
 
-.change-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 3;
-  display: none;
-  font-size: 10px;
+.farm-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.change-photo-btn {
+  font-size: 0.75rem;
   font-weight: 600;
   color: #fff;
-  background: rgba(0,0,0,0.38);
+  background: rgba(255,255,255,0.2);
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 6px;
-  padding: 5px 10px;
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 8px;
+  padding: 5px 12px;
   cursor: pointer;
   transition: background 0.15s;
 }
-.farm-card:hover .change-btn { display: block; }
-.change-btn:hover { background: rgba(0,0,0,0.55); }
+
+.change-photo-btn:hover { background: rgba(255,255,255,0.35); }
 
 @media (max-width: 768px) {
-  .profile-grid { grid-template-columns: 1fr; }
+  .profile-hero { grid-template-columns: 1fr; }
+  .meta-grid { grid-template-columns: 1fr 1fr; }
 }
 </style>

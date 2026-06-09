@@ -63,6 +63,12 @@ export class OrdersController {
         ? JSON.parse(body.providerOrders)
         : [];
 
+      const checkoutFees = {
+        shippingFee: Number(body.shippingFee || 0),
+        serviceFee: Number(body.serviceFee || 0),
+        grandTotal: Number(body.total || 0),
+      };
+
       if (Array.isArray(providerOrders) && providerOrders.length > 0) {
         const dtos: CreateOrderDto[] = providerOrders.map((group: any) => {
           const providerId = Number(group.providerId || group.provider_id || 0);
@@ -77,6 +83,7 @@ export class OrdersController {
               ? group.items.map((item: any) => ({
                   product_id: Number(item.product_id || item.id),
                   quantity: Number(item.quantity || 0),
+                  unit_price: Number(item.unit_price || item.unitPrice || 0) || undefined,
                 }))
               : [],
             payment_method: body.payment_method,
@@ -84,18 +91,25 @@ export class OrdersController {
           };
         });
 
-        return await this.ordersService.createMany(dtos, file?.filename);
+        return await this.ordersService.createMany(dtos, file?.filename, checkoutFees);
       }
 
+      const parsedItems = JSON.parse(body.items || '[]');
       const dto: CreateOrderDto = {
         customer_id: customerId,
         provider_id: Number(body.provider_id),
-        items: JSON.parse(body.items || '[]'),
+        items: Array.isArray(parsedItems)
+          ? parsedItems.map((item: any) => ({
+              product_id: Number(item.product_id || item.id || item.productId),
+              quantity: Number(item.quantity || 0),
+              unit_price: Number(item.unit_price || item.unitPrice || item.price || 0) || undefined,
+            }))
+          : [],
         payment_method: body.payment_method,
         payment_status: PaymentStatus.PENDING,
       };
 
-      return await this.ordersService.create(dto, file?.filename);
+      return await this.ordersService.create(dto, file?.filename, checkoutFees);
     } catch (error) {
       console.error('Order creation error:', error);
       if (error instanceof HttpException) throw error;

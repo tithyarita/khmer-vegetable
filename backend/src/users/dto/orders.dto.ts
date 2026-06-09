@@ -19,6 +19,10 @@ export class CreateOrderItemDto {
   @IsNumber()
   @IsNotEmpty()
   quantity!: number;
+
+  @IsNumber()
+  @IsOptional()
+  unit_price?: number;
 }
 
 export class CreateOrderDto {

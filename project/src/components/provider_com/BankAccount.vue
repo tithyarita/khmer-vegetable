@@ -174,6 +174,7 @@ async function handleQrUpload(e, index) {
 <template>
   <div class="card">
     <p class="section-title">Bank Accounts</p>
+    <p class="section-sub">Payment details shown to customers at checkout</p>
 
     <!-- VIEW MODE -->
     <template v-if="!bankEditing">
@@ -312,17 +313,23 @@ async function handleQrUpload(e, index) {
 .card {
   background: #fff;
   border-radius: 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #e8ecef;
   padding: 24px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
 .section-title {
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 700;
-  color: #2e7d32;
+  color: #111827;
+  margin: 0 0 4px;
+}
+.section-sub {
+  font-size: 0.8rem;
+  color: #9ca3af;
   margin: 0 0 18px;
 }
+
 select {
   border: 1px solid #e0e0e0;
   border-radius: 6px;

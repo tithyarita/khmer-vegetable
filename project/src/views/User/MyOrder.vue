@@ -100,55 +100,85 @@
 
     <!-- Detail Modal -->
     <div v-if="selectedOrder" class="modal-overlay" @click.self="closeDetail">
-      <div class="modal">
-        <div class="modal-header">
-          <div>
-            <h2>Order Details</h2>
-            <p>{{ selectedOrder.orderCode }}</p>
+      <div class="modal detail-modal">
+        <div class="modal-hero">
+          <div class="hero-top">
+            <div>
+              <p class="hero-label">Order Details</p>
+              <h2>{{ selectedOrder.orderCode }}</h2>
+              <p class="hero-date">{{ selectedOrder.meta }}</p>
+            </div>
+            <button class="close-btn light" type="button" @click="closeDetail">
+              <i class="bi bi-x-lg"></i>
+            </button>
           </div>
-          <button class="close-btn" type="button" @click="closeDetail">
-            <i class="bi bi-x-lg"></i>
-          </button>
+          <div class="hero-badges">
+            <span :class="['status-badge', selectedOrder.statusClass]">{{ selectedOrder.statusLabel }}</span>
+            <span class="pay-badge">{{ selectedOrder.paymentMethod }} · {{ selectedOrder.paymentStatus }}</span>
+          </div>
         </div>
 
         <div class="modal-body">
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="label">Status</span>
-              <span :class="['status-badge', selectedOrder.statusClass]">{{ selectedOrder.statusLabel }}</span>
+          <div class="info-cards">
+            <div class="mini-card">
+              <i class="bi bi-shop"></i>
+              <div>
+                <span class="mini-label">Provider</span>
+                <span class="mini-value">{{ selectedOrder.providerName }}</span>
+              </div>
             </div>
-            <div class="detail-item">
-              <span class="label">Provider</span>
-              <span class="value">{{ selectedOrder.providerName }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Payment</span>
-              <span class="value">{{ selectedOrder.paymentMethod }} ({{ selectedOrder.paymentStatus }})</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Date</span>
-              <span class="value">{{ selectedOrder.meta.replace('Placed on ', '') }}</span>
+            <div class="mini-card">
+              <i class="bi bi-box-seam"></i>
+              <div>
+                <span class="mini-label">Items</span>
+                <span class="mini-value">{{ selectedOrder.itemCount }} products</span>
+              </div>
             </div>
           </div>
 
-          <h3 class="section-label">Order Items</h3>
-          <div class="items-table">
-            <div v-for="item in selectedOrder.items" :key="item.id" class="item-row">
-              <div class="item-img-wrap">
+          <h3 class="section-label">Products in this order</h3>
+          <div class="product-list">
+            <article v-for="item in selectedOrder.items" :key="item.id" class="product-card">
+              <div class="product-image">
                 <img v-if="itemImage(item.image)" :src="itemImage(item.image)" :alt="item.name" />
-                <span v-else class="item-fallback">{{ item.name.charAt(0) }}</span>
+                <span v-else class="product-fallback">{{ item.name.charAt(0) }}</span>
               </div>
-              <div class="item-info">
-                <span class="item-name">{{ item.name }}</span>
-                <span class="item-qty">Qty: {{ item.quantity }}</span>
+              <div class="product-content">
+                <div class="product-head">
+                  <h4>{{ item.name }}</h4>
+                  <span v-if="item.category" class="category-tag">{{ item.category }}</span>
+                </div>
+                <p v-if="item.description" class="product-desc">{{ item.description }}</p>
+                <div class="product-pricing">
+                  <span class="qty-pill">Qty: {{ item.quantity }}</span>
+                  <span v-if="item.discount > 0" class="original-price">${{ item.originalPrice.toFixed(2) }}</span>
+                  <span class="unit-price">${{ item.unitPrice.toFixed(2) }} each</span>
+                </div>
               </div>
-              <span class="item-price">${{ (item.price * item.quantity).toFixed(2) }}</span>
-            </div>
+              <div class="product-total">
+                <span class="line-label">Line total</span>
+                <strong>${{ item.lineTotal.toFixed(2) }}</strong>
+              </div>
+            </article>
           </div>
 
-          <div class="total-row">
-            <span>Order Total</span>
-            <span class="total-amount">${{ selectedOrder.price }}</span>
+          <div class="summary-box">
+            <div class="summary-row">
+              <span>Items subtotal</span>
+              <span>${{ selectedOrder.subtotal }}</span>
+            </div>
+            <div v-if="Number(selectedOrder.shippingFee) > 0" class="summary-row">
+              <span>Shipping fee</span>
+              <span>${{ selectedOrder.shippingFee }}</span>
+            </div>
+            <div v-if="Number(selectedOrder.serviceFee) > 0" class="summary-row">
+              <span>Service fee</span>
+              <span>${{ selectedOrder.serviceFee }}</span>
+            </div>
+            <div class="summary-row grand">
+              <span>Total paid</span>
+              <strong>${{ selectedOrder.price }}</strong>
+            </div>
           </div>
         </div>
 
@@ -590,29 +620,63 @@ refreshOrders()
   background: #fff;
   border-radius: 20px;
   width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
+  max-width: 680px;
+  max-height: 92vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
-.modal-header {
+.detail-modal {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-hero {
+  background: linear-gradient(135deg, #2d7a3a, #4a9e5c);
+  color: #fff;
+  padding: 22px 24px;
+}
+
+.hero-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 22px 24px 0;
+  gap: 12px;
 }
 
-.modal-header h2 {
+.hero-label {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
+.modal-hero h2 {
   margin: 0;
-  font-size: 1.15rem;
-  color: #1a2e1f;
+  font-size: 1.25rem;
 }
 
-.modal-header p {
-  margin: 4px 0 0;
+.hero-date {
+  margin: 6px 0 0;
   font-size: 0.85rem;
-  color: #8a9a90;
+  opacity: 0.9;
+}
+
+.hero-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.pay-badge {
+  background: rgba(255, 255, 255, 0.18);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .close-btn {
@@ -623,120 +687,215 @@ refreshOrders()
   border-radius: 8px;
   cursor: pointer;
   color: #6b7c72;
+  flex-shrink: 0;
+}
+
+.close-btn.light {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
 }
 
 .modal-body {
-  padding: 20px 24px;
+  padding: 20px 24px 24px;
+  overflow-y: auto;
 }
 
-.detail-grid {
+.info-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 20px;
 }
 
-.detail-item .label {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #8a9a90;
-  margin-bottom: 4px;
+.mini-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f9fbf9;
+  border: 1px solid #e8ede9;
+  border-radius: 14px;
+  padding: 14px;
 }
 
-.detail-item .value {
-  font-size: 0.9rem;
-  font-weight: 600;
+.mini-card i {
+  font-size: 1.2rem;
+  color: #2d7a3a;
+}
+
+.mini-label {
+  display: block;
+  font-size: 0.72rem;
+  color: #8a9a90;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mini-value {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: #1a2e1f;
 }
 
 .section-label {
   margin: 0 0 12px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: #4a5c50;
 }
 
-.items-table {
+.product-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.item-row {
-  display: flex;
-  align-items: center;
   gap: 12px;
-  padding: 10px;
-  background: #f9fbf9;
-  border-radius: 12px;
+  margin-bottom: 18px;
 }
 
-.item-img-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+.product-card {
+  display: grid;
+  grid-template-columns: 88px 1fr auto;
+  gap: 14px;
+  padding: 14px;
+  background: #f9fbf9;
+  border: 1px solid #e8ede9;
+  border-radius: 16px;
+  align-items: center;
+}
+
+.product-image {
+  width: 88px;
+  height: 88px;
+  border-radius: 14px;
   overflow: hidden;
   background: #e8f5ec;
-  flex-shrink: 0;
 }
 
-.item-img-wrap img {
+.product-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.item-fallback {
+.product-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
+  font-size: 1.8rem;
   font-weight: 700;
   color: #2d7a3a;
 }
 
-.item-info {
-  flex: 1;
+.product-head {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
 }
 
-.item-name {
-  font-weight: 600;
-  font-size: 0.9rem;
+.product-head h4 {
+  margin: 0;
+  font-size: 0.98rem;
   color: #1a2e1f;
 }
 
-.item-qty {
-  font-size: 0.78rem;
-  color: #8a9a90;
-}
-
-.item-price {
-  font-weight: 700;
+.category-tag {
+  background: #e8f5ec;
   color: #2d7a3a;
-  font-size: 0.9rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  text-transform: capitalize;
 }
 
-.total-row {
+.product-desc {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: #6b7c72;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-pricing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.qty-pill {
+  background: #fff;
+  border: 1px solid #dde5df;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a5c50;
+}
+
+.original-price {
+  font-size: 0.78rem;
+  color: #a0b0a8;
+  text-decoration: line-through;
+}
+
+.unit-price {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2d7a3a;
+}
+
+.product-total {
+  text-align: right;
+  min-width: 72px;
+}
+
+.line-label {
+  display: block;
+  font-size: 0.68rem;
+  color: #8a9a90;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.product-total strong {
+  font-size: 1rem;
+  color: #1a2e1f;
+}
+
+.summary-box {
+  background: #fff;
+  border: 1px solid #e8ede9;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.summary-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 2px solid #e8f5ec;
-  font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.88rem;
+  color: #6b7c72;
+  padding: 6px 0;
 }
 
-.total-amount {
+.summary-row.grand {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 2px solid #e8f5ec;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2e1f;
+}
+
+.summary-row.grand strong {
   color: #2d7a3a;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
 }
 
 .modal-footer {
@@ -745,6 +904,7 @@ refreshOrders()
   gap: 10px;
   padding: 16px 24px 22px;
   border-top: 1px solid #f0f4f1;
+  background: #fff;
 }
 
 @media (max-width: 768px) {
@@ -780,6 +940,23 @@ refreshOrders()
   }
 
   .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-card {
+    grid-template-columns: 72px 1fr;
+  }
+
+  .product-total {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px dashed #dde5df;
+  }
+
+  .info-cards {
     grid-template-columns: 1fr;
   }
 }

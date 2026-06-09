@@ -9,7 +9,8 @@
         @click="goToFarmer(farmer.id)"
       >
         <div class="avatar">
-          <img :src="farmer.image" :alt="farmer.name" />
+          <img v-if="farmer.image" :src="farmer.image" :alt="farmer.name" @error="onImageError(farmer)" />
+          <span v-else class="avatar-fallback">{{ farmer.initials }}</span>
         </div>
 
         <div class="farmer-name">{{ farmer.name }}</div>
@@ -36,9 +37,22 @@ const farmers = ref([])
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 function resolveImage(url) {
-  if (!url) return 'https://via.placeholder.com/80'
+  if (!url) return null
   if (url.startsWith('http')) return url
-  return `${API_BASE_URL}/uploads/${url.replace(/^\/?(images\/|uploads\/)?/, '')}`
+  return `${API_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`
+}
+
+function getInitials(name) {
+  return String(name || 'P')
+    .split(/\s+/)
+    .map(w => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+function onImageError(farmer) {
+  farmer.image = null
 }
 
 async function loadFarmers() {
@@ -60,6 +74,7 @@ async function loadFarmers() {
       name,
       farm: provider.farm_name || name,
       image: resolveImage(provider.avatar),
+      initials: getInitials(name),
       desc: provider.story || `Fresh produce from ${name}.`,
     })
   }
@@ -124,6 +139,18 @@ function goToFarmer(id) {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: #2d6a4f;
+  background: #e8f5ee;
 }
 
 .farmer-name {

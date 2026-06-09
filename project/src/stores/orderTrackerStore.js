@@ -55,6 +55,10 @@ function mapOrder(order) {
 
   const items = Array.isArray(order.order_items) ? order.order_items : []
   const status = String(order.status || 'pending').toLowerCase()
+  const subtotal = Number(order.subtotal || 0)
+  const shippingFee = Number(order.shipping_fee || 0)
+  const serviceFee = Number(order.service_fee || 0)
+  const total = Number(order.total || 0)
 
   return {
     id: order.id,
@@ -98,7 +102,11 @@ function mapOrder(order) {
       image: productImage(entry.product?.imageUrl),
       category: entry.product?.category || '',
     })),
-    deliveryFee: 0,
+    subtotal,
+    shippingFee,
+    serviceFee,
+    total,
+    deliveryFee: shippingFee + serviceFee,
     raw: order,
   }
 }
@@ -119,6 +127,7 @@ export const useOrderTrackerStore = defineStore('orderTracker', () => {
 
   const total = computed(() => {
     if (!currentOrder.value) return 0
+    if (Number(currentOrder.value.total) > 0) return Number(currentOrder.value.total)
     return subtotal.value + (currentOrder.value.deliveryFee || 0)
   })
 

@@ -1,8 +1,11 @@
 <template>
   <div class="feedback-section">
     <div class="section-header">
-      <h2>Customer Feedback</h2>
-      <div class="rating-summary" v-if="summary.total > 0">
+      <div>
+        <h2>Customer Reviews</h2>
+        <p class="section-sub">Feedback from customers who purchased your products</p>
+      </div>
+      <div v-if="summary.total > 0" class="rating-summary">
         <div class="big-rating">{{ summary.average_rating }}</div>
         <div class="rating-detail">
           <div class="stars-display">
@@ -13,42 +16,33 @@
               :class="i <= Math.round(summary.average_rating) ? 'filled' : ''"
             >★</span>
           </div>
-          <span class="total-count">{{ summary.total }} reviews</span>
+          <span class="total-count">{{ summary.total }} review{{ summary.total !== 1 ? 's' : '' }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
       <span>Loading reviews...</span>
     </div>
 
-    <!-- Empty -->
     <div v-else-if="reviews.length === 0" class="empty-state">
       <span class="empty-icon">💬</span>
       <p>No reviews yet</p>
-      <span>Customer feedback will appear here</span>
+      <span>Customer feedback will appear here once they review your products</span>
     </div>
 
-    <!-- Review List -->
     <div v-else class="review-list">
       <div v-for="review in reviews" :key="review.id" class="review-card">
         <div class="review-header">
           <div class="reviewer-info">
-            <div class="avatar">
-              <img
-                v-if="review.customer_avatar"
-                :src="`http://localhost:3000${review.customer_avatar}`"
-                :alt="review.customer_name"
-              />
-              <span v-else class="avatar-fallback">
-                {{ (review.customer_name || 'A')[0].toUpperCase() }}
-              </span>
+            <div class="avatar" :style="{ background: review.color }">
+              <span class="avatar-fallback">{{ review.initials }}</span>
             </div>
             <div>
-              <strong>{{ review.customer_name || 'Anonymous' }}</strong>
-              <span class="review-date">{{ formatDate(review.created_at) }}</span>
+              <strong>{{ review.author }}</strong>
+              <span v-if="review.productName" class="product-tag">{{ review.productName }}</span>
+              <span class="review-date">{{ review.date }}</span>
             </div>
           </div>
           <div class="review-stars">
@@ -60,173 +54,177 @@
             >★</span>
           </div>
         </div>
-        <p v-if="review.comment" class="review-comment">{{ review.comment }}</p>
+        <p v-if="review.feedback" class="review-comment">{{ review.feedback }}</p>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import axios from 'axios'
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useReviewStore } from '@/stores/reviewStore'
 
-interface Review {
-  id: number
-  customer_id: number
-  customer_name: string
-  customer_avatar: string
-  rating: number
-  comment: string
-  created_at: string
-}
+const reviewStore = useReviewStore()
 
-const props = defineProps<{ providerId: number }>()
+const loading = computed(() => reviewStore.loading)
+const reviews = computed(() => reviewStore.reviews)
 
-const reviews = ref<Review[]>([])
-const loading = ref(false)
-const summary = ref({ average_rating: 0, total: 0 })
+const summary = computed(() => ({
+  average_rating: Number(reviewStore.averageRating) || 0,
+  total: reviewStore.reviewCount,
+}))
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  })
-}
-
-async function fetchReviews() {
-  if (!props.providerId) return
-  loading.value = true
-  try {
-    const res = await axios.get(
-      `http://localhost:3000/providers/${props.providerId}/feedbacks`,
-    )
-    reviews.value        = res.data.reviews        ?? []
-    summary.value.average_rating = res.data.average_rating ?? 0
-    summary.value.total          = res.data.total          ?? 0
-  } catch {
-    reviews.value = []
-  } finally {
-    loading.value = false
-  }
-}
-
-watch(() => props.providerId, fetchReviews)
-onMounted(fetchReviews)
+onMounted(() => {
+  reviewStore.fetchReviewsByProvider()
+})
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-
 .feedback-section {
-  font-family: 'DM Sans', sans-serif;
   background: #fff;
   border-radius: 16px;
+  border: 1px solid #e8ecef;
   padding: 1.5rem;
-  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
 .section-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
+
 .section-header h2 {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #111827;
+  margin: 0;
+}
+
+.section-sub {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 4px 0 0;
 }
 
 .rating-summary {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  background: #f8fdf9;
+  gap: 0.75rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
   border-radius: 12px;
-  padding: .6rem 1.2rem;
+  padding: 0.5rem 1rem;
 }
-.big-rating {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #2d6a4f;
-}
-.stars-display { display: flex; gap: 2px; }
-.star { font-size: 1rem; color: #d1d5db; }
-.star.filled { color: #f59e0b; }
-.total-count { font-size: .8rem; color: #888; margin-top: .2rem; display: block; }
 
-/* Loading */
+.big-rating {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #15803d;
+  line-height: 1;
+}
+
+.stars-display { display: flex; gap: 1px; }
+.star { font-size: 0.85rem; color: #d1d5db; }
+.star.filled { color: #f59e0b; }
+.total-count { font-size: 0.75rem; color: #6b7280; margin-top: 2px; display: block; }
+
 .loading-state {
   display: flex;
   align-items: center;
-  gap: .8rem;
+  gap: 0.75rem;
   padding: 2rem;
-  color: #888;
+  color: #9ca3af;
   justify-content: center;
+  font-size: 0.875rem;
 }
+
 .spinner {
-  width: 20px; height: 20px;
-  border: 2px solid #e5e5e5;
-  border-top-color: #2d6a4f;
+  width: 18px; height: 18px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #15803d;
   border-radius: 50%;
-  animation: spin .6s linear infinite;
+  animation: spin 0.6s linear infinite;
 }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Empty */
 .empty-state {
   text-align: center;
-  padding: 3rem 1rem;
-  color: #aaa;
+  padding: 2.5rem 1rem;
+  color: #9ca3af;
 }
-.empty-icon { font-size: 2.5rem; display: block; margin-bottom: .8rem; }
-.empty-state p { font-size: 1rem; color: #555; font-weight: 600; }
 
-/* Review cards */
-.review-list { display: flex; flex-direction: column; gap: 1rem; }
+.empty-icon { font-size: 2rem; display: block; margin-bottom: 0.75rem; }
+.empty-state p { font-size: 0.95rem; color: #374151; font-weight: 600; margin: 0 0 4px; }
+.empty-state span { font-size: 0.8rem; }
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 420px;
+  overflow-y: auto;
+}
 
 .review-card {
-  border: 1.5px solid #f0f0f0;
+  border: 1px solid #f0f0f0;
   border-radius: 12px;
-  padding: 1rem 1.2rem;
-  transition: border-color .2s;
+  padding: 0.875rem 1rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.review-card:hover { border-color: #b7e4c7; }
+
+.review-card:hover {
+  border-color: #bbf7d0;
+  box-shadow: 0 2px 8px rgba(21,128,61,0.06);
+}
 
 .review-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: .6rem;
+  margin-bottom: 0.5rem;
   flex-wrap: wrap;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .reviewer-info {
   display: flex;
   align-items: center;
-  gap: .8rem;
+  gap: 0.75rem;
 }
+
 .avatar {
-  width: 40px; height: 40px;
+  width: 36px; height: 36px;
   border-radius: 50%;
-  overflow: hidden;
-  background: #d8f3dc;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.avatar img { width: 100%; height: 100%; object-fit: cover; }
-.avatar-fallback { font-weight: 700; color: #2d6a4f; font-size: 1rem; }
-.reviewer-info strong { display: block; font-size: .9rem; color: #1a1a1a; }
-.review-date { font-size: .75rem; color: #aaa; }
 
-.review-stars { display: flex; gap: 2px; }
+.avatar-fallback { font-weight: 700; color: #fff; font-size: 0.8rem; }
+.reviewer-info strong { display: block; font-size: 0.875rem; color: #111827; }
+
+.product-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: #15803d;
+  background: #f0fdf4;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-top: 2px;
+}
+
+.review-date { display: block; font-size: 0.72rem; color: #9ca3af; margin-top: 2px; }
+
+.review-stars { display: flex; gap: 1px; }
 .review-comment {
-  font-size: .88rem;
-  color: #555;
+  font-size: 0.85rem;
+  color: #4b5563;
   line-height: 1.5;
   margin: 0;
-  padding-left: 3rem;
+  padding-left: 2.75rem;
 }
 </style>

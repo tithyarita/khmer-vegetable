@@ -2,29 +2,26 @@
 import { onMounted, computed } from "vue"
 import { useProviderStore } from "@/stores/providerStore"
 import { useProviderOrderStore } from "@/stores/providerOrderStore"
+import { useReviewStore } from "@/stores/reviewStore"
 
 import SideBar from '../../components/provider_com/sideBar.vue'
 import PageHeader from '../../components/provider_com/pageHeader.vue'
-import ProfileCard  from "../../components/provider_com/ProfileCard.vue"
+import ProfileCard from "../../components/provider_com/ProfileCard.vue"
 import FormProvider from "../../components/provider_com/ProviderForm.vue"
-import BankAccount  from "../../components/provider_com/BankAccount.vue"
-
-// 1. Import your newly created Customer Feedback component
+import BankAccount from "../../components/provider_com/BankAccount.vue"
 import CustomerFeedback from "../../components/provider_com/CustomerFeedback.vue"
 
 const store = useProviderStore()
 const providerOrderStore = useProviderOrderStore()
-const currentUser = JSON.parse(localStorage.getItem("user") || 'null')
-const providerId = currentUser?.id || currentUser?.user_id || null
+const reviewStore = useReviewStore()
 
-// 2. Calculate dynamic average rating from your backend feedbacks array
+const currentUser = JSON.parse(localStorage.getItem("user") || 'null')
+const providerId = Number(currentUser?.id || currentUser?.user_id || 0) || null
+
 const dynamicRating = computed(() => {
-  if (!store.feedbacks || store.feedbacks.length === 0) {
-    return "0.0 ★"
-  }
-  const totalStars = store.feedbacks.reduce((sum, item) => sum + item.rating_stars, 0)
-  const average = totalStars / store.feedbacks.length
-  return `${average.toFixed(1)} ★`
+  const avg = Number(reviewStore.averageRating)
+  if (!avg) return "—"
+  return `${avg.toFixed(1)} ★`
 })
 
 const activeServices = computed(() => {
@@ -43,12 +40,11 @@ const totalRevenue = computed(() => {
   }, 0)
 })
 
-// 3. Keep stats dynamic by turning it into a computed property
 const stats = computed(() => [
-  { title: "Active Services", value: activeServices.value, icon: "🛠️" },
-  { title: "Bookings",        value: totalBookings.value, icon: "📅" },
-  { title: "Revenue",         value: `$${totalRevenue.value.toLocaleString()}`, icon: "💰" },
-  { title: "Rating",          value: dynamicRating.value, icon: "⭐" },
+  { title: "Active Orders", value: activeServices.value, icon: "📦", color: "#15803d" },
+  { title: "Total Orders", value: totalBookings.value, icon: "📋", color: "#0369a1" },
+  { title: "Revenue", value: `$${totalRevenue.value.toLocaleString()}`, icon: "💰", color: "#b45309" },
+  { title: "Rating", value: dynamicRating.value, icon: "⭐", color: "#7c3aed" },
 ])
 
 onMounted(async () => {
@@ -56,62 +52,60 @@ onMounted(async () => {
     console.warn('Provider profile cannot load: missing authenticated user id.')
     return
   }
-  // Load provider profile, feedbacks, and provider orders for stats
   await Promise.all([
     store.loadProvider(providerId),
     providerOrderStore.fetchProviderOrders(providerId),
+    reviewStore.fetchReviewsByProvider(),
   ])
 })
 </script>
 
 <template>
   <div class="provider-page">
-
     <aside class="sidebar">
       <SideBar />
     </aside>
 
     <main class="main-content">
-      <PageHeader title="Provider Profile" />
+      <PageHeader title="My Profile" />
 
-      <section class="section-pad">
-        <ProfileCard />
-      </section>
+      <div v-if="store.loading" class="loading-banner">
+        <div class="spinner"></div>
+        Loading profile...
+      </div>
 
-      <section class="stats-grid section-pad">
-        <div v-for="(item, i) in stats" :key="i" class="stats-card">
-          <div class="stats-icon">
-            <span class="stats-icon-text">{{ item.icon }}</span>
+      <template v-else>
+        <section class="section-pad">
+          <ProfileCard />
+        </section>
+
+        <section class="stats-grid section-pad">
+          <div v-for="(item, i) in stats" :key="i" class="stats-card">
+            <div class="stats-icon" :style="{ background: item.color + '18', color: item.color }">
+              <span>{{ item.icon }}</span>
+            </div>
+            <div class="stats-body">
+              <h2>{{ item.value }}</h2>
+              <p>{{ item.title }}</p>
+            </div>
           </div>
-          <h2>{{ item.value }}</h2>
-          <p>{{ item.title }}</p>
-        </div>
-      </section>
+        </section>
 
-      <section class="content-grid section-pad">
-
-        <div class="left-column">
-          <FormProvider />
-        </div>
-
-        <div class="right-column">
-          <BankAccount />
-          
-          <CustomerFeedback />
-        </div>
-
-      </section>
+        <section class="content-grid section-pad">
+          <div class="left-column">
+            <FormProvider />
+          </div>
+          <div class="right-column">
+            <BankAccount />
+            <CustomerFeedback />
+          </div>
+        </section>
+      </template>
     </main>
   </div>
 </template>
 
 <style scoped>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 .provider-page {
   display: flex;
   min-height: 100vh;
@@ -119,126 +113,118 @@ onMounted(async () => {
   font-family: "DM Sans", sans-serif;
 }
 
-/* SIDEBAR */
 .sidebar {
   width: 250px;
   height: 100vh;
   position: fixed;
   top: 0;
   left: 0;
-
   background: white;
   border-right: 1px solid #e5e7eb;
-
   overflow-y: auto;
   z-index: 1000;
 }
 
-/* MAIN */
 .main-content {
   flex: 1;
   margin-left: 250px;
-
   min-height: 100vh;
   overflow-y: auto;
-
-  padding-bottom: 40px;
+  padding-bottom: 48px;
 }
 
-/* spacing helper */
+.loading-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 30px;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #15803d;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .section-pad {
   padding: 0 30px;
   margin-top: 24px;
 }
 
-/* STATS */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 16px;
 }
 
 .stats-card {
   background: white;
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #e8ecef;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .stats-icon {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
-  background: #f0fdf4;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  margin-bottom: 16px;
+  font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
-.stats-icon-text {
-  font-size: 1.2rem;
-  line-height: 1;
-}
-
-.stats-card h2 {
-  font-size: 1.6rem;
+.stats-body h2 {
+  font-size: 1.4rem;
   font-weight: 700;
   color: #111827;
+  line-height: 1.2;
 }
 
-.stats-card p {
-  margin-top: 4px;
-  color: #6b7280;
-  font-size: 0.9rem;
+.stats-body p {
+  margin-top: 2px;
+  color: #9ca3af;
+  font-size: 0.8rem;
 }
 
-/* CONTENT GRID */
 .content-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
 }
 
 .left-column,
 .right-column {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
-/* RESPONSIVE */
 @media (max-width: 1100px) {
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .content-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
-  .sidebar {
-    display: none;
-  }
-
-  .main-content {
-    margin-left: 0;
-  }
-
-  .section-pad {
-    padding: 0 16px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
+  .sidebar { display: none; }
+  .main-content { margin-left: 0; }
+  .section-pad { padding: 0 16px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
 }
 </style>

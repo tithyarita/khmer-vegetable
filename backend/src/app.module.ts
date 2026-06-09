@@ -33,13 +33,8 @@ import { AppService } from './app.service';
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
       username: process.env.DB_USER || 'root',
-<<<<<<< HEAD
       password: process.env.DB_PASSWORD || 'root',
       database: process.env.DB_NAME || 'khmer_vegetable_market',
-=======
-      password: process.env.DB_PASSWORD || '123456789',
-      database: process.env.DB_NAME || 'Khmer_vegetable',
->>>>>>> 5a6a846a9edf8208db03a3db0d5c7dd98fb3ba39
 
       autoLoadEntities: true,
       synchronize: true,

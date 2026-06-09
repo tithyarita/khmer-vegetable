@@ -44,6 +44,14 @@ export const useCustomerOrderStore = defineStore('customerOrders', () => {
       .map((item) => getInitial(item.product?.name || 'Item'))
 
     const itemCount = items.reduce((sum, item) => sum + Number(item.quantity || 1), 0)
+    const computedSubtotal = items.reduce(
+      (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 1),
+      0,
+    )
+    const subtotal = Number(order.subtotal ?? computedSubtotal)
+    const shippingFee = Number(order.shipping_fee || 0)
+    const serviceFee = Number(order.service_fee || 0)
+    const total = Number(order.total || subtotal + shippingFee + serviceFee)
 
     return {
       id: order.id,
@@ -52,7 +60,12 @@ export const useCustomerOrderStore = defineStore('customerOrders', () => {
       statusLabel: formatStatus(order.status),
       statusClass: statusClass(order.status),
       meta: `Placed on ${formatDate(order.created_at)}`,
-      price: Number(order.total || 0).toFixed(2),
+      createdAt: order.created_at,
+      price: total.toFixed(2),
+      subtotal: subtotal.toFixed(2),
+      shippingFee: shippingFee.toFixed(2),
+      serviceFee: serviceFee.toFixed(2),
+      paymentAmount: Number(order.payment_amount || total).toFixed(2),
       itemCount,
       paymentMethod: order.payment_method || '—',
       paymentStatus: order.payment_status || 'pending',
@@ -62,14 +75,26 @@ export const useCustomerOrderStore = defineStore('customerOrders', () => {
         ? items.map((item) => item.product?.name || 'Product').join(', ')
         : 'No items available',
       providerName: order.provider?.provider_name || 'Unknown',
-      items: items.map((item) => ({
-        id: item.id,
-        name: item.product?.name || 'Product',
-        quantity: Number(item.quantity || 1),
-        price: Number(item.price || item.product?.price || 0),
-        image: item.product?.imageUrl || '',
-        category: item.product?.category || '',
-      })),
+      providerFarm: order.provider?.farm_name || '',
+      items: items.map((item) => {
+        const unitPrice = Number(item.price || item.product?.price || 0)
+        const quantity = Number(item.quantity || 1)
+        const originalPrice = Number(item.product?.price || unitPrice)
+        const discount = Number(item.product?.discount || 0)
+        return {
+          id: item.id,
+          name: item.product?.name || 'Product',
+          quantity,
+          unitPrice,
+          price: unitPrice,
+          lineTotal: unitPrice * quantity,
+          originalPrice,
+          discount,
+          image: item.product?.imageUrl || '',
+          category: item.product?.category || '',
+          description: item.product?.description || '',
+        }
+      }),
       raw: order,
     }
   }

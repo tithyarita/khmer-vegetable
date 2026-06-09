@@ -329,7 +329,7 @@
               </div>
               <div class="summary-row">
                 <span>Logistics / Delivery</span>
-                <strong>${{ shippingFee.toFixed(2) }}</strong>
+                <strong class="free-tag">{{ shippingFee === 0 ? 'Free' : `$${shippingFee.toFixed(2)}` }}</strong>
               </div>
               <div class="summary-row">
                 <span>Platform Maintenance Fee</span>
@@ -940,6 +940,11 @@
   letter-spacing: -0.02em;
 }
 
+.free-tag {
+  color: #15803d;
+  font-weight: 700;
+}
+
 /* Diagnostic Action Error Box */
 .error-box {
   margin-top: 18px;
@@ -1107,7 +1112,7 @@ const orderMessage = ref('')
 const activeSection = ref('address')
 const paymentMethod = ref('qr')
 
-const shippingFee = ref(2)
+const shippingFee = ref(0)
 const serviceFee = ref(1)
 
 const providerPayments = ref([])
@@ -1224,6 +1229,81 @@ const clearStoredReceipt = () => {
   receiptPreview.value = ''
   receiptFileName.value = ''
   localStorage.removeItem(RECEIPT_STORAGE_KEY)
+}
+
+const formatPaymentMethod = (method) => {
+  const labels = {
+    qr: 'Bank Transfer (QR)',
+    cash: 'Cash on Delivery',
+    visa: 'Visa Card',
+    mastercard: 'Master Card',
+  }
+  return labels[method] || method
+}
+
+const splitShippingName = (name) => {
+  const parts = String(name || '').trim().split(/\s+/)
+  if (!parts[0]) return { firstName: 'Customer', lastName: '' }
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') }
+}
+
+const resolveItemImage = (image) => {
+  if (!image) return null
+  if (image.startsWith('http')) return image
+  return `${API_BASE_URL}${image.startsWith('/') ? image : `/${image}`}`
+}
+
+const saveLastOrder = (orderResponse) => {
+  const orders = orderResponse?.data?.data
+  const orderCodes = Array.isArray(orders)
+    ? orders.map(o => o.order_code).filter(Boolean)
+    : []
+  const orderNumber = orderCodes.length
+    ? orderCodes.join(', ')
+    : `ORD-${Date.now()}`
+
+  const { firstName, lastName } = splitShippingName(shipping.name)
+  const deliveryDate = new Date()
+  deliveryDate.setDate(deliveryDate.getDate() + 5)
+
+  const snapshot = {
+    orderNumber,
+    orderDate: new Date().toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric',
+    }),
+    paymentMethod: formatPaymentMethod(paymentMethod.value),
+    customer: {
+      firstName,
+      lastName,
+      address: shipping.address,
+      city: shipping.city,
+      state: shipping.state,
+      zip: shipping.zip || '',
+      country: shipping.country || 'Cambodia',
+      phone: shipping.phone,
+      email: shipping.email,
+    },
+    items: orderItems.value.map(item => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: Number(item.unitPrice || item.price || 0),
+      price: Number(item.unitPrice || item.price || 0),
+      image: resolveItemImage(item.image),
+      providerName: item.providerName || item.provider?.provider_name || 'Unknown',
+      providerId: item.providerId || item.provider_id || null,
+    })),
+    subtotal: subtotal.value,
+    shippingFee: shippingFee.value,
+    serviceFee: serviceFee.value,
+    total: total.value,
+    estimatedDelivery: deliveryDate.toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric',
+    }),
+    trackingNumber: `TRK${Date.now().toString(36).toUpperCase()}`,
+  }
+
+  localStorage.setItem('lastOrder', JSON.stringify(snapshot))
 }
 
 /* --------------------------
@@ -1463,6 +1543,7 @@ const confirmOrder = async () => {
       groups[pId].items.push({
         product_id: Number(item.id || item.product_id || item.productId || 0),
         quantity: Number(item.quantity || 0),
+        unit_price: Number(item.unitPrice || item.price || 0),
       })
 
       return groups
@@ -1503,12 +1584,13 @@ const confirmOrder = async () => {
 
     await saveShippingAddress()
 
-    await axios.post(`${API_BASE_URL}/orders`, formData, {
+    const response = await axios.post(`${API_BASE_URL}/orders`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
 
+    saveLastOrder(response.data)
     orderResult.value = 'success'
     orderMessage.value = 'Order placed successfully!'
     clearStoredReceipt()

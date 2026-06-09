@@ -57,8 +57,17 @@ export class orders {
   })
   status!: OrderStatus;
 
-  @Column('decimal')
+  @Column('decimal', { precision: 12, scale: 2 })
   total!: number;
+
+  @Column('decimal', { precision: 12, scale: 2, default: 0 })
+  subtotal!: number;
+
+  @Column('decimal', { precision: 12, scale: 2, default: 0 })
+  shipping_fee!: number;
+
+  @Column('decimal', { precision: 12, scale: 2, default: 0 })
+  service_fee!: number;
 
   @Column({ default: 1 })
   item!: number;
@@ -76,7 +85,7 @@ export class orders {
   @Column({ type: 'text', nullable: true })
   payment_proof!: string | null;
 
-  @Column({ type: 'decimal', default: 0 })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   payment_amount!: number;
 
   @Column({ nullable: true })

@@ -155,7 +155,7 @@ export const useReviewStore = defineStore('review', () => {
       color: color,
       createdAt: date.toISOString(),
       date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      location: 'Phnom Penh, KH',
+      productName: review.product?.name || review.product?.product_name || null,
       verified: true,
       body: review.feedback,
       userId: review.user?.id,

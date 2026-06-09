@@ -12,43 +12,27 @@ function fullUrl(path) {
 export const useProviderStore = defineStore('provider', {
   state: () => ({
     provider: {},
-    feedbacks: [], // 1. Added state to hold the customer reviews array
+    loading: false,
   }),
 
   actions: {
-    // ========================================
-    // LOAD PROVIDER PROFILE & REVIEWS
-    // ========================================
     async loadProvider(userId) {
-      // Fetch the provider profile details
-      const res = await axios.get(`${BASE}/providers/${userId}`)
-      const d   = res.data
-
-      this.provider = {
-        ...d,
-        avatar:     fullUrl(d.avatar),
-        farm_image: fullUrl(d.farm_image),
-        banks: (d.banks || []).map(b => ({
-          ...b,
-          qr: fullUrl(b.qr),
-        })),
-      }
-
-      // 2. Automatically load feedbacks right after profile loads successfully
-      await this.loadFeedbacks(userId)
-    },
-
-    // ========================================
-    // LOAD CUSTOMER FEEDBACKS
-    // ========================================
-    async loadFeedbacks(providerId) {
+      this.loading = true
       try {
-        const res = await axios.get(`${BASE}/providers/${providerId}/feedbacks`)
-        // Save the reviews array directly to the state
-        this.feedbacks = res.data
-      } catch (err) {
-        console.error("Failed to load customer feedbacks:", err)
-        this.feedbacks = [] // Fallback to empty list on failure
+        const res = await axios.get(`${BASE}/providers/${userId}`)
+        const d = res.data
+
+        this.provider = {
+          ...d,
+          avatar: fullUrl(d.avatar),
+          farm_image: fullUrl(d.farm_image),
+          banks: (d.banks || []).map(b => ({
+            ...b,
+            qr: fullUrl(b.qr),
+          })),
+        }
+      } finally {
+        this.loading = false
       }
     },
 
@@ -56,9 +40,6 @@ export const useProviderStore = defineStore('provider', {
       return this.provider.user_id || this.provider.id || this.provider.user?.id || null
     },
 
-    // ========================================
-    // UPDATE PROVIDER
-    // ========================================
     async updateProvider(data) {
       const providerId = this.getProviderId()
       if (!providerId) {
@@ -79,7 +60,7 @@ export const useProviderStore = defineStore('provider', {
 
       this.provider = {
         ...d,
-        avatar:     fullUrl(d.avatar),
+        avatar: fullUrl(d.avatar),
         farm_image: fullUrl(d.farm_image),
         banks: (d.banks || []).map(b => ({
           ...b,

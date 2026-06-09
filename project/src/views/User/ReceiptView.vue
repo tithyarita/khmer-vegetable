@@ -5,7 +5,14 @@
 
     <section class="section receipt-section">
       <div class="section-inner">
-        <div ref="receiptContainer" class="receipt-container">
+        <div v-if="!hasOrder" class="no-order-card">
+          <div class="no-order-icon">🧾</div>
+          <h2>No Receipt Found</h2>
+          <p>Complete a checkout first to generate your order receipt.</p>
+          <button @click="goHome" class="action-btn home-btn">Browse Products</button>
+        </div>
+
+        <div v-else ref="receiptContainer" class="receipt-container">
           <!-- Receipt Header -->
           <div class="receipt-header">
             <div class="success-badge">
@@ -58,7 +65,8 @@
               <div class="items-list">
                 <div v-for="item in orderItems" :key="item.id" class="receipt-item">
                   <div class="item-image">
-                    <img :src="item.image" :alt="item.name" />
+                    <img v-if="item.image" :src="item.image" :alt="item.name" />
+                    <div v-else class="item-placeholder">{{ (item.name || '?')[0] }}</div>
                   </div>
                   <div class="item-details">
                     <h4>{{ item.name }}</h4>
@@ -85,11 +93,13 @@
                 </div>
                 <div class="price-row">
                   <span>Delivery Fee</span>
-                  <span>${{ getShippingCost() }}</span>
+                  <span :class="{ 'free-label': fees.shipping === 0 }">
+                    {{ fees.shipping === 0 ? 'Free' : `$${fees.shipping.toFixed(2)}` }}
+                  </span>
                 </div>
                 <div class="price-row">
                   <span>Service Fee</span>
-                  <span>$1.00</span>
+                  <span>${{ fees.service.toFixed(2) }}</span>
                 </div>
                 <div class="price-divider"></div>
                 <div class="price-row total">
@@ -133,7 +143,7 @@
           </div>
         </div>
 
-        <div ref="receiptExport" class="receipt-export" aria-hidden="true">
+        <div v-if="hasOrder" ref="receiptExport" class="receipt-export" aria-hidden="true">
           <div class="export-header">
             <div>
               <p class="export-kicker">Khmer Vegetable Market</p>
@@ -202,11 +212,13 @@
             </div>
             <div class="summary-row">
               <span>Delivery Fee</span>
-              <strong>${{ getShippingCost() }}</strong>
+              <strong :class="{ 'free-label': fees.shipping === 0 }">
+                {{ fees.shipping === 0 ? 'Free' : `$${fees.shipping.toFixed(2)}` }}
+              </strong>
             </div>
             <div class="summary-row">
               <span>Service Fee</span>
-              <strong>$1.00</strong>
+              <strong>${{ fees.service.toFixed(2) }}</strong>
             </div>
             <div class="summary-row total">
               <span>Total</span>
@@ -227,15 +239,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import html2pdf from 'html2pdf.js'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Footer from '../../components/Customer/Footer.vue'
 
 const router = useRouter()
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
-// Receipt data
 const orderNumber = ref('')
 const orderDate = ref('')
 const paymentMethod = ref('')
@@ -243,8 +255,16 @@ const customer = ref({})
 const orderItems = ref([])
 const estimatedDelivery = ref('')
 const trackingNumber = ref('')
+const hasOrder = ref(false)
 const receiptContainer = ref(null)
 const receiptExport = ref(null)
+
+const fees = reactive({
+  subtotal: 0,
+  shipping: 0,
+  service: 1,
+  total: 0,
+})
 
 const UNKNOWN = 'Unknown'
 
@@ -255,9 +275,7 @@ const normalizeField = (value) => {
 
 const splitName = (value) => {
   const name = String(value ?? '').trim()
-  if (!name) {
-    return { firstName: UNKNOWN, lastName: UNKNOWN }
-  }
+  if (!name) return { firstName: UNKNOWN, lastName: '' }
   const [firstName, ...rest] = name.split(/\s+/)
   return {
     firstName: normalizeField(firstName),
@@ -269,40 +287,44 @@ const getLoggedInUser = () => {
   return JSON.parse(localStorage.getItem('user') || 'null') || {}
 }
 
-// Generate order details on component mount
-onMounted(() => {
-  // Get order data from localStorage (in real app, this would come from API)
-  const orderData = localStorage.getItem('lastOrder')
-  if (orderData) {
-    const data = JSON.parse(orderData)
-    orderNumber.value = data.orderNumber || generateOrderNumber()
+const resolveImage = (image) => {
+  if (!image) return null
+  if (image.startsWith('http')) return image
+  return `${API_BASE}${image.startsWith('/') ? image : `/${image}`}`
+}
+
+const loadFromStorage = () => {
+  const raw = localStorage.getItem('lastOrder')
+  if (!raw) return false
+
+  try {
+    const data = JSON.parse(raw)
+    if (!data.items?.length) return false
+
+    orderNumber.value = data.orderNumber || `ORD-${Date.now()}`
     orderDate.value = data.orderDate || new Date().toLocaleDateString()
     paymentMethod.value = data.paymentMethod || 'Bank Transfer'
-    customer.value = data.customer || getCustomerData()
-    orderItems.value = data.items || getSampleItems()
-    estimatedDelivery.value = data.estimatedDelivery || calculateEstimatedDelivery()
+    customer.value = data.customer || buildCustomerFromUser()
+    orderItems.value = data.items.map(item => ({
+      ...item,
+      image: resolveImage(item.image),
+    }))
+    estimatedDelivery.value = data.estimatedDelivery || getEstimatedDelivery()
     trackingNumber.value = data.trackingNumber || generateTrackingNumber()
-  } else {
-    // Generate sample data if no order data exists
-    orderNumber.value = generateOrderNumber()
-    orderDate.value = new Date().toLocaleDateString()
-    paymentMethod.value = 'Bank Transfer'
-    customer.value = getCustomerData()
-    orderItems.value = getSampleItems()
-    estimatedDelivery.value = calculateEstimatedDelivery()
-    trackingNumber.value = generateTrackingNumber()
+
+    fees.subtotal = Number(data.subtotal ?? calculateSubtotalFromItems())
+    fees.shipping = Number(data.shippingFee ?? 0)
+    fees.service = Number(data.serviceFee ?? 1)
+    fees.total = Number(data.total ?? (fees.subtotal + fees.shipping + fees.service))
+
+    hasOrder.value = true
+    return true
+  } catch {
+    return false
   }
-})
-
-const generateOrderNumber = () => {
-  return 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase()
 }
 
-const generateTrackingNumber = () => {
-  return 'TRK' + Math.random().toString(36).substr(2, 10).toUpperCase()
-}
-
-const getCustomerData = () => {
+const buildCustomerFromUser = () => {
   const savedAddress = localStorage.getItem('shippingAddress')
   if (savedAddress) {
     const address = JSON.parse(savedAddress)
@@ -313,7 +335,7 @@ const getCustomerData = () => {
       city: normalizeField(address.city),
       state: normalizeField(address.state),
       zip: normalizeField(address.zip),
-      country: normalizeField(address.country),
+      country: normalizeField(address.country || 'Cambodia'),
       phone: normalizeField(address.phone),
       email: normalizeField(address.email),
     }
@@ -328,59 +350,43 @@ const getCustomerData = () => {
     city: normalizeField(account.city),
     state: normalizeField(account.state || account.province),
     zip: normalizeField(account.zip || account.postalCode),
-    country: normalizeField(account.country),
+    country: normalizeField(account.country || 'Cambodia'),
     phone: normalizeField(account.phone || account.phoneNumber),
     email: normalizeField(account.email),
   }
 }
 
-const getSampleItems = () => {
-  return [
-    {
-      id: 1,
-      name: 'Organic Curly Kale Bunch',
-      price: 2.50,
-      quantity: 2,
-      image: 'https://images.unsplash.com/photo-1524179091875-bf99a9a6af57?w=400&q=80'
-    },
-    {
-      id: 2,
-      name: 'Fresh Garden Radish (Bunch)',
-      price: 1.99,
-      quantity: 3,
-      image: 'https://images.unsplash.com/photo-1585278407894-e2a1386378d9?w=400&q=80'
-    },
-    {
-      id: 3,
-      name: 'Sweet Red Bell Peppers (3 Pack)',
-      price: 3.45,
-      quantity: 1,
-      image: 'https://images.unsplash.com/photo-1563565375-fc4c4e308637?w=400&q=80'
-    }
-  ]
+const generateTrackingNumber = () => {
+  return 'TRK' + Math.random().toString(36).substr(2, 10).toUpperCase()
 }
 
-const calculateEstimatedDelivery = () => {
+const getEstimatedDelivery = () => {
   const deliveryDate = new Date()
-  deliveryDate.setDate(deliveryDate.getDate() + 5) // 5 days from now
-  return deliveryDate.toLocaleDateString()
+  deliveryDate.setDate(deliveryDate.getDate() + 5)
+  return deliveryDate.toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric',
+  })
 }
 
-const calculateSubtotal = () => {
+const calculateSubtotalFromItems = () => {
   return orderItems.value.reduce((total, item) => {
     return total + (Number(item.unitPrice ?? item.price ?? 0) * Number(item.quantity ?? 0))
-  }, 0).toFixed(2)
+  }, 0)
 }
 
-const getShippingCost = () => {
-  return '2.00'
+onMounted(() => {
+  loadFromStorage()
+})
+
+const calculateSubtotal = () => {
+  if (fees.subtotal > 0) return fees.subtotal.toFixed(2)
+  return calculateSubtotalFromItems().toFixed(2)
 }
 
 const calculateTotal = () => {
+  if (fees.total > 0) return fees.total.toFixed(2)
   const subtotal = parseFloat(calculateSubtotal())
-  const shipping = parseFloat(getShippingCost())
-  const serviceFee = 1.00
-  return (subtotal + shipping + serviceFee).toFixed(2)
+  return (subtotal + fees.shipping + fees.service).toFixed(2)
 }
 
 const printReceipt = () => {
@@ -435,6 +441,7 @@ const downloadReceipt = async () => {
 }
 
 const generateReceiptText = () => {
+  const deliveryLabel = fees.shipping === 0 ? 'Free' : `$${fees.shipping.toFixed(2)}`
   return `
 ORDER RECEIPT
 ===============
@@ -452,13 +459,13 @@ ${customer.value.phone}
 ${customer.value.email}
 
 Order Items:
-${orderItems.value.map(item => 
-  `${item.name} - ${item.quantity} × $${item.price} = $${(item.price * item.quantity).toFixed(2)}`
+${orderItems.value.map(item =>
+  `${item.name} - ${item.quantity} × $${Number(item.unitPrice ?? item.price ?? 0).toFixed(2)} = $${(Number(item.unitPrice ?? item.price ?? 0) * Number(item.quantity ?? 0)).toFixed(2)}`
 ).join('\n')}
 
 Subtotal: $${calculateSubtotal()}
-Delivery Fee: $${getShippingCost()}
-Service Fee: $1.00
+Delivery Fee: ${deliveryLabel}
+Service Fee: $${fees.service.toFixed(2)}
 Total: $${calculateTotal()}
 
 Estimated Delivery: ${estimatedDelivery.value}
@@ -971,4 +978,37 @@ const goHome = () => {
   color: #475569;
   margin-top: 4px;
 }
+
+.free-label {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.item-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0fdf4;
+  color: #15803d;
+  font-weight: 700;
+  font-size: 18px;
+  border-radius: 8px;
+}
+
+.no-order-card {
+  max-width: 480px;
+  margin: 60px auto;
+  background: white;
+  border-radius: 16px;
+  padding: 48px 32px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #e5e7eb;
+}
+
+.no-order-icon { font-size: 48px; margin-bottom: 16px; }
+.no-order-card h2 { font-size: 1.25rem; color: #111827; margin: 0 0 8px; }
+.no-order-card p { color: #6b7280; margin: 0 0 24px; font-size: 0.9rem; }
 </style>

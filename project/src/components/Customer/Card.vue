@@ -114,7 +114,6 @@ const resolveImage = (path) => {
   return API_BASE_URL + '/uploads/' + path
 }
 
-<<<<<<< HEAD
 const normalizeProduct = product => {
   const basePrice = Number(product?.price ?? 0)
   const discountVal = Number(product?.discount ?? 0)
@@ -131,17 +130,6 @@ const normalizeProduct = product => {
     stock: Number(product?.stock ?? 0),
   }
 }
-=======
-const normalizeProduct = product => ({
-  ...product,
-  price: Number(product?.price ?? 0),
-  discount: Number(product?.discount ?? 0),
-  providerId: Number(product?.providerId ?? product?.provider_id ?? product?.provider?.user_id ?? 0) || null,
-  providerName: product?.providerName || product?.provider?.farm_name || product?.provider?.provider_name || `Farm #${product?.provider?.user_id || '?'}`,
-  image: resolveImage(product?.image || product?.imageUrl || ''),
-  stock: Number(product?.stock ?? 0),
-})
->>>>>>> 5a6a846a9edf8208db03a3db0d5c7dd98fb3ba39
 
 const displayProducts = computed(() => {
   if (props.product) {

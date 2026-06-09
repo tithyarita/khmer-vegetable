@@ -14,6 +14,12 @@ import { users } from '../users/users.entity';
 import { ReportService } from '../report/report.service';
 import { CreateOrderDto, UpdateOrderDto } from './dto/orders.dto';
 
+type OrderCheckoutFees = {
+  shippingFee?: number;
+  serviceFee?: number;
+  grandTotal?: number;
+};
+
 @Injectable()
 export class OrdersService {
   constructor(
@@ -34,6 +40,41 @@ export class OrdersService {
     private readonly reportService: ReportService,
     private dataSource: DataSource,
   ) {}
+
+  private roundMoney(value: number): number {
+    return Math.round(Number(value || 0) * 100) / 100;
+  }
+
+  private getDiscountedUnitPrice(product: Product): number {
+    const base = Number(product.price || 0);
+    const discount = Number(product.discount || 0);
+    return this.roundMoney(base * (1 - discount / 100));
+  }
+
+  private resolveItemUnitPrice(
+    product: Product,
+    item: { unit_price?: number; price?: number },
+  ): number {
+    const passed = Number(item.unit_price ?? item.price ?? 0);
+    if (passed > 0) return this.roundMoney(passed);
+    return this.getDiscountedUnitPrice(product);
+  }
+
+  private calculateItemsSubtotal(
+    items: Array<{ product_id: number; quantity: number; unit_price?: number; price?: number }>,
+    productMap: Map<number, Product>,
+  ): number {
+    let subtotal = 0;
+
+    for (const item of items) {
+      const product = productMap.get(item.product_id);
+      if (!product) continue;
+      const unitPrice = this.resolveItemUnitPrice(product, item);
+      subtotal += unitPrice * Number(item.quantity || 0);
+    }
+
+    return this.roundMoney(subtotal);
+  }
 
   private async ensureCustomerExists(customerId: number) {
     const customer = await this.customerRepo.findOne({
@@ -84,7 +125,11 @@ export class OrdersService {
   // =========================
   // CREATE ORDER
   // =========================
-  async create(dto: CreateOrderDto, paymentProof?: string) {
+  async create(
+    dto: CreateOrderDto,
+    paymentProof?: string,
+    fees: OrderCheckoutFees = {},
+  ) {
     return this.dataSource.transaction(async (manager) => {
       const orderRepo = manager.getRepository(orders);
       const itemRepo = manager.getRepository(orderItems);
@@ -108,7 +153,11 @@ export class OrdersService {
 
       const productMap = new Map(products.map((p) => [p.id, p]));
 
-      let total = 0;
+      const shippingFee = this.roundMoney(fees.shippingFee || 0);
+      const serviceFee = this.roundMoney(fees.serviceFee || 0);
+      const itemsSubtotal = this.calculateItemsSubtotal(items, productMap);
+      const total = this.roundMoney(itemsSubtotal + shippingFee + serviceFee);
+      const grandTotal = this.roundMoney(fees.grandTotal || total);
 
       for (const item of items) {
         const product = productMap.get(item.product_id);
@@ -118,8 +167,6 @@ export class OrdersService {
         if (Number(product.stock) < item.quantity) {
           throw new BadRequestException(`${product.name} out of stock`);
         }
-
-        total += Number(product.price) * item.quantity;
       }
 
       await this.ensureCustomerExists(dto.customer_id);
@@ -129,7 +176,11 @@ export class OrdersService {
         customer_id: dto.customer_id,
         provider_id: dto.provider_id,
         status: OrderStatus.PENDING,
+        subtotal: itemsSubtotal,
+        shipping_fee: shippingFee,
+        service_fee: serviceFee,
         total,
+        payment_amount: grandTotal,
         item: items.length,
         payment_method: dto.payment_method,
         payment_status: dto.payment_status ?? PaymentStatus.PENDING,
@@ -138,14 +189,15 @@ export class OrdersService {
 
       const savedOrder = await orderRepo.save(order);
 
-      const orderItemsEntities = items.map((i) =>
-        itemRepo.create({
+      const orderItemsEntities = items.map((i) => {
+        const product = productMap.get(i.product_id)!;
+        return itemRepo.create({
           order: { id: savedOrder.id },
           product: { id: i.product_id },
           quantity: i.quantity,
-          price: productMap.get(i.product_id)!.price,
-        }),
-      );
+          price: this.resolveItemUnitPrice(product, i),
+        });
+      });
 
       await itemRepo.save(orderItemsEntities);
 
@@ -171,7 +223,11 @@ export class OrdersService {
     });
   }
 
-  async createMany(dtos: CreateOrderDto[], paymentProof?: string) {
+  async createMany(
+    dtos: CreateOrderDto[],
+    paymentProof?: string,
+    fees: OrderCheckoutFees = {},
+  ) {
     return this.dataSource.transaction(async (manager) => {
       const orderRepo = manager.getRepository(orders);
       const itemRepo = manager.getRepository(orderItems);
@@ -219,23 +275,30 @@ export class OrdersService {
       }
 
       const savedOrders = [] as any[];
+      const shippingFee = this.roundMoney(fees.shippingFee || 0);
+      const serviceFee = this.roundMoney(fees.serviceFee || 0);
+      const combinedFees = this.roundMoney(shippingFee + serviceFee);
+      const grandTotal = this.roundMoney(fees.grandTotal || 0);
 
-      for (const dto of dtos) {
+      for (let index = 0; index < dtos.length; index++) {
+        const dto = dtos[index];
         const items = dto.items ?? [];
-        let total = 0;
-
-        for (const item of items) {
-          const product = productMap.get(item.product_id);
-          if (!product) continue;
-          total += Number(product.price) * item.quantity;
-        }
+        const itemsSubtotal = this.calculateItemsSubtotal(items, productMap);
+        const orderFees = index === 0 ? combinedFees : 0;
+        const total = this.roundMoney(itemsSubtotal + orderFees);
+        const paymentAmount =
+          grandTotal > 0 && index === 0 ? grandTotal : total;
 
         const order = orderRepo.create({
           order_code: `ORD-${Date.now()}-${dto.provider_id || '0'}`,
           customer_id: dto.customer_id,
           provider_id: dto.provider_id,
           status: dto.status ?? OrderStatus.PENDING,
+          subtotal: itemsSubtotal,
+          shipping_fee: index === 0 ? shippingFee : 0,
+          service_fee: index === 0 ? serviceFee : 0,
           total,
+          payment_amount: paymentAmount,
           item: items.length,
           payment_method: dto.payment_method,
           payment_status: dto.payment_status ?? PaymentStatus.PENDING,
@@ -244,14 +307,15 @@ export class OrdersService {
 
         const savedOrder = await orderRepo.save(order);
 
-        const orderItemsEntities = items.map((item) =>
-          itemRepo.create({
+        const orderItemsEntities = items.map((item) => {
+          const product = productMap.get(item.product_id)!;
+          return itemRepo.create({
             order: { id: savedOrder.id },
             product: { id: item.product_id },
             quantity: item.quantity,
-            price: productMap.get(item.product_id)!.price,
-          }),
-        );
+            price: this.resolveItemUnitPrice(product, item),
+          });
+        });
 
         await itemRepo.save(orderItemsEntities);
         savedOrders.push(savedOrder);
