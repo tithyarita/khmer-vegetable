@@ -16,11 +16,16 @@ export class CartService {
     private productRepository: Repository<Product>,
   ) {}
 
-  async getUserCart(userId: number): Promise<Cart[]> {
-    return this.cartRepository.find({
+  async getUserCart(userId: number): Promise<Array<Cart & { shipping: number }>> {
+    const cartItems = await this.cartRepository.find({
       where: { user: { id: userId } },
       relations: ['user', 'product', 'product.provider'],
     });
+
+    return cartItems.map((item) => ({
+      ...item,
+      shipping: 0,
+    }));
   }
 
   async addToCart(

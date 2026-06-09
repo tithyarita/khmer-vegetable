@@ -62,7 +62,14 @@
         </div>
         <!-- Checkout Button -->
         <div class="checkout-section">
-          <button class="checkout-btn" @click="proceedToCheckout">{{ t('proceedToCheckout') }}</button>
+          <button
+            class="checkout-btn"
+            :disabled="!hasCartItems"
+            @click="proceedToCheckout"
+          >
+            {{ t('proceedToCheckout') }}
+          </button>
+          <p v-if="!hasCartItems" class="empty-cart-hint">Add items to your cart before checkout.</p>
         </div>
       </div>
     </section>
@@ -96,9 +103,10 @@ const languageStore = useLanguageStore()
 const t = (key) => messages[languageStore.language][key] || key
 
 const couponCode = ref('')
-const shippingCost = ref('2.00')
+const shippingCost = ref('0.00')
 
 const cartItems = computed(() => cartStore.cartItems)
+const hasCartItems = computed(() => cartItems.value.length > 0)
 
 const calculateSubtotal = () => {
   return cartItems.value.reduce((total, item) => {
@@ -129,6 +137,10 @@ const applyCoupon = () => {
 }
 
 const proceedToCheckout = () => {
+  if (!hasCartItems.value) {
+    alert('Your cart is empty. Add items before proceeding to checkout.')
+    return
+  }
   router.push('/checkout')
 }
 </script>
@@ -399,6 +411,17 @@ const proceedToCheckout = () => {
 
 .checkout-btn:hover {
   background: #1a5c27;
+}
+
+.checkout-btn:disabled {
+  background: #94a89a;
+  cursor: not-allowed;
+}
+
+.empty-cart-hint {
+  margin-top: 12px;
+  color: #6b7280;
+  font-size: 0.95rem;
 }
 
 /* ── RESPONSIVE ── */

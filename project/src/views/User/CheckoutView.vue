@@ -303,7 +303,7 @@
             <div class="review-list">
               <div v-for="item in orderItems" :key="item.id" class="review-item">
                 <div class="img-wrapper">
-                  <img :src="item.image ? `http://localhost:3000${item.image}` : '/images/placeholder.png'" class="review-image" alt="Item Snapshot" />
+                  <img :src="resolveItemImage(item.image || item.imageUrl) || '/images/placeholder.png'" class="review-image" alt="Item Snapshot" />
                 </div>
                 <div class="item-details">
                   <h4>{{ item.name }}</h4>
