@@ -16,12 +16,13 @@ import {
 } from '@nestjs/common'
 
 import { FileInterceptor } from '@nestjs/platform-express'
-import { diskStorage } from 'multer'
-import { extname } from 'path'
+import { memoryStorage } from 'multer'
 
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import * as bcrypt from 'bcryptjs'
+
+import { uploadToCloudinary } from '../cloudinary'
 
 import { users, UserRole } from './users.entity'
 import { orders } from './orders.entity'
@@ -40,20 +41,12 @@ export class UsersController {
   ) {}
 
   // =====================================================
-  // UPDATE USER (FIXED + LOCAL FILE UPLOAD)
+  // UPDATE USER (CLOUDINARY UPLOAD)
   // =====================================================
   @Put(':id')
   @UseInterceptors(
     FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const unique =
-            Date.now() + '-' + Math.round(Math.random() * 1e9)
-
-          cb(null, unique + extname(file.originalname))
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
@@ -63,7 +56,6 @@ export class UsersController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     console.log('BODY:', body)
-    console.log('FILE:', file?.filename)
 
     const update: Partial<users> = {}
 
@@ -79,10 +71,14 @@ export class UsersController {
     }
 
     // -------------------------
-    // AVATAR (LOCAL FILE PATH)
+    // AVATAR (CLOUDINARY)
     // -------------------------
     if (file) {
-      update.avatar = `/uploads/${file.filename}`
+      update.avatar = await uploadToCloudinary(
+        file.buffer,
+        'users/avatars',
+        file.originalname,
+      )
     }
 
     // -------------------------

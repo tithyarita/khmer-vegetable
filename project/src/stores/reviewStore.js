@@ -150,6 +150,8 @@ export const useReviewStore = defineStore('review', () => {
       id: review.id,
       rating: review.rating,
       feedback: review.feedback,
+      deliveryRating: review.deliveryRating,
+      deliveryFeedback: review.deliveryFeedback,
       author: userName,
       initials: initials,
       color: color,
@@ -160,6 +162,7 @@ export const useReviewStore = defineStore('review', () => {
       body: review.feedback,
       userId: review.user?.id,
       productId: review.product?.id,
+      orderId: review.orderId,
     }
   }
 

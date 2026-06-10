@@ -254,7 +254,7 @@
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:3000'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 const status = ref('All Statuses')
 const timeframe = ref('all') 
 const startDate = ref('')

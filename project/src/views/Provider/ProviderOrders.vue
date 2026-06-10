@@ -272,6 +272,29 @@
               </div>
             </div>
 
+            <div v-if="orderReviews.length" class="info-card card-review">
+              <h3 class="card-title">Customer Reviews</h3>
+              <div v-for="r in orderReviews" :key="r.id" class="review-entry">
+                <div v-if="r.productName" class="review-section">
+                  <p class="review-section-title">Product: {{ r.productName }}</p>
+                  <div class="review-stars">
+                    <span v-for="i in 5" :key="i" class="rstar" :class="{ on: i <= r.rating }">★</span>
+                    <span class="rscore">{{ r.rating }}/5</span>
+                  </div>
+                  <p class="review-feedback">{{ r.feedback || 'No written feedback.' }}</p>
+                </div>
+                <div v-if="r.deliveryRating != null" class="review-section">
+                  <p class="review-section-title">Delivery</p>
+                  <div class="review-stars">
+                    <span v-for="i in 5" :key="'d'+i" class="rstar" :class="{ on: i <= r.deliveryRating }">★</span>
+                    <span class="rscore">{{ r.deliveryRating }}/5</span>
+                  </div>
+                  <p class="review-feedback">{{ r.deliveryFeedback || 'No written feedback.' }}</p>
+                </div>
+                <p class="review-date">{{ r.date }}</p>
+              </div>
+            </div>
+
             <div class="modal-status-bar">
               <span class="status-label">Status</span>
               <span class="status-badge" :class="`badge-${selectedOrder.status}`">
@@ -403,7 +426,8 @@ const fetchOrders = async () => {
           name: item.product?.name || item.name || `Item ${item.product_id ?? item.id ?? ''}`,
           qty: item.quantity ?? item.qty ?? 1,
           price: item.price != null ? `$${parseFloat(item.price).toFixed(2)}` : '$0.00',
-          total: item.quantity != null && item.price != null ? `$${(parseFloat(item.price) * item.quantity).toFixed(2)}` : '$0.00'
+          total: item.quantity != null && item.price != null ? `$${(parseFloat(item.price) * item.quantity).toFixed(2)}` : '$0.00',
+          productId: item.product_id || item.product?.id || null,
         })),
         item: order.item ?? rawItems.length ?? 1,
         // ✅ Map database fields correctly for payment verification
@@ -424,6 +448,7 @@ let pollInterval = null
 onMounted(() => {
 
   fetchOrders()
+  reviewStore.fetchReviewsByProvider().then(r => providerReviews.value = r)
 
   pollInterval = setInterval(fetchOrders, 10000)
 
@@ -500,6 +525,13 @@ const sectionTitle = computed(() => ({
   delivering: 'Delivering Orders', completed: 'Completed Orders',
 })[activeFilter.value] || 'All Orders')
 
+const orderReviews = computed(() => {
+  if (!selectedOrder.value) return []
+  const productIds = selectedOrder.value.items?.map(i => i.productId).filter(Boolean) || []
+  if (!productIds.length) return []
+  return providerReviews.value.filter(r => productIds.includes(r.productId))
+})
+
 // --- Status Label ---
 const getStatusLabel = (status) => ({
   pending: 'Pending', delivering: 'Delivering', completed: 'Completed'
@@ -532,9 +564,12 @@ const updateStatus = async (order, status) => {
 }
 
 // --- Modal Controls ---
-const openDetailModal = (order) => {
+const openDetailModal = async (order) => {
   selectedOrder.value = { ...order }
   showDetailModal.value = true
+  try {
+    providerReviews.value = await reviewStore.fetchReviewsByProvider()
+  } catch (_) {}
 }
 
 const openFeedbackModal = async () => {
@@ -1252,4 +1287,17 @@ const formatFullDate = (date) => {
   .modal-header { padding: 14px 16px; }
   .modal-body   { padding: 14px 16px 18px; gap: 10px; }
 }
+
+/* Review card in detail modal */
+.card-review { background: #f8faf8; }
+.card-review .card-title { margin-bottom: 10px; }
+.review-stars { display: flex; align-items: center; gap: 3px; margin-bottom: 8px; }
+.review-stars .rstar { font-size: 22px; color: #dde5df; line-height: 1; }
+.review-stars .rstar.on { color: #f59e0b; }
+.review-stars .rscore { margin-left: 6px; font-size: 0.85rem; font-weight: 700; color: #4a5c50; }
+.review-feedback { margin: 0 0 4px; font-size: 0.88rem; color: #1a2e1f; line-height: 1.5; white-space: pre-wrap; }
+.review-date { margin: 0; font-size: 0.78rem; color: #a0b0a6; }
+.review-entry + .review-entry { margin-top: 14px; padding-top: 14px; border-top: 1px solid #e0e8e3; }
+.review-section { margin-bottom: 10px; }
+.review-section-title { margin: 0 0 4px; font-size: 0.82rem; font-weight: 700; color: #2d7a3a; }
 </style>

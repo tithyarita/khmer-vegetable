@@ -41,6 +41,8 @@ export class ReviewService {
     const review = this.reviewRepository.create({
       rating: data.rating,
       feedback: data.feedback,
+      deliveryRating: (data as any).deliveryRating ?? null,
+      deliveryFeedback: (data as any).deliveryFeedback ?? null,
       user: { id: userId },
       product: { id: productId },
     });

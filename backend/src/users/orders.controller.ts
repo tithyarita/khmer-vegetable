@@ -18,16 +18,14 @@ import {
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
+
+import { uploadToCloudinary } from '../cloudinary';
 
 import { OrdersService } from './orders.service';
 import { OrderStatus, PaymentStatus } from './orders.entity';
 import { CreateOrderDto, UpdateOrderDto } from './dto/orders.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-
-interface MulterFile {
-  filename: string;
-}
 
 @Controller('orders')
 export class OrdersController {
@@ -40,23 +38,28 @@ export class OrdersController {
   @Post()
   @UseInterceptors(
     FileInterceptor('receipt', {
-      storage: diskStorage({
-        destination: './uploads/payment-proofs',
-        filename: (_, file, cb) => {
-          cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '-'));
-        },
-      }),
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
     }),
   )
   async create(
     @Request() req: any,
     @Body() body: any,
-    @UploadedFile() file?: MulterFile,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
     try {
       const customerId = Number(req.user?.id ?? req.user?.sub ?? 0);
       if (!customerId) {
         throw new BadRequestException('Authenticated customer is required to place an order.');
+      }
+
+      let receiptUrl: string | undefined;
+      if (file) {
+        receiptUrl = await uploadToCloudinary(
+          file.buffer,
+          'orders/receipts',
+          file.originalname,
+        );
       }
 
       const providerOrders = body.providerOrders
@@ -91,7 +94,7 @@ export class OrdersController {
           };
         });
 
-        return await this.ordersService.createMany(dtos, file?.filename, checkoutFees);
+        return await this.ordersService.createMany(dtos, receiptUrl, checkoutFees);
       }
 
       const parsedItems = JSON.parse(body.items || '[]');
@@ -109,7 +112,7 @@ export class OrdersController {
         payment_status: PaymentStatus.PENDING,
       };
 
-      return await this.ordersService.create(dto, file?.filename, checkoutFees);
+      return await this.ordersService.create(dto, receiptUrl, checkoutFees);
     } catch (error) {
       console.error('Order creation error:', error);
       if (error instanceof HttpException) throw error;

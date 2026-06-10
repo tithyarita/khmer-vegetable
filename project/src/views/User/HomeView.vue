@@ -10,9 +10,13 @@
         <TopSellingProducts />
       </div>
     </section>
-            <br>
+    <br>
+    <section class="section">
+      <div class="section-inner">
         <FashDeal />
-        <br>
+      </div>
+    </section>
+    <br>
 
     <section class="section popular-vegetables">
       <div class="section-inner">

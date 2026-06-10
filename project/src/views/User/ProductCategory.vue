@@ -103,8 +103,8 @@
                 v-for="cat in allCategories"
                 :key="cat.value"
                 class="cat-item"
-                :class="{ active: activeCategory === cat.value }"
-                @click="toggleCategory(cat.value)"
+                :class="{ active: categoryType === cat.value }"
+                @click="goToCategory(cat.value)"
               >
                 <span class="cat-name">
                   {{ cat.name }}
@@ -173,19 +173,20 @@
             {{ t('loading') }}
           </div>
 
-          <Card
-            v-else
-            :products="paginatedProducts"
-            :viewMode="viewMode"
-          />
+          <template v-else>
+            <Card
+              v-if="paginatedProducts.length > 0"
+              :products="paginatedProducts"
+              :viewMode="viewMode"
+            />
 
-          <!-- Empty -->
-          <div
-            v-if="!loading && paginatedProducts.length === 0"
-            class="no-results"
-          >
-            {{ t('noProducts') }}
-          </div>
+            <div
+              v-else
+              class="no-results"
+            >
+              {{ t('noProducts') }}
+            </div>
+          </template>
 
           <!-- Pagination -->
           <div
@@ -247,7 +248,6 @@ const viewMode = ref('grid')
 const sortBy = ref('featured')
 const maxPrice = ref(150)
 const appliedMaxPrice = ref(150)
-const activeCategory = ref(null)
 const activeTag = ref(null)
 const searchQuery = ref('')
 const page = ref(1)
@@ -258,7 +258,7 @@ const tags = ['Organic', 'Fresh', 'Healthy', 'Snacks', 'Dairy']
 
 const allCategories = [
   { value: 'vegetables', name: 'Vegetables' },
-  { value: 'leafy-greens', name: 'Leafy Greens' },
+  { value: 'greens', name: 'Leafy Greens' },
   { value: 'tubers', name: 'Tubers' },
   { value: 'root-veg', name: 'Root Veg' },
   { value: 'cruciferous', name: 'Cruciferous' },
@@ -269,8 +269,6 @@ const allCategories = [
 const categoryMap = {
   vegetables: 'Vegetables',
   greens: 'Leafy Greens',
-  'leafy-greens': 'Leafy Greens',
-  'leafy greens': 'Leafy Greens',
   tubers: 'Tubers',
   'root veg': 'Root Veg',
   'root-veg': 'Root Veg',
@@ -292,54 +290,14 @@ const categoryName = computed(() =>
 const filteredProducts = computed(() => {
   let list = productStore.products.filter(p => {
     const cat = (p.category || '').toLowerCase()
-    const catType = categoryType.value.toLowerCase()
 
-    // Strict category matching - product must belong to the selected category
-    let catMatch = false
-    
-    if (catType) {
-      // Check exact match
-      if (cat === catType) {
-        catMatch = true
-      }
-      // Check category map for subcategory matches
-      else if (categoryMap[catType]) {
-        const mappedCategory = categoryMap[catType].toLowerCase()
-        catMatch = cat === mappedCategory || cat === catType
-      }
-      // Check if product category matches any value in categoryMap that corresponds to catType
-      else {
-        for (const [key, value] of Object.entries(categoryMap)) {
-          const keyLower = key.toLowerCase()
-          const valueLower = value.toLowerCase()
-          
-          // If catType matches the key, check if product category matches key or value
-          if (catType === keyLower) {
-            if (cat === keyLower || cat === valueLower) {
-              catMatch = true
-              break
-            }
-          }
-          // If catType matches the value, check if product category matches key or value
-          else if (catType === valueLower) {
-            if (cat === keyLower || cat === valueLower) {
-              catMatch = true
-              break
-            }
-          }
-        }
-      }
-    } else {
-      // If no category type selected, show all products
-      catMatch = true
-    }
+    const catMatch =
+      !categoryType.value ||
+      cat === categoryType.value ||
+      cat === categoryName.value.toLowerCase()
 
     const priceMatch =
       parseFloat(p.price || 0) <= appliedMaxPrice.value
-
-    const categoryFilterMatch =
-      !activeCategory.value ||
-      cat === activeCategory.value
 
     const tagMatch =
       !activeTag.value ||
@@ -356,7 +314,6 @@ const filteredProducts = computed(() => {
     return (
       catMatch &&
       priceMatch &&
-      categoryFilterMatch &&
       tagMatch &&
       searchMatch
     )
@@ -410,7 +367,6 @@ watch(
   () => route.params.type,
   () => {
     page.value = 1
-    activeCategory.value = null
     activeTag.value = null
   }
 )
@@ -425,13 +381,12 @@ onMounted(async () => {
   }
 })
 
-function toggleCategory(value) {
-  activeCategory.value =
-    activeCategory.value === value
-      ? null
-      : value
-
-  page.value = 1
+function goToCategory(value) {
+  if (categoryType.value === value) {
+    router.push('/products')
+  } else {
+    router.push(`/category/${value}`)
+  }
 }
 
 function toggleTag(tag) {

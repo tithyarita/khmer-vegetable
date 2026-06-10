@@ -39,6 +39,7 @@ import Address from '../views/User/AddressView.vue'
 import Checkout from '../views/User/CheckoutView.vue'
 import Profile from '../views/User/UserDashboard.vue'
 import OrderTracker from '../views/User/OrderTracker.vue'
+import OrderReview from '../views/User/Ordereview.vue'
 import ProductDetailUser from '../views/User/ProductDetail.vue'
 import ProductCategory from '@/views/User/ProductCategory.vue'
 import fashDeals from '../views/User/fashDeals.vue'
@@ -70,6 +71,7 @@ const routes = [
       { path: 'category/:type', component: ProductCategory, props: true },
       { path: 'settings', component: settings },
       { path: 'farmer/:id', component: () => import('../views/User/FarmerProfile.vue'), props: true },
+      { path: 'order-review/:orderId', component: OrderReview, props: true },
     ],
   },
 

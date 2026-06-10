@@ -89,8 +89,8 @@
               >
                 <i class="bi bi-truck"></i> Track
               </button>
-              <button v-else class="primary-btn sm outline" type="button" @click="openDetail(order)">
-                View Receipt
+              <button v-else class="primary-btn sm outline" type="button" @click="reviewOrder(order)">
+                <i class="bi bi-star"></i> Review
               </button>
             </div>
           </div>
@@ -192,10 +192,19 @@
           >
             <i class="bi bi-truck"></i> Track Order
           </button>
+          <button
+            v-else
+            class="primary-btn"
+            type="button"
+            @click="reviewOrder(selectedOrder)"
+          >
+            <i class="bi bi-star"></i> Order Review
+          </button>
         </div>
       </div>
     </div>
   </div>
+
 </template>
 
 <script setup>
@@ -263,6 +272,11 @@ function closeDetail() {
 function trackOrder(order) {
   closeDetail()
   router.push(`/order-tracker/${order.id}`)
+}
+
+function reviewOrder(order) {
+  closeDetail()
+  router.push(`/order-review/${order.id}`)
 }
 
 refreshOrders()
@@ -556,30 +570,32 @@ refreshOrders()
 .primary-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: #2d7a3a;
   color: #fff;
   border: none;
-  border-radius: 10px;
-  padding: 9px 16px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
   text-decoration: none;
+  transition: background 0.15s;
 }
 
 .primary-btn.sm {
-  padding: 8px 14px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
 }
 
 .primary-btn.outline {
   background: transparent;
   color: #2d7a3a;
-  border: 1.5px solid #2d7a3a;
+  border: 2px solid #2d7a3a;
 }
 
 .primary-btn:hover {
-  background: #246830;
+  background: #1a5c2a;
 }
 
 .primary-btn.outline:hover {

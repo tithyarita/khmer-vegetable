@@ -21,6 +21,12 @@ export class Review {
   @Column({ type: 'text' })
   feedback!: string;
 
+  @Column({ type: 'int', nullable: true })
+  deliveryRating!: number;
+
+  @Column({ type: 'text', nullable: true })
+  deliveryFeedback!: string;
+
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt!: Date;
 
