@@ -599,7 +599,7 @@ onMounted(async () => {
   flex: 1;
   overflow-y: auto;
   padding: 28px 40px 48px;
-  max-width: 1100px;
+  max-width: 1500px;
   width: 100%;
 }
 

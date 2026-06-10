@@ -281,7 +281,7 @@ refreshOrders()
   flex: 1;
   overflow-y: auto;
   padding: 28px 36px 48px;
-  max-width: 960px;
+  max-width: 1500px;
   width: 100%;
 }
 
@@ -968,5 +968,6 @@ refreshOrders()
   .info-cards {
     grid-template-columns: 1fr;
   }
+
 }
 </style>

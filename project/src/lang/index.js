@@ -325,7 +325,7 @@ export const messages = {
     supportingLocalFarmers: 'Directly Supporting Local Khmer Farmers',
 
     // Farmer Profile
-    back: '← Back',
+    back: 'Back',
     loadingProvider: 'Loading provider...',
     providerNotFound: 'Provider not found.',
     products: 'products',

@@ -34,7 +34,7 @@
           </div>
         </div>
         <div v-else class="empty-cart">
-          <h3>{{ t('yourCartIsEmpty') }}</h3>
+          <h4>{{ t('yourCartIsEmpty') }}</h4>
           <p>{{ t('addSomeProducts') }}</p>
         </div>
         <!-- Cart Summary -->
@@ -414,10 +414,11 @@ const proceedToCheckout = () => {
   cursor: not-allowed;
 }
 
-.empty-cart-hint {
-  margin-top: 12px;
-  color: #6b7280;
-  font-size: 0.95rem;
+.empty-cart{
+  text-align: center;
+  padding: 60px 40px;
+  font-size: 1.1rem;
+  color: #888;
 }
 
 /* ── RESPONSIVE ── */

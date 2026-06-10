@@ -342,7 +342,7 @@ onUnmounted(stopPolling)
   flex: 1;
   overflow-y: auto;
   padding: 28px 36px 48px;
-  max-width: 1000px;
+  max-width: 1500px;
   width: 100%;
 }
 

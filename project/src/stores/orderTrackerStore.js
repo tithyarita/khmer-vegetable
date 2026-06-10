@@ -13,6 +13,7 @@ function productImage(url) {
 function formatTime(value) {
   if (!value) return '—'
   return new Date(value).toLocaleString('en-US', {
+    year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: 'numeric',

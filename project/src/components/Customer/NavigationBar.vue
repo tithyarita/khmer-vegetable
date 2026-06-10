@@ -46,7 +46,7 @@
           <!-- Logged-in: show profile avatar with dropdown -->
           <div v-else class="profile-wrapper" ref="profileRef">
             <button class="profile-avatar" @click="toggleProfileMenu" :aria-expanded="profileMenuOpen">
-              <img v-if="user.avatar" :src="user.avatar" :alt="user.name" class="avatar-img" />
+              <img v-if="userAvatarSrc" :src="userAvatarSrc" :alt="user.name" class="avatar-img" />
               <span v-else class="avatar-initials">{{ userInitials }}</span>
             </button>
 
@@ -56,7 +56,7 @@
                 <!-- User info header -->
                 <div class="dropdown-header">
                   <div class="dropdown-avatar">
-                    <img v-if="user.avatar" :src="user.avatar" :alt="user.name" class="avatar-img" />
+                    <img v-if="userAvatarSrc" :src="userAvatarSrc" :alt="user.name" class="avatar-img" />
                     <span v-else class="avatar-initials">{{ userInitials }}</span>
                   </div>
                   <div class="dropdown-user-info">
@@ -215,7 +215,8 @@ export default {
     const locationStore = useLocationStore()
     const favoriteStore = useFavoriteStore()
     const { t, languageStore } = useI18n()
-    return { cartStore, searchStore, userStore, locationStore, favoriteStore, t, languageStore }
+    const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+    return { cartStore, searchStore, userStore, locationStore, favoriteStore, t, languageStore, API_BASE_URL }
   },
   data() {
     return {
@@ -260,6 +261,12 @@ export default {
         .slice(0, 2)
         .join('')
         .toUpperCase()
+    },
+    userAvatarSrc() {
+      const src = this.user.avatar
+      if (!src) return ''
+      if (src.startsWith('http') || src.startsWith('data:')) return src
+      return `${this.API_BASE_URL}${src}`
     },
     locationDisplay() {
       const active = this.locationStore.activeLocation
