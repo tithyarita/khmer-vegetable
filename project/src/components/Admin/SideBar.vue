@@ -28,7 +28,6 @@ const navItems = [
   { to: '/admin/products',  label: 'Products',  icon: 'bi-box-seam'      },
   { to: '/admin/orders',    label: 'Orders',    icon: 'bi-cart3'         },
   { to: '/admin/reports',   label: 'Reports',   icon: 'bi-bar-chart-line'},
-  { to: '/admin/settings',  label: 'Settings',  icon: 'bi-gear'          },
   { to: '/admin/profile',  label: 'Profile',   icon: 'bi-person-circle' },
 ]
 </script>

@@ -57,7 +57,9 @@
           name:      app.owner_name,
           email:     app.contact_email,
           avatarUrl: app.profile_photo_path
-            ? `${API_BASE}/images/${app.profile_photo_path.replace(/\\/g, '/').replace('uploads/', '')}`
+             ? (app.profile_photo_path.startsWith('http')
+                ? app.profile_photo_path 
+                : `${API_BASE}/images/${app.profile_photo_path.replace(/\\/g, '/').replace('uploads/', '')}`)
             : '',
         }"
         :farm="{

@@ -94,6 +94,7 @@ function fileType(path) {
 /** Build a public URL for a stored file path */
 function fileUrl(path) {
   if (!path) return null
+    if (path.startsWith('http')) return path 
   return `${API_BASE}/images/${path.replace(/\\/g, '/').replace('uploads/', '')}`
 }
 
@@ -137,7 +138,7 @@ export default {
         email:            r.contact_email  ?? '—',
         phone:            r.phone          ?? '—',
         profilePhotoUrl: r.profile_photo_path
-          ? `${API_BASE}/images/${r.profile_photo_path.replace(/\\/g, '/').replace('uploads/', '')}`
+          ? fileUrl(r.profile_photo_path)
           : null,
         verificationNote: r.village || r.commune || r.district
           ? `Farm located in ${[r.village, r.commune, r.district, r.city_province].filter(Boolean).join(', ')}.`
@@ -172,7 +173,6 @@ export default {
       const r = this.record
       const files = [
         { path: r.id_document_path,   label: 'ID Document',     meta: 'NATIONAL ID' },
-        { path: r.profile_photo_path, label: 'Profile Photo',   meta: 'PROFILE'     },
         { path: r.farm_angle1_path,   label: 'Farm Overview',   meta: 'ANGLE 1'     },
         { path: r.farm_angle2_path,   label: 'Produce Close-up',meta: 'ANGLE 2'     },
         { path: r.farm_angle3_path,   label: 'Infrastructure',  meta: 'ANGLE 3'     },

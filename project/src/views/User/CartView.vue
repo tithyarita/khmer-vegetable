@@ -38,7 +38,7 @@
           <p>{{ t('addSomeProducts') }}</p>
         </div>
         <!-- Cart Summary -->
-        <div class="cart-summary">
+        <div v-if="hasCartItems" class="cart-summary">
           <div class="summary-row">
             <span>{{ t('subtotal') }}</span>
             <span>${{ calculateSubtotal() }}</span>
@@ -54,22 +54,20 @@
           </div>
         </div>
         <!-- Coupon Section -->
-        <div class="coupon-section">
+        <div v-if="hasCartItems" class="coupon-section">
           <div class="coupon-input">
             <input v-model="couponCode" type="text" :placeholder="t('enterCoupon')" />
             <button @click="applyCoupon" class="apply-coupon-btn">{{ t('apply') }}</button>
           </div>
         </div>
         <!-- Checkout Button -->
-        <div class="checkout-section">
+        <div v-if="hasCartItems" class="checkout-section">
           <button
             class="checkout-btn"
-            :disabled="!hasCartItems"
             @click="proceedToCheckout"
           >
             {{ t('proceedToCheckout') }}
           </button>
-          <p v-if="!hasCartItems" class="empty-cart-hint">Add items to your cart before checkout.</p>
         </div>
       </div>
     </section>

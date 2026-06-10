@@ -68,7 +68,12 @@
           <!-- Top Orders Section -->
           <div class="card mb-4">
             <div class="card-body">
-              <TopOrders :limit="5" />
+
+
+
+
+
+              <TopOrders :limit="5" @view-order="openDetailModal" />
             </div>
           </div>
 
@@ -93,10 +98,14 @@
 
               <div class="row g-3">
 
-                <div v-for="product in products" :key="product.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
-
+                <div
+                  v-for="product in products"
+                  :key="product.id"
+                  class="col-12 col-sm-6 col-md-4 col-lg-3"
+                  style="cursor: pointer;"
+                  @click="openProductEditModal(product)"
+                >
                   <ProductCard :product="product" />
-
                 </div>
 
               </div>
@@ -110,7 +119,14 @@
       </div>
 
     </div>
-
+    <OrderDetailModal :show="showDetailModal" :order="selectedOrder" @close="showDetailModal = false" />
+    <PopupCard
+      :is-open="showProductModal"
+      :is-edit-mode="true"
+      :product="selectedProduct"
+      @close="closeProductModal"
+      @save="saveProduct"
+    />
   </div>
 
 </template>
@@ -137,6 +153,51 @@ import ProductCard from '@/components/provider_com/ProductCard.vue'
 
 import TopCustomers from '@/components/provider_com/TopCustomers.vue'
 import TopOrders from '@/components/provider_com/TopOrders.vue'
+import OrderDetailModal from '@/components/provider_com/OrderDetailModal.vue'
+import PopupCard from '@/components/provider_com/popupCard.vue'
+
+const showDetailModal = ref(false)
+const selectedOrder = ref({})
+
+const openDetailModal = (order) => {
+  selectedOrder.value = order
+  showDetailModal.value = true
+}
+
+// --- Product Edit Modal ---
+const showProductModal = ref(false)
+const selectedProduct = ref(null)
+
+const openProductEditModal = (product) => {
+  selectedProduct.value = { ...product }
+  showProductModal.value = true
+}
+
+const closeProductModal = () => {
+  showProductModal.value = false
+  selectedProduct.value = null
+}
+
+const saveProduct = async (productData) => {
+  try {
+    const price = Number(productData.price) || 0
+    const discount = Number(productData.discount) || 0
+    const finalPrice = price * (1 - discount / 100)
+    const formatted = {
+      ...productData,
+      price,
+      discount,
+      stock: Number(productData.stock) || 0,
+      priceAfterDiscount: Number(finalPrice.toFixed(2))
+    }
+    await productStore.updateProduct(formatted.id, formatted)
+    await productStore.fetchAllProducts()
+    products.value = productStore.products.slice(0, 4)
+    closeProductModal()
+  } catch (err) {
+    console.error('Failed to save product', err)
+  }
+}
 
 import tomatoesImg from '@/assets/img-provider/tomatoes.jpg'
 

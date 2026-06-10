@@ -29,7 +29,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="order in orders" :key="order.id" class="recent-order-row">
+            <tr v-for="order in orders" :key="order.id" class="recent-order-row" @click="$emit('view-order', order.rawOrder)" style="cursor: pointer;">
               <td class="order-id-col px-4 py-3">
                 <span class="fw-bold text-primary">{{ order.id }}</span>
               </td>
@@ -51,11 +51,13 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import axios from 'axios'
 import { useUserStore } from '@/stores/userStore'
+import { useProviderOrderStore } from '@/stores/providerOrderStore'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+const emit = defineEmits(['view-order'])
+
 const userStore = useUserStore()
+const providerOrderStore = useProviderOrderStore()
 
 const orders = ref([])
 const loading = ref(false)
@@ -76,8 +78,9 @@ const formatDate = (value) => {
 }
 
 const getStatusColor = (status) => {
-  if (status === 'delivering') return 'primary'
-  if (status === 'pending') return 'warning'
+  const s = (status || '').toLowerCase()
+  if (s === 'delivering') return 'primary'
+  if (s === 'pending') return 'warning'
   return 'success'
 }
 
@@ -93,19 +96,34 @@ const loadRecentOrders = async () => {
   }
 
   try {
-    const response = await axios.get(`${API_BASE_URL}/orders/provider/${providerId}/revenue`)
-    const recentOrders = Array.isArray(response.data?.recentOrders) ? response.data.recentOrders : []
+    const rawOrders = await providerOrderStore.fetchProviderOrders(providerId)
+    // Sort by descending orderId to get recent
+    const sorted = [...rawOrders].sort((a, b) => b.orderId - a.orderId)
+    const recentOrders = sorted.slice(0, 10)
 
-    orders.value = recentOrders.map((order) => ({
-      id: order.id,
-      product: order.product,
-      quantity: order.quantity,
-      date: formatDate(order.date),
-      status: order.status,
-      statusColor: getStatusColor(order.status),
-    }))
+    orders.value = recentOrders.map((order) => {
+      // Use the first product's name, or fallback
+      const productName = order.items && order.items.length > 0
+        ? order.items[0].name || order.items[0].product?.name || 'Multiple Items'
+        : 'Multiple Items'
+
+      // Sum the total quantity
+      const totalQuantity = order.items && order.items.length > 0
+        ? order.items.reduce((sum, item) => sum + Number(item.qty || item.quantity || 0), 0)
+        : order.item
+
+      return {
+        id: order.id,
+        product: productName,
+        quantity: totalQuantity,
+        date: formatDate(order.createdAt),
+        status: order.status || 'pending',
+        statusColor: getStatusColor(order.status),
+        rawOrder: order
+      }
+    })
   } catch (err) {
-    error.value = err.response?.data?.message || err.message || 'Failed to load recent orders.'
+    error.value = err.message || 'Failed to load recent orders.'
     orders.value = []
   } finally {
     loading.value = false

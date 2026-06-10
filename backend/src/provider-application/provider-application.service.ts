@@ -176,4 +176,11 @@ export class ApplicationsService {
     if (!app) throw new NotFoundException(`Application #${id} not found`);
     return app;
   }
+
+  async checkEmailExists(email: string): Promise<boolean> {
+    const count = await this.repo.count({
+      where: { contact_email: email },
+    });
+    return count > 0;
+  }
 }

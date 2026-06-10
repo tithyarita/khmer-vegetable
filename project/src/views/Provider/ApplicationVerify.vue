@@ -31,9 +31,26 @@
           <span v-if="emailError" class="field-error">{{ emailError }}</span>
         </div>
 
-        <button class="btn-primary" @click="sendOtp" :disabled="sending">
+        <!-- Already submitted banner -->
+        <div v-if="alreadySubmitted" class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <div>
+            <strong>Application already submitted</strong>
+            <p>
+              An application has already been submitted with this email address.
+              Each email can only submit one application. If you believe this is
+              an error, please contact our support team.
+            </p>
+          </div>
+        </div>
+
+        <button
+          class="btn-primary"
+          @click="sendOtp"
+          :disabled="sending || alreadySubmitted"
+        >
           <i v-if="sending" class="bi bi-arrow-repeat spin"></i>
-          <span>{{ sending ? 'Sending code…' : 'Send verification code' }}</span>
+          <span>{{ sending ? 'Checking…' : 'Send verification code' }}</span>
           <i v-if="!sending" class="bi bi-arrow-right"></i>
         </button>
 
@@ -48,7 +65,6 @@
           It expires in 10 minutes.
         </p>
 
-        <!-- 6 individual boxes -->
         <div class="otp-row">
           <input
             v-for="(_, i) in otpDigits"
@@ -70,7 +86,11 @@
           {{ otpError }}
         </span>
 
-        <button class="btn-primary" @click="verifyOtp" :disabled="verifying || otpDigits.join('').length < 6">
+        <button
+          class="btn-primary"
+          @click="verifyOtp"
+          :disabled="verifying || otpDigits.join('').length < 6"
+        >
           <i v-if="verifying" class="bi bi-arrow-repeat spin"></i>
           <span>{{ verifying ? 'Verifying…' : 'Confirm & continue' }}</span>
           <i v-if="!verifying" class="bi bi-check-lg"></i>
@@ -80,7 +100,7 @@
           {{ resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code' }}
         </button>
 
-        <button class="btn-text" @click="step = 1">← Use a different email</button>
+        <button class="btn-text" @click="backToEmail">← Use a different email</button>
 
         <div v-if="otpError" class="alert alert-error">{{ otpError }}</div>
       </template>
@@ -104,6 +124,7 @@ const email   = ref('')
 const sending   = ref(false)
 const sendError = ref('')
 const emailError = ref('')
+const alreadySubmitted = ref(false)   // ← new: blocks submission if true
 
 const otpDigits = ref(['', '', '', '', '', ''])
 const otpRefs   = ref([])
@@ -117,6 +138,7 @@ let cooldownTimer = null
 async function sendOtp() {
   emailError.value = ''
   sendError.value  = ''
+  alreadySubmitted.value = false
 
   const val = email.value.trim()
   if (!val) { emailError.value = 'Email is required.'; return }
@@ -124,6 +146,19 @@ async function sendOtp() {
 
   sending.value = true
   try {
+    // ── Step 1: Check if email already has a submitted application ────────
+    const checkRes = await fetch(
+      `${API_BASE}/api/applications/check-email?email=${encodeURIComponent(val)}`
+    )
+    const checkData = await checkRes.json()
+
+    if (checkData.exists) {
+      // Email already used — block and show message, don't send OTP
+      alreadySubmitted.value = true
+      return
+    }
+
+    // ── Step 2: Email is clean — send OTP ─────────────────────────────────
     const res  = await fetch(`${API_BASE}/api/verify/send`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -156,14 +191,19 @@ async function resendOtp() {
   await sendOtp()
 }
 
+function backToEmail() {
+  step.value           = 1
+  alreadySubmitted.value = false
+  emailError.value     = ''
+  sendError.value      = ''
+  otpDigits.value      = ['', '', '', '', '', '']
+  otpError.value       = ''
+}
+
 // ── OTP input helpers ──────────────────────────────────────────────────────
 function onOtpInput(i) {
-  const val = otpDigits.value[i]
-  // Allow only one digit
-  otpDigits.value[i] = val.replace(/\D/g, '').slice(0, 1)
-  if (otpDigits.value[i] && i < 5) {
-    otpRefs.value[i + 1]?.focus()
-  }
+  otpDigits.value[i] = otpDigits.value[i].replace(/\D/g, '').slice(0, 1)
+  if (otpDigits.value[i] && i < 5) otpRefs.value[i + 1]?.focus()
   otpError.value = ''
 }
 
@@ -184,7 +224,6 @@ function onOtpPaste(e) {
 async function verifyOtp() {
   otpError.value  = ''
   verifying.value = true
-
   const code = otpDigits.value.join('')
   try {
     const res  = await fetch(`${API_BASE}/api/verify/confirm`, {
@@ -195,10 +234,8 @@ async function verifyOtp() {
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || 'Invalid code')
 
-    // Store verified state in sessionStorage so form knows it's allowed
     sessionStorage.setItem('app_verified_email', email.value.trim())
     router.replace('/application-form')
-
   } catch (err) {
     otpError.value = err.message
   } finally {
@@ -324,9 +361,16 @@ onUnmounted(() => clearInterval(cooldownTimer))
 }
 .btn-text:hover { color: #1a1a2e; }
 
-/* Alert */
-.alert { border-radius: 10px; padding: 12px 14px; font-size: 13px; }
-.alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+.alert { border-radius: 10px; padding: 12px 14px; font-size: 13px; display: flex; align-items: flex-start; gap: 10px; }
+.alert i { flex-shrink: 0; margin-top: 2px; }
+.alert strong { display: block; font-weight: 700; margin-bottom: 3px; }
+.alert p { margin: 0; line-height: 1.5; }
+
+.alert-error   { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+.alert-error i { color: #dc2626; }
+
+.alert-warning   { background: #fffbeb; color: #92400e; border: 1px solid #fcd34d; }
+.alert-warning i { color: #d97706; font-size: 16px; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { display: inline-block; animation: spin .7s linear infinite; }

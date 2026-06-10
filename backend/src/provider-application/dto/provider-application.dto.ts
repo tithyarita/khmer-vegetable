@@ -7,12 +7,14 @@ import {
 } from 'class-validator';
 
 export enum FarmCategory {
-  ORGANIC_VEGETABLES = 'organic-vegetables',
-  SEASONAL_FRUITS = 'seasonal-fruits',
-  DAIRY_CHEESE = 'dairy-cheese',
-  HONEY_BEESWAX = 'honey-beeswax',
-  HERBS_MICROGREENS = 'herbs-microgreens',
-  ROOT_VEGETABLES = 'root-vegetables',
+  LEAFY_AQUATIC = 'leafy-aquatic',
+  FRUIT_GOURDS = 'fruit-gourds',
+  ROOT_TUBERS = 'root-tubers',
+  KHMER_HERBS = 'khmer-herbs',
+  FLOWERS_SHOOTS = 'flowers-shoots',
+  MUSHROOMS = 'mushrooms',
+  ORGANIC_PRODUCE = 'organic-produce',
+  SEEDS_SEEDLINGS = 'seeds-seedlings',
   OTHER = 'other',
 }
 

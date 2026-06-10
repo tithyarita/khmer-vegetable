@@ -34,7 +34,7 @@
           <i class="bi bi-check-circle-fill"></i>
           <div>
             <strong>Application submitted!</strong>
-            <p>We'll review it within 3–5 business days and contact you at {{ form.contactEmail }}.</p>
+            <p>We'll review it within 2-3 business days and contact you at {{ form.contactEmail }}.</p>
           </div>
         </div>
       </transition>
@@ -112,30 +112,32 @@
             </div>
             <div class="pin-marker"><i class="bi bi-geo-alt-fill"></i></div>
           </div>
-
-          <!-- Cambodian address breakdown -->
           <div class="row-two mt-16">
             <div class="field-group">
               <label class="field-label">Village</label>
               <input class="field-input" type="text" placeholder="Village name"
-                v-model="form.village" />
+                v-model="form.village" @blur="validateField('village')" />
+                <span v-if="errors.village" class="field-error">{{ errors.village }}</span>
             </div>
             <div class="field-group">
               <label class="field-label">Commune / Sangkat</label>
               <input class="field-input" type="text" placeholder="Commune or Sangkat"
-                v-model="form.commune" />
+                v-model="form.commune" @blur="validateField('commune')" />
+                <span v-if="errors.commune" class="field-error">{{ errors.commune }}</span>
             </div>
           </div>
           <div class="row-two mt-14">
             <div class="field-group">
               <label class="field-label">District / Khan</label>
               <input class="field-input" type="text" placeholder="District or Khan"
-                v-model="form.district" />
+                v-model="form.district" @blur="validateField('district')" />
+                <span v-if="errors.district" class="field-error">{{ errors.district }}</span>
             </div>
             <div class="field-group">
               <label class="field-label">City / Province</label>
               <input class="field-input" type="text" placeholder="e.g. Phnom Penh, Siem Reap"
-                v-model="form.cityProvince" />
+                v-model="form.cityProvince" @blur="validateField('cityProvince')" />
+                <span v-if="errors.cityProvince" class="field-error">{{ errors.cityProvince }}</span>
             </div>
           </div>
         </div>
@@ -150,27 +152,28 @@
             <div class="field-group">
               <label class="field-label">Primary Vegetable Input</label>
               <input class="field-input" type="text" placeholder="e.g. Heirloom Tomatoes, Kale"
-                v-model="form.primaryVegetable" />
+                v-model="form.primaryVegetable" @blur="validateField('primaryVegetable')"/>
+                <span v-if="errors.primaryVegetable" class="field-error">{{ errors.primaryVegetable }}</span>
             </div>
             <div class="field-group">
              <label class="field-label">Farm Category</label>
              <div class="select-wrap">
-               <select class="field-select" v-model="form.farmCategory">
-                 <option value="" disabled>Select a category</option>
-           
-                 <option value="leafy-vegetables">Leafy Vegetables</option>
-                 <option value="fruit-vegetables">Fruit Vegetables</option>
-                 <option value="root-vegetables">Root Vegetables & Tubers</option>
-                 <option value="herbs-spices">Herbs & Spices</option>
-                 <option value="mushrooms">Mushrooms</option>
-                 <option value="organic-produce">Organic Produce</option>
-                 <option value="seasonal-products">Seasonal Products</option>
-                 <option value="seeds-seedlings">Seeds & Seedlings</option>
-                 <option value="mixed-farm-products">Mixed Farm Products</option>
-                 <option value="other">Other</option>
+               <select class="field-select" :class="{ 'input-error': errors.farmCategory }"
+                v-model="form.farmCategory" @change="validateField('farmCategory')" @blur="validateField('farmCategory')">
+                  <option value="" disabled selected>Select a category</option>
+                  <option value="leafy-aquatic">Leafy & Aquatic Vegetables (e.g., Morning Glory, Water Mimosa)</option>
+                  <option value="fruit-gourds">Fruit Vegetables & Gourds (e.g., Eggplant, Bitter Melon)</option>
+                  <option value="root-tubers">Root Vegetables & Tubers (e.g., Taro, Cassava, Sweet Potato)</option>
+                  <option value="khmer-herbs">Khmer Herbs & Spices (e.g., Lemongrass, Kaffir Lime, Galangal)</option>
+                  <option value="flowers-shoots">Edible Flowers & Shoots (e.g., Sdau, Bamboo Shoots)</option>
+                  <option value="mushrooms">Mushrooms (e.g., Straw Mushrooms)</option>
+                  <option value="organic-produce">Organic & Local Produce</option>
+                  <option value="seeds-seedlings">Seeds & Seedlings</option>
+                  <option value="other">Other</option>
                </select>
                <i class="bi bi-chevron-down select-arrow"></i>
              </div>
+             <span v-if="errors.farmCategory" class="field-error">{{ errors.farmCategory }}</span>
            </div>
           </div>
         </div>
@@ -183,12 +186,15 @@
           </div>
           <div
             class="dropzone"
-            :class="{ 'dropzone-hover': isDragging, 'dropzone-has-file': idDocument }"
+            :class="{ 'dropzone-hover': isDragging, 'dropzone-has-file': idDocument, 'input-error': errors.idDocument }"
             @dragover.prevent="isDragging = true"
             @dragleave.prevent="isDragging = false"
             @drop.prevent="onDrop"
             @click="$refs.fileInput.click()"
+            tabindex="0"
+            @blur="validateField('idDocument')" 
           >
+            <span v-if="errors.idDocument" class="field-error mt-14" style="display:block;">{{ errors.idDocument }}</span>
             <input ref="fileInput" type="file" accept=".pdf,.jpg,.jpeg,.png"
               class="hidden-input" @change="onFileChange" />
 
@@ -221,10 +227,9 @@
             <h2 class="section-title">Farm Visuals</h2>
           </div>
 
-          <!-- Profile photo -->
           <p class="sub-label">FARMER PROFILE PHOTO</p>
           <div class="profile-photo-row">
-            <div class="profile-avatar-wrap">
+            <div class="profile-avatar-wrap" :class="{ 'input-error': errors.profilePhoto }" style="border-radius:50%">
               <img v-if="profilePhotoUrl" :src="profilePhotoUrl" alt="Farmer" class="profile-avatar" />
               <div v-else class="profile-avatar-placeholder">
                 <i class="bi bi-person-fill"></i>
@@ -236,21 +241,22 @@
                 A clear profile photo helps build trust with buyers. Ideally, take this at your
                 farm in natural daylight.
               </p>
-              <button class="btn-change-photo" @click="$refs.profileInput.click()">Change Photo</button>
+              <button class="btn-change-photo" @click="$refs.profileInput.click()" @blur="validateField('profilePhoto')">Change Photo</button>
               <input ref="profileInput" type="file" accept="image/*" class="hidden-input"
-                @change="onProfilePhotoChange" />
+              @change="onProfilePhotoChange" />
+              <span v-if="errors.profilePhoto" class="field-error" style="display:block; margin-top:6px;">{{ errors.profilePhoto }}</span>
             </div>
           </div>
-
-          <!-- Farm angles -->
           <p class="sub-label mt-22">REQUIRED FARM DOCUMENTATION (3 ANGLES)</p>
           <div class="angles-grid">
             <div
               v-for="(angle, idx) in angles"
               :key="idx"
               class="angle-card"
-              :class="{ 'angle-has-photo': angle.previewUrl }"
+              :class="{ 'angle-has-photo': angle.previewUrl, 'input-error': errors['angle' + (idx + 1)] }"
               @click="$refs['angleInput' + idx][0].click()"
+              tabindex="0"
+              @blur="validateField('angle' + (idx + 1))"
             >
               <input
                 :ref="'angleInput' + idx"
@@ -273,6 +279,9 @@
               </template>
             </div>
           </div>
+            <span v-if="errors.angle1" class="field-error">{{ errors.angle1 }}</span><br>
+            <span v-if="errors.angle2" class="field-error">{{ errors.angle2 }}</span><br>
+            <span v-if="errors.angle3" class="field-error">{{ errors.angle3 }}</span>
         </div>
 
       </div><!-- /form-stack -->
@@ -295,7 +304,6 @@
         </button>
       </div>
 
-      <!-- Site footer -->
       <footer class="site-footer">
         <span class="footer-copy">© 2024 The Greenhouse Organic Editorial. All rights reserved.</span>
         <div class="footer-links">
@@ -310,12 +318,12 @@
 </template>
 
 <script>
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-const verifiedEmail = sessionStorage.getItem('app_verified_email') || '';
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 export default {
   name: "ProviderApplicationForm",
   data() {
+    const verifiedEmail = sessionStorage.getItem('app_verified_email') || ''
     return {
       submitting: false,
       submitSuccess: false,
@@ -360,19 +368,19 @@ export default {
     /* ── Validation ── */
     validateField(field) {
       const val = this.form[field]?.trim()
-    
+
       if (field === 'businessName')
         this.errors.businessName = val ? '' : 'Business name is required.'
-    
+
       if (field === 'ownerName')
         this.errors.ownerName = val ? '' : 'Owner name is required.'
-    
+
       if (field === 'contactEmail') {
         if (!val)                          this.errors.contactEmail = 'Email is required.'
         else if (!/\S+@\S+\.\S+/.test(val)) this.errors.contactEmail = 'Enter a valid email.'
         else                               this.errors.contactEmail = ''
       }
-    
+
       if (field === 'phone') {
         if (!val) {
           this.errors.phone = 'Phone number is required.'
@@ -384,9 +392,40 @@ export default {
           this.errors.phone = ''
         }
       }
+
+      if (field === 'village')
+        this.errors.village = val ? '' : 'Village is required.'
+
+      if (field === 'commune')
+        this.errors.commune = val ? '' : 'Commune is required.'
+
+      if (field === 'district')
+        this.errors.district = val ? '' : 'District is required.'
+
+      if (field === 'cityProvince')
+        this.errors.cityProvince = val ? '' : 'City/Province is required.'
+      
+
+      if (field === 'primaryVegetable')
+        this.errors.primaryVegetable = val ? '' : 'Primary vegetable is required.'
+
+      if (field === 'farmCategory')
+        this.errors.farmCategory = this.form.farmCategory ? '' : 'Please select a farm category.'
+
+      if (field === 'idDocument')
+        this.errors.idDocument = this.idDocument ? '' : 'ID document is required.'
+
+      if (field === 'profilePhoto') {
+        this.errors.profilePhoto = this.profilePhotoFile ? '' : 'Profile photo is required.'
+      }
+      
+      if (field.startsWith('angle')) {
+        const idx = parseInt(field.slice(-1)) - 1;
+        this.errors[field] = this.angles[idx].file ? '' : `Photo for ${this.angles[idx].label} is required.`;
+      }
     },
     validateAll() {
-      ['businessName', 'ownerName', 'contactEmail', 'phone'].forEach(f => this.validateField(f));
+      ['businessName', 'ownerName', 'contactEmail', 'phone', 'village', 'commune', 'district', 'cityProvince', 'primaryVegetable', 'farmCategory', 'idDocument', 'profilePhoto', 'angle1', 'angle2', 'angle3'].forEach(f => this.validateField(f));
       return !Object.values(this.errors).some(Boolean);
     },
 
