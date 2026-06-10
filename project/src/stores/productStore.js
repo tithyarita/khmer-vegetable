@@ -58,6 +58,14 @@ const formatProduct = (p) => {
     // Remove existing slashes and normalize to /uploads/ prefix
     const clean = image.replace(/^\/+/, '').replace(/^(images|uploads)\//, '');
     finalImage = `${API_BASE_URL}/uploads/${clean}`;
+  } else if (image) {
+    // Image is a full URL (e.g. http://localhost:3000/uploads/...)
+    // Extract the relative path so we can use the correct API_BASE_URL
+    const uploadsMatch = image.match(/\/+(uploads\/.+)$/i);
+    if (uploadsMatch) {
+      finalImage = `${API_BASE_URL}/${uploadsMatch[1]}`;
+    }
+    // If it's a Cloudinary URL (starts with https://res.cloudinary.com), keep as-is
   }
 
   return { ...p, image: finalImage };

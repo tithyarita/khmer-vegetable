@@ -147,6 +147,7 @@ export class ProductService {
         data.description ?? product.description,
       discount: data.discount ?? product.discount,
       imageUrl: data.imageUrl ?? product.imageUrl,
+      weight: data.weight ?? product.weight,
     })
 
     product.status = this.resolveStockStatus(Number(product.stock || 0))

@@ -607,29 +607,38 @@ refreshOrders()
 /* Modal */
 .modal-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
   padding: 20px;
+  margin: 0;
 }
 
 .modal {
   background: #fff;
   border-radius: 20px;
-  width: 100%;
-  max-width: 680px;
+  width: 680px;
+  max-width: 90vw;
   max-height: 92vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .detail-modal {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+
 }
 
 .modal-hero {

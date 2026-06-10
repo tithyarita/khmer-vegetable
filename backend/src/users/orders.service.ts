@@ -409,6 +409,8 @@ export class OrdersService {
       order: { id: 'DESC' },
     });
 
+    const ADMIN_FEE_RATE = 0.03; // 3%
+
     const totalOrders = orders.length;
     const totalRevenue = orders.reduce(
       (sum, order) => sum + Number(order.total || 0),
@@ -437,13 +439,23 @@ export class OrdersService {
       0,
     );
 
+    const totalAdminFee = Number((totalRevenue * ADMIN_FEE_RATE).toFixed(2));
+    const totalProviderNet = Number((totalRevenue - totalAdminFee).toFixed(2));
+
+    const monthAdminFee = Number((monthRevenue * ADMIN_FEE_RATE).toFixed(2));
+    const monthProviderNet = Number((monthRevenue - monthAdminFee).toFixed(2));
+
     return {
       totalOrders,
       totalRevenue: Number(totalRevenue.toFixed(2)),
+      totalAdminFee,
+      totalProviderNet,
       pendingOrders,
       completedOrders,
       monthOrders: monthOrders.length,
       monthRevenue: Number(monthRevenue.toFixed(2)),
+      monthAdminFee,
+      monthProviderNet,
       revenueOrders: totalOrders,
     };
   }

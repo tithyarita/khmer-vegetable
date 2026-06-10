@@ -269,6 +269,8 @@ const allCategories = [
 const categoryMap = {
   vegetables: 'Vegetables',
   greens: 'Leafy Greens',
+  'leafy-greens': 'Leafy Greens',
+  'leafy greens': 'Leafy Greens',
   tubers: 'Tubers',
   'root veg': 'Root Veg',
   'root-veg': 'Root Veg',
@@ -290,11 +292,47 @@ const categoryName = computed(() =>
 const filteredProducts = computed(() => {
   let list = productStore.products.filter(p => {
     const cat = (p.category || '').toLowerCase()
+    const catType = categoryType.value.toLowerCase()
 
-    const catMatch =
-      !categoryType.value ||
-      cat === categoryType.value ||
-      cat === categoryName.value.toLowerCase()
+    // Strict category matching - product must belong to the selected category
+    let catMatch = false
+    
+    if (catType) {
+      // Check exact match
+      if (cat === catType) {
+        catMatch = true
+      }
+      // Check category map for subcategory matches
+      else if (categoryMap[catType]) {
+        const mappedCategory = categoryMap[catType].toLowerCase()
+        catMatch = cat === mappedCategory || cat === catType
+      }
+      // Check if product category matches any value in categoryMap that corresponds to catType
+      else {
+        for (const [key, value] of Object.entries(categoryMap)) {
+          const keyLower = key.toLowerCase()
+          const valueLower = value.toLowerCase()
+          
+          // If catType matches the key, check if product category matches key or value
+          if (catType === keyLower) {
+            if (cat === keyLower || cat === valueLower) {
+              catMatch = true
+              break
+            }
+          }
+          // If catType matches the value, check if product category matches key or value
+          else if (catType === valueLower) {
+            if (cat === keyLower || cat === valueLower) {
+              catMatch = true
+              break
+            }
+          }
+        }
+      }
+    } else {
+      // If no category type selected, show all products
+      catMatch = true
+    }
 
     const priceMatch =
       parseFloat(p.price || 0) <= appliedMaxPrice.value

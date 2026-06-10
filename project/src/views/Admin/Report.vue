@@ -606,8 +606,128 @@ const disconnectSocket = () => {
   }
 }
 
-const exportPDF = () => console.log('Exporting PDF payloads...')
-const exportCSV = () => console.log('Exporting CSV payloads...')
+const exportCSV = () => {
+  try {
+    // Combine all relevant data for export
+    const exportData = filteredReports.value.map(report => ({
+      'Report Code': report.report_code || `#REP-${report.report_id}`,
+      'Provider Name': getProviderName(report),
+      'Provider ID': `#PRV-${report.provider_id}`,
+      'Total Orders': report.total_orders,
+      'Total Revenue': Number(report.total_revenue || 0).toFixed(2),
+      'Admin Cut (3%)': (Number(report.total_revenue || 0) * 0.03).toFixed(2),
+      'Period': activePeriod.value,
+      'Date Range': useCustomDateRange.value ? `${startDate.value} to ${endDate.value}` : activePeriod.value
+    }))
+
+    if (exportData.length === 0) {
+      alert('No data to export')
+      return
+    }
+
+    // Create CSV headers
+    const headers = Object.keys(exportData[0])
+
+    // Convert data to CSV rows
+    const csvRows = exportData.map(row => headers.map(header => `"${row[header]}"`).join(','))
+
+    // Combine headers and rows
+    const csvContent = [headers.join(','), ...csvRows].join('\n')
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+
+    const timestamp = new Date().toISOString().split('T')[0]
+    const filename = `admin_reports_${activePeriod.value}_${timestamp}.csv`
+
+    link.setAttribute('href', url)
+    link.setAttribute('download', filename)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    alert(`Exported ${exportData.length} reports to CSV`)
+  } catch (error) {
+    console.error('Export error:', error)
+    alert('Failed to export report')
+  }
+}
+
+const exportPDF = () => {
+  try {
+    // Create a comprehensive report for printing
+    const printContent = `
+      <html>
+      <head>
+        <title>Khmer Veg Admin Platform - Reports</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { color: #1e5e3a; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #1e5e3a; color: white; }
+          .summary { margin: 20px 0; padding: 15px; background: #f0f4f1; border-radius: 8px; }
+        </style>
+      </head>
+      <body>
+        <h1>Khmer Veg Admin Platform - Reports & Analytics</h1>
+        <p>Period: ${activePeriod.value} ${useCustomDateRange.value ? `(${startDate.value} to ${endDate.value})` : ''}</p>
+        <p>Generated: ${new Date().toLocaleString()}</p>
+        
+        <div class="summary">
+          <h2>Summary</h2>
+          <p><strong>Total Revenue:</strong> $${totalRevenue.value.toFixed(2)}</p>
+          <p><strong>Total Orders:</strong> ${totalOrders.value}</p>
+          <p><strong>Admin Profit:</strong> $${totalAdminProfit.value.toFixed(2)}</p>
+          <p><strong>Active Providers:</strong> ${totalProviders.value}</p>
+        </div>
+
+        <h2>Reports Data</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Report Code</th>
+              <th>Provider Name</th>
+              <th>Provider ID</th>
+              <th>Total Orders</th>
+              <th>Total Revenue</th>
+              <th>Admin Cut (3%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredReports.value.map(report => `
+              <tr>
+                <td>${report.report_code || `#REP-${report.report_id}`}</td>
+                <td>${getProviderName(report)}</td>
+                <td>#PRV-${report.provider_id}</td>
+                <td>${report.total_orders}</td>
+                <td>$${Number(report.total_revenue || 0).toFixed(2)}</td>
+                <td>$${(Number(report.total_revenue || 0) * 0.03).toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `
+
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+    printWindow.focus()
+
+    // Wait for content to load, then print
+    setTimeout(() => {
+      printWindow.print()
+    }, 500)
+  } catch (error) {
+    console.error('PDF export error:', error)
+    alert('Failed to export PDF')
+  }
+}
 
 onMounted(() => {
   refreshDashboardMetrics()

@@ -94,13 +94,11 @@ import { useCartStore } from '../../stores/cartStore'
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Card from '../../components/Customer/Card.vue'
 import Footer from '../../components/Customer/Footer.vue'
-import { useLanguageStore } from '@/stores/languageStore.js'
-import { messages } from '@/lang/index.js'
+import { useI18n } from '@/composables/useI18n'
 
 const router = useRouter()
 const cartStore = useCartStore()
-const languageStore = useLanguageStore()
-const t = (key) => messages[languageStore.language][key] || key
+const { t } = useI18n()
 
 const couponCode = ref('')
 const shippingCost = ref('0.00')

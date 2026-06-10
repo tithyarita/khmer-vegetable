@@ -518,7 +518,75 @@ const formatDate = (date) => {
 }
 
 const exportReport = () => {
-  showToast(`Exporting data matrix layout for ${timeframe.value.toUpperCase()} scope.`, 'success')
+  try {
+    // Get the filtered orders based on current filters
+    const ordersToExport = filteredOrders.value
+
+    if (ordersToExport.length === 0) {
+      showToast('No data to export', 'error')
+      return
+    }
+
+    // Create CSV headers
+    const headers = [
+      'Order ID',
+      'Customer',
+      'Provider',
+      'Total Price',
+      'Status',
+      'Created At',
+      'Completed At',
+      'Payment Method',
+      'Payment Status',
+      'Items Count',
+      'Subtotal',
+      'Shipping Fee',
+      'Service Fee'
+    ]
+
+    // Convert orders to CSV rows
+    const csvRows = ordersToExport.map(order => [
+      `ORD-${order.id}`,
+      order.customer,
+      order.provider,
+      order.price,
+      order.status,
+      formatDate(order.createdAt),
+      order.completedAt ? formatDate(order.completedAt) : 'N/A',
+      order.paymentMethod,
+      order.paymentStatus,
+      order.item,
+      `$${Number(order.subtotal || 0).toFixed(2)}`,
+      `$${Number(order.shippingFee || 0).toFixed(2)}`,
+      `$${Number(order.serviceFee || 0).toFixed(2)}`
+    ])
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...csvRows.map(row => row.join(','))
+    ].join('\n')
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+
+    const timestamp = new Date().toISOString().split('T')[0]
+    const filename = `orders_report_${timeframe.value}_${timestamp}.csv`
+
+    link.setAttribute('href', url)
+    link.setAttribute('download', filename)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    showToast(`Exported ${ordersToExport.length} orders to CSV`, 'success')
+  } catch (error) {
+    console.error('Export error:', error)
+    showToast('Failed to export report', 'error')
+  }
 }
 
 // --- Status State Mutation Pipeline ---

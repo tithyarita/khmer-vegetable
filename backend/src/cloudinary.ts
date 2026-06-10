@@ -40,9 +40,7 @@ export async function uploadToCloudinary(
       stream.end(buffer);
     });
 
-    const relativePath = '/uploads/' + folder + '/' + filename;
-    const host = process.env.APP_BASE_URL || 'http://localhost:3000';
-    return host + relativePath;
+    return '/uploads/' + folder + '/' + filename;
   }
 
   return new Promise((resolve, reject) => {

@@ -40,6 +40,9 @@ export class Product {
   price!: number;
 
   @Column({ nullable: true })
+  weight!: string;
+
+  @Column({ nullable: true })
   description!: string;
 
   @CreateDateColumn({ type: 'timestamp', name: 'added_date' })

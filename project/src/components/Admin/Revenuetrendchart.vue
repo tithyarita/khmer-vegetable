@@ -2,13 +2,8 @@
   <div class="chart-card">
     <div class="chart-header">
       <div>
-        <h3 class="chart-title">Revenue Trends</h3>
-        <p class="chart-sub">Admin profit growth analysis.</p>
-      </div>
-      <div class="legend">
-        <span class="legend-item">
-          <span class="legend-dot legend-dot--current"></span> Admin Profit
-        </span>
+        <h3 class="chart-title">Revenue Distribution Streams</h3>
+        <p class="chart-sub">Admin profit comparison by {{ periodLabel }}</p>
       </div>
     </div>
 
@@ -16,37 +11,22 @@
       <p>No data available for the selected date range</p>
     </div>
 
-    <svg v-else viewBox="0 0 440 160" class="chart-svg" preserveAspectRatio="none">
-      <!-- Grid lines -->
-      <line v-for="y in gridLines" :key="y" x1="0" :y1="y" x2="440" :y2="y"
-        stroke="#f0f0f0" stroke-width="1" />
-
-      <!-- Filled area under profit line -->
-      <path :d="areaPath" fill="url(#greenGrad)" opacity=".18" />
-
-      <!-- Profit line -->
-      <polyline :points="profitPoints" fill="none"
-        stroke="#2d6a4f" stroke-width="2.5"
-        stroke-linejoin="round" stroke-linecap="round" />
-
-      <!-- Dots -->
-      <circle v-for="(pt, i) in profitCoords" :key="i"
-        :cx="pt.x" :cy="pt.y" r="3.5"
-        fill="#2d6a4f" stroke="#fff" stroke-width="2" />
-
-      <!-- X-axis provider labels -->
-      <text v-for="(item, i) in displayLabels" :key="item"
-        :x="20 + i * labelSpacing" y="156" text-anchor="middle"
-        font-size="8" fill="#9ca3af">{{ item }}</text>
-
-      <!-- Gradient def -->
-      <defs>
-        <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stop-color="#2d6a4f" stop-opacity="1" />
-          <stop offset="100%" stop-color="#2d6a4f" stop-opacity="0" />
-        </linearGradient>
-      </defs>
-    </svg>
+    <div v-else class="chart-container">
+      <div class="y-axis">
+        <div class="y-axis-label">{{ maxValue }}</div>
+        <div class="y-axis-label">{{ (maxValue * 0.75).toFixed(0) }}</div>
+        <div class="y-axis-label">{{ (maxValue * 0.5).toFixed(0) }}</div>
+        <div class="y-axis-label">{{ (maxValue * 0.25).toFixed(0) }}</div>
+        <div class="y-axis-label">0</div>
+      </div>
+      <div class="chart-bars">
+        <div v-for="(bar, i) in barData" :key="i" class="bar-wrapper">
+          <div class="bar-value">${{ bar.value }}</div>
+          <div class="bar" :style="{ height: bar.heightPercent + '%' }"></div>
+          <div class="bar-label">{{ displayLabels[i] }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -58,6 +38,14 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  activePeriod: {
+    type: String,
+    default: 'Today',
+  },
+  useCustomRange: {
+    type: Boolean,
+    default: false,
+  },
   dateRange: {
     type: Object,
     default: () => ({ start: '', end: '' }),
@@ -66,45 +54,82 @@ const props = defineProps({
 
 const gridLines = [30, 65, 100, 135]
 
-// Calculate profit coordinates from data
-const profitCoords = computed(() => {
+const periodLabel = computed(() => {
+  if (props.useCustomRange) return 'custom range'
+  const period = props.activePeriod.toLowerCase()
+  if (period === 'today') return 'hour'
+  if (period === 'weekly') return 'day'
+  if (period === 'monthly') return 'day'
+  if (period === 'yearly') return 'month'
+  return 'period'
+})
+
+// Aggregate data by time period
+const aggregatedData = computed(() => {
   if (!props.adminProfitData || props.adminProfitData.length === 0) {
     return []
   }
 
-  const data = props.adminProfitData.slice(0, 15) // Limit to 15 items for readability
-  const maxProfit = Math.max(...data.map(d => Number(d.admin_profit || 0)), 1)
-
-  return data.map((item, i) => {
+  const data = props.adminProfitData
+  const period = props.activePeriod.toLowerCase()
+  
+  const groups = {}
+  
+  data.forEach(item => {
+    const date = new Date(item.created_at || item.createdAt || Date.now())
+    let key = ''
+    
+    if (props.useCustomRange) {
+      key = date.toISOString().split('T')[0]
+    } else if (period === 'today') {
+      key = `${date.getHours()}:00`
+    } else if (period === 'weekly') {
+      key = date.toLocaleDateString('en-US', { weekday: 'short' })
+    } else if (period === 'monthly') {
+      key = date.getDate().toString()
+    } else if (period === 'yearly') {
+      key = date.toLocaleDateString('en-US', { month: 'short' })
+    } else {
+      key = date.toISOString().split('T')[0]
+    }
+    
     const profit = Number(item.admin_profit || 0)
-    const y = 130 - (profit / maxProfit) * 85 // Scale to SVG height
-    return { x: 16 + i * 27, y: Math.max(y, 20) }
+    if (!groups[key]) {
+      groups[key] = { key, profit: 0 }
+    }
+    groups[key].profit += profit
+  })
+  
+  return Object.values(groups)
+})
+
+// Calculate max value for Y-axis
+const maxValue = computed(() => {
+  const data = aggregatedData.value
+  if (data.length === 0) return 100
+  const max = Math.max(...data.map(d => d.profit), 1)
+  return Math.ceil(max / 10) * 10 // Round up to nearest 10
+})
+
+// Calculate bar chart data
+const barData = computed(() => {
+  const data = aggregatedData.value.slice(0, 12)
+  if (data.length === 0) return []
+  
+  const max = Math.max(...data.map(d => d.profit), 1)
+  
+  return data.map((item) => {
+    const heightPercent = (item.profit / max) * 100
+    return {
+      heightPercent: Math.max(heightPercent, 5), // Minimum 5% height
+      value: item.profit.toFixed(2)
+    }
   })
 })
 
-const profitPoints = computed(() =>
-  profitCoords.value.map(p => `${p.x},${p.y}`).join(' ')
-)
-
-const areaPath = computed(() => {
-  const pts = profitCoords.value
-  if (pts.length === 0) return ''
-
-  const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
-  const last = pts[pts.length - 1]
-  const first = pts[0]
-  return `${line} L${last.x},148 L${first.x},148 Z`
+const displayLabels = computed(() => {
+  return aggregatedData.value.slice(0, 12).map(d => d.key)
 })
-
-const displayLabels = computed(() =>
-  props.adminProfitData
-    .slice(0, 15)
-    .map(d => d.provider_name?.substring(0, 8) || 'N/A')
-)
-
-const labelSpacing = computed(() =>
-  Math.max(30, 440 / Math.max(displayLabels.value.length, 1))
-)
 </script>
 
 <style scoped>
@@ -112,27 +137,117 @@ const labelSpacing = computed(() =>
   background: #fff;
   border: 1px solid #eaeaea;
   border-radius: 14px;
-  padding: 18px 20px 12px;
+  padding: 20px;
   box-shadow: 0 1px 3px rgba(0,0,0,.05);
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  margin-bottom: 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
 }
-.chart-title { font-size: 14px; font-weight: 700; color: #111827; }
-.chart-sub   { font-size: 11px; color: #9ca3af; margin-top: 2px; }
 
-.legend { display: flex; gap: 12px; align-items: center; }
-.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #6b7280; }
-.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-.legend-dot--current { background: #2d6a4f; }
+.chart-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
 
-.chart-svg { width: 100%; height: 160px; }
+.chart-sub {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
 
 .no-data {
-  display: flex; align-items: center; justify-content: center;
-  height: 160px; color: #9ca3af; font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  position: relative;
+}
+
+.y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 10px 40px 0;
+  width: 50px;
+  border-right: 1px solid #e8e8e8;
+}
+
+.y-axis-label {
+  font-size: 10px;
+  color: #9ca3af;
+  text-align: right;
+  padding-right: 8px;
+}
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  flex: 1;
+  height: 100%;
+  padding: 20px 10px 40px 15px;
+  gap: 15px;
+  position: relative;
+}
+
+.chart-bars::after {
+  content: '';
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #e8e8e8;
+}
+
+.bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 60px;
+}
+
+.bar-value {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e5e3a;
+  margin-bottom: 8px;
+}
+
+.bar {
+  width: 100%;
+  min-height: 8px;
+  background: linear-gradient(180deg, #1e5e3a 0%, #40916c 100%);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.3s ease;
+}
+
+.bar:hover {
+  background: linear-gradient(180deg, #154429 0%, #2d6a4f 100%);
+}
+
+.bar-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-top: 10px;
+  text-align: center;
+  word-break: break-word;
 }
 </style>

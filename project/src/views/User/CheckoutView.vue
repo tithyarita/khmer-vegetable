@@ -8,8 +8,8 @@
 
     <div class="checkout-container">
       <header class="checkout-header">
-        <h1>Secure Checkout</h1>
-        <p>Review your fresh items and complete your order to support local Khmer farmers.</p>
+        <h1>{{ t('secureCheckout') }}</h1>
+        <p>{{ t('checkoutDescription') }}</p>
       </header>
       
       <div v-if="loading" class="fullscreen-state">
@@ -17,18 +17,18 @@
           <div class="loader-wrapper">
             <div class="loader"></div>
           </div>
-          <h3>Processing Order</h3>
-          <p>Please wait while we establish a secure connection...</p>
+          <h3>{{ t('processingOrder') }}</h3>
+          <p>{{ t('pleaseWait') }}</p>
         </div>
       </div>
 
       <div v-else-if="orderResult === 'success'" class="fullscreen-state">
         <div class="state-card glass-card success-card text-center">
           <div class="result-icon-wrapper">🎉</div>
-          <h2>Order Placed Successfully!</h2>
+          <h2>{{ t('orderPlacedSuccessfully') }}</h2>
           <p class="success-msg">{{ orderMessage }}</p>
           <button @click="goToReceipt" class="primary-btn">
-            <span>View Receipt</span>
+            <span>{{ t('viewReceipt') }}</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
           </button>
         </div>
@@ -44,8 +44,8 @@
                 <div class="collapse-left">
                   <div class="collapse-icon green">📍</div>
                   <div class="header-text">
-                    <h3>Shipping Address</h3>
-                    <p>Where should we deliver your fresh vegetables?</p>
+                    <h3>{{ t('shippingAddress') }}</h3>
+                    <p>{{ t('shippingAddressQuestion') }}</p>
                   </div>
                 </div>
               </button>
@@ -57,7 +57,7 @@
                   class="action-pill-btn edit-btn"
                   type="button"
                 >
-                  ✏️ Edit Location
+                  {{ t('editLocation') }}
                 </button>
                 <button 
                   v-else 
@@ -65,7 +65,7 @@
                   class="action-pill-btn add-btn"
                   type="button"
                 >
-                  ➕ Add Address
+                  {{ t('addAddress') }}
                 </button>
 
                 <button @click="toggleSection('address')" class="arrow-icon-btn" :class="{ rotated: activeSection === 'address' }" type="button">
@@ -78,28 +78,28 @@
               <div v-if="activeSection === 'address'" class="collapse-body">
                 <div class="form-grid">
                   <div class="input-group full-width">
-                    <label>Full Name</label>
-                    <input v-model="shipping.name" type="text" placeholder="Receiver's name" />
+                    <label>{{ t('fullName') }}</label>
+                    <input v-model="shipping.name" type="text" :placeholder="t('receiversName')" />
                   </div>
                   <div class="input-group full-width">
-                    <label>Street Address</label>
-                    <input v-model="shipping.address" type="text" placeholder="House number, Street name, Commune" />
+                    <label>{{ t('streetAddress') }}</label>
+                    <input v-model="shipping.address" type="text" :placeholder="t('streetAddressPlaceholder')" />
                   </div>
                   <div class="input-group">
-                    <label>City / Town</label>
-                    <input v-model="shipping.city" type="text" placeholder="Phnom Penh, etc." />
+                    <label>{{ t('cityTown') }}</label>
+                    <input v-model="shipping.city" type="text" :placeholder="t('cityTownPlaceholder')" />
                   </div>
                   <div class="input-group">
-                    <label>Province / State</label>
-                    <input v-model="shipping.state" type="text" placeholder="Kandal, Siem Reap, etc." />
+                    <label>{{ t('provinceState') }}</label>
+                    <input v-model="shipping.state" type="text" :placeholder="t('provinceStatePlaceholder')" />
                   </div>
                   <div class="input-group">
-                    <label>Phone Number</label>
-                    <input v-model="shipping.phone" type="text" placeholder="012345678" />
+                    <label>{{ t('phoneNumber') }}</label>
+                    <input v-model="shipping.phone" type="text" :placeholder="t('phoneNumberPlaceholder')" />
                   </div>
                   <div class="input-group">
-                    <label>Email Address</label>
-                    <input v-model="shipping.email" type="email" placeholder="name@example.com" />
+                    <label>{{ t('emailAddress') }}</label>
+                    <input v-model="shipping.email" type="email" :placeholder="t('emailAddressPlaceholder')" />
                   </div>
                 </div>
               </div>
@@ -111,8 +111,8 @@
               <div class="collapse-left">
                 <div class="collapse-icon blue">💳</div>
                 <div class="header-text">
-                  <h3>Payment Method</h3>
-                  <p>Choose your preferred payment gateway</p>
+                  <h3>{{ t('paymentMethod') }}</h3>
+                  <p>{{ t('choosePaymentGateway') }}</p>
                 </div>
               </div>
               <span class="arrow-icon" :class="{ rotated: activeSection === 'payment' }">
@@ -128,11 +128,11 @@
                     @click="paymentMethod = 'qr'"
                     :class="['payment-card', { active: paymentMethod === 'qr' }]"
                   >
-                    <span class="pay-badge">Recommended</span>
+                    <span class="pay-badge">{{ t('recommended') }}</span>
                     <div class="pay-icon">🏦</div>
                     <div class="pay-meta">
-                      <strong>QR Payment</strong>
-                      <p>Scan provider QR directly</p>
+                      <strong>{{ t('qrPayment') }}</strong>
+                      <p>{{ t('scanProviderQR') }}</p>
                     </div>
                   </div>
                 
@@ -142,8 +142,8 @@
                   >
                     <div class="pay-icon">🚚</div>
                     <div class="pay-meta">
-                      <strong>Cash on Delivery</strong>
-                      <p>Pay upon terminal delivery</p>
+                      <strong>{{ t('cashOnDelivery') }}</strong>
+                      <p>{{ t('payUponDelivery') }}</p>
                     </div>
                   </div>
                 
@@ -153,8 +153,8 @@
                   >
                     <div class="pay-icon">💳</div>
                     <div class="pay-meta">
-                      <strong>Visa Card</strong>
-                      <p>Process with Visa Engine</p>
+                      <strong>{{ t('visaCard') }}</strong>
+                      <p>{{ t('processWithVisa') }}</p>
                     </div>
                   </div>
                 
@@ -164,29 +164,29 @@
                   >
                     <div class="pay-icon">🪪</div>
                     <div class="pay-meta">
-                      <strong>Mastercard</strong>
-                      <p>Process with Mastercard Engine</p>
+                      <strong>{{ t('mastercard') }}</strong>
+                      <p>{{ t('processWithMastercard') }}</p>
                     </div>
                   </div>
                 </div>
 
                 <div v-if="paymentMethod === 'qr'" class="dynamic-payment-panel">
-                  <h4 class="panel-subtitle">Provider Payment Terminals</h4>
+                  <h4 class="panel-subtitle">{{ t('providerPaymentTerminals') }}</h4>
                   
                   <div v-if="providerPayments.length === 0" class="panel-loader">
-                    <span class="spinner-sm"></span> Loading provider bank details...
+                    <span class="spinner-sm"></span> {{ t('loadingProviderBankDetails') }}
                   </div>
 
                   <div v-else class="provider-cards-wrapper">
                     <p class="panel-instructions">
-                      Please scan and transfer exact matching segment items to corresponding vendor accounts below:
+                      {{ t('scanAndTransfer') }}
                     </p>
                     
                     <div v-for="prov in providerPayments" :key="prov.providerId" class="provider-payment-card">
                       <h5>{{ prov.providerName }}</h5>
                       
                       <p v-if="!prov.banks || prov.banks.length === 0" class="no-payment-info">
-                        ⚠️ No payment credentials declared by this farm vendor.
+                        {{ t('noPaymentCredentials') }}
                       </p>
 
                       <div
@@ -199,26 +199,26 @@
                         </div>
 
                         <div class="bank-info-box">
-                          <p><span class="label">Vendor:</span> <strong class="val">{{ prov.providerName }}</strong></p>
-                          <p><span class="label">Account Name:</span> <strong class="val uppercase">{{ bank.holder_name }}</strong></p>
+                          <p><span class="label">{{ t('vendor') }}</span> <strong class="val">{{ prov.providerName }}</strong></p>
+                          <p><span class="label">{{ t('accountName') }}</span> <strong class="val uppercase">{{ bank.holder_name }}</strong></p>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <div class="receipt-upload-container">
-                    <label>Upload Remittance Receipt Copy</label>
+                    <label>{{ t('uploadRemittanceReceipt') }}</label>
                     <div class="file-dropzone">
                       <input @change="handleReceiptUpload" type="file" accept="image/*" id="receipt-file" />
                       <label for="receipt-file" class="dropzone-label">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                        <span>{{ receiptFileName ? 'Change Receipt Copy' : 'Choose or Drop Image File' }}</span>
+                        <span>{{ receiptFileName ? t('changeReceiptCopy') : t('chooseOrDropImage') }}</span>
                       </label>
                     </div>
                   </div>
                   
                   <div v-if="receiptPreview" class="receipt-preview-block">
-                    <p>Saved local context file: <span>{{ receiptFileName }}</span></p>
+                    <p>{{ t('savedLocalFile') }} <span>{{ receiptFileName }}</span></p>
                     <img :src="receiptPreview" alt="Receipt preview" class="receipt-preview-img" />
                   </div>
                 </div>
@@ -226,21 +226,21 @@
                 <div v-if="paymentMethod === 'cash'" class="cash-payment-box">
                   <div class="cash-icon-wrapper">🍃</div>
                   <div class="cash-text-wrapper">
-                    <h4>Cash Terms Authorized</h4>
-                    <p>Please prepare the exact sum total of <span class="highlight-amt">${{ total.toFixed(2) }}</span> for processing hand-to-hand directly to our dispatch driver upon arrival.</p>
+                    <h4>{{ t('cashTermsAuthorized') }}</h4>
+                    <p>{{ t('prepareExactSum') }} <span class="highlight-amt">${{ total.toFixed(2) }}</span> {{ t('forProcessingHandToHand') }}</p>
                   </div>
                 </div>
 
                 <div v-if="paymentMethod === 'visa' || paymentMethod === 'mastercard'" class="dynamic-payment-panel">
                   <div class="card-form">
-                    <h4 class="panel-subtitle">Your Secure Card Details</h4>
+                    <h4 class="panel-subtitle">{{ t('yourSecureCardDetails') }}</h4>
                     <div class="form-grid">
                       <div class="input-group full-width">
-                        <label>Cardholder Name</label>
+                        <label>{{ t('cardholderName') }}</label>
                         <input v-model="card.name" type="text" placeholder="JOHN DOE" class="uppercase" />
                       </div>
                       <div class="input-group full-width">
-                        <label>Card Number</label>
+                        <label>{{ t('cardNumber') }}</label>
                         <input
                           :value="card.number"
                           @input="handleCardNumber"
@@ -249,7 +249,7 @@
                         />
                       </div>
                       <div class="input-group">
-                        <label>Expiration</label>
+                        <label>{{ t('expiration') }}</label>
                         <input
                           :value="card.expiry"
                           @input="handleExpiry"
@@ -258,26 +258,26 @@
                         />
                       </div>
                       <div class="input-group">
-                        <label>CVV</label>
+                        <label>{{ t('cvv') }}</label>
                         <input v-model="card.cvv" type="password" maxlength="4" placeholder="•••" />
                       </div>
                     </div>
                   </div>
                 
-                  <h4 class="panel-subtitle mt-6">Vendor Escrow Settlement Accounts</h4>
+                  <h4 class="panel-subtitle mt-6">{{ t('vendorEscrowSettlementAccounts') }}</h4>
                 
                   <div v-if="providerPayments.length === 0" class="panel-loader">
-                    <span class="spinner-sm"></span> Loading routing targets...
+                    <span class="spinner-sm"></span> {{ t('loadingRoutingTargets') }}
                   </div>
                 
                   <div v-else class="provider-cards-wrapper">
-                    <p class="panel-instructions">Your single payment processing routes values down to respective segments:</p>
+                    <p class="panel-instructions">{{ t('yourSinglePaymentRoutes') }}</p>
                   
                     <div v-for="prov in providerPayments" :key="prov.providerId" class="provider-payment-card plain">
                       <h5>{{ prov.providerName }}</h5>
                     
                       <p v-if="!prov.banks.filter(b => b.type === paymentMethod).length" class="no-payment-info">
-                        ⚠️ No native card metrics provided by this merchant vendor.
+                        {{ t('noNativeCardMetrics') }}
                       </p>
                     
                       <div
@@ -286,8 +286,8 @@
                         class="bank-payment-item card-style"
                       >
                         <div class="bank-info-box horizontal">
-                          <div><span class="lbl">Holder:</span> <span class="val bold uppercase">{{ bank.holder_name }}</span></div>
-                          <div><span class="lbl">Route Account:</span> <span class="val monospace">{{ bank.account }}</span></div>
+                          <div><span class="lbl">{{ t('holder') }}</span> <span class="val bold uppercase">{{ bank.holder_name }}</span></div>
+                          <div><span class="lbl">{{ t('routeAccount') }}</span> <span class="val monospace">{{ bank.account }}</span></div>
                         </div>
                       </div>
                     </div>
@@ -299,7 +299,7 @@
           </div>
 
           <div class="glass-card collapse-card review-items-card">
-            <h3 class="section-title">Review Order Inventory</h3>
+            <h3 class="section-title">{{ t('reviewOrderInventory') }}</h3>
             <div class="review-list">
               <div v-for="item in orderItems" :key="item.id" class="review-item">
                 <div class="img-wrapper">
@@ -308,8 +308,8 @@
                 <div class="item-details">
                   <h4>{{ item.name }}</h4>
                   <div class="review-meta">
-                    <span class="qty-pill">Qty: {{ item.quantity }}</span>
-                    <span class="price-each">${{ Number(item.unitPrice || item.price).toFixed(2) }} / unit</span>
+                    <span class="qty-pill">{{ t('qty') }} {{ item.quantity }}</span>
+                    <span class="price-each">${{ Number(item.unitPrice || item.price).toFixed(2) }} {{ t('perUnit') }}</span>
                   </div>
                 </div>
                 <div class="review-price">${{ itemTotal(item).toFixed(2) }}</div>
@@ -320,50 +320,50 @@
 
         <div class="checkout-right-sticky">
           <div class="glass-card summary-card">
-            <h3 class="summary-title">Cost Checkout Summary</h3>
+            <h3 class="summary-title">{{ t('costCheckoutSummary') }}</h3>
             
             <div class="summary-list">
               <div class="summary-row">
-                <span>Cart Subtotal</span>
+                <span>{{ t('cartSubtotal') }}</span>
                 <strong>${{ subtotal.toFixed(2) }}</strong>
               </div>
               <div class="summary-row">
-                <span>Logistics / Delivery</span>
+                <span>{{ t('logisticsDelivery') }}</span>
                 <strong class="free-tag">{{ shippingFee === 0 ? 'Free' : `$${shippingFee.toFixed(2)}` }}</strong>
               </div>
               <div class="summary-row">
-                <span>Platform Maintenance Fee</span>
-                <strong>${{ serviceFee.toFixed(2) }}</strong>
+                <span>{{ t('platformMaintenanceFee') }}</span>
+                <strong>{{ serviceFee === 0 ? 'Free' : `$${serviceFee.toFixed(2)}` }}</strong>
               </div>
               
               <div class="summary-divider"></div>
               
               <div class="summary-row total-row">
-                <span>Grand Total</span>
+                <span>{{ t('grandTotal') }}</span>
                 <span class="total-amount">${{ total.toFixed(2) }}</span>
               </div>
             </div>
 
             <transition name="fade">
               <div v-if="Object.keys(errors).length > 0" class="error-box">
-                <div class="error-header">⚠️ Complete Required Metrics</div>
+                <div class="error-header">{{ t('completeRequiredMetrics') }}</div>
                 <p v-for="(err, key) in errors" :key="key">{{ err }}</p>
               </div>
             </transition>
 
             <button @click="confirmOrder" class="checkout-btn" type="button">
-              <span>Place Secure Order</span>
+              <span>{{ t('placeSecureOrder') }}</span>
               <span class="btn-price">${{ total.toFixed(2) }}</span>
             </button>
 
             <div class="security-box">
               <div class="security-item">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                <span>End-to-End Encrypted Platform Connection</span>
+                <span>{{ t('endToEndEncrypted') }}</span>
               </div>
               <div class="security-item success">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                <span>Directly Supporting Local Khmer Farmers</span>
+                <span>{{ t('supportingLocalFarmers') }}</span>
               </div>
             </div>
           </div>
@@ -384,9 +384,13 @@
   min-height: 100vh;
   background-color: #f6f9fc;
   color: #1e293b;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Poppins', sans-serif;
   overflow-x: hidden;
   position: relative;
+}
+
+body.khmer-font .checkout-page {
+  font-family: 'Kantumruy Pro', sans-serif;
 }
 
 /* Sophisticated background blur elements */
@@ -1095,12 +1099,14 @@ import Footer from '../../components/Customer/Footer.vue'
 
 import { useCartStore } from '../../stores/cartStore'
 import { useUserStore } from '@/stores/userStore'
+import { useI18n } from '@/composables/useI18n'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 const router = useRouter()
 const cartStore = useCartStore()
 const userStore = useUserStore()
+const { t } = useI18n()
 
 /* --------------------------
     STATE
@@ -1113,7 +1119,7 @@ const activeSection = ref('address')
 const paymentMethod = ref('qr')
 
 const shippingFee = ref(0)
-const serviceFee = ref(1)
+const serviceFee = ref(0)
 
 const providerPayments = ref([])
 const paymentReceipt = ref(null)

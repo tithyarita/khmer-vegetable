@@ -5,10 +5,8 @@
 </template>
 
 <script setup>
-import { useLanguageStore } from '@/stores/languageStore.js'
-import { messages } from '@/lang/index.js'
-const languageStore = useLanguageStore()
-const t = (key) => messages[languageStore.language][key] || key
+import { useI18n } from '@/composables/useI18n'
+const { t } = useI18n()
 </script>
 
 <style>

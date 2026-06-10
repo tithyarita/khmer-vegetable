@@ -26,12 +26,10 @@ import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Card from '../../components/Customer/Card.vue'
 import Footer from '../../components/Customer/Footer.vue'
 import { useFavoriteStore } from '../../stores/favoriteStore'
-import { useLanguageStore } from '@/stores/languageStore.js'
-import { messages } from '@/lang/index.js'
+import { useI18n } from '@/composables/useI18n'
 
 const favoriteStore = useFavoriteStore()
-const languageStore = useLanguageStore()
-const t = (key) => messages[languageStore.language][key] || key
+const { t } = useI18n()
 
 onMounted(async () => {
   await favoriteStore.fetchFavoritesFromBackend()

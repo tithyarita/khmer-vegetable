@@ -6,7 +6,7 @@
       <div class="sidebar-header">
         <button class="back-btn" @click="goHome">
           <i class="bi bi-arrow-left"></i>
-          <span>Back</span>
+          <span>{{ t('back') }}</span>
         </button>
       </div>
 
@@ -29,7 +29,7 @@
       <div class="sidebar-footer">
         <button @click="handleLogout" class="logout-btn">
           <i class="bi bi-box-arrow-right menu-icon"></i>
-          <span class="menu-label">Logout</span>
+          <span class="menu-label">{{ t('logout') }}</span>
         </button>
       </div>
     </div>
@@ -44,21 +44,28 @@
 </template>
 
 <script setup>
-import { ref, inject } from 'vue'
+import { ref, inject, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/userStore'
+import { useI18n } from '@/composables/useI18n'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
+const { t, languageStore } = useI18n()
 
 // Get sidebar state from parent component via provide/inject
 const isSidebarOpen = inject('isSidebarOpen', ref(false))
 const closeSidebar = inject('closeSidebar', () => {})
 
-const menuItems = ref([
-  { id: 1, icon: 'bi bi-speedometer2', label: 'Dashboard', route: '/profile' },
-  { id: 2, icon: 'bi bi-bag-check', label: 'My Orders', route: '/myorder' },
-  { id: 3, icon: 'bi bi-truck', label: 'Track Order', route: '/order-tracker' },
-])
+const menuItems = computed(() => {
+  languageStore.language
+  return [
+    { id: 1, icon: 'bi bi-speedometer2', label: t('dashboard'), route: '/profile' },
+    { id: 2, icon: 'bi bi-bag-check', label: t('myOrders'), route: '/myorder' },
+    { id: 3, icon: 'bi bi-truck', label: t('trackOrder'), route: '/order-tracker' },
+  ]
+})
 
 const closeSidebarOnMobile = () => {
   // Close sidebar on mobile after clicking a menu item
@@ -74,9 +81,6 @@ const goHome = () => {
 const isActive = (itemRoute) => {
   return route.path === itemRoute
 }
-
-import { useUserStore } from '@/stores/userStore'
-const userStore = useUserStore()
 
 const handleLogout = () => {
   userStore.logout()

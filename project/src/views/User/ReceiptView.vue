@@ -262,7 +262,7 @@ const receiptExport = ref(null)
 const fees = reactive({
   subtotal: 0,
   shipping: 0,
-  service: 1,
+  service: 0,
   total: 0,
 })
 

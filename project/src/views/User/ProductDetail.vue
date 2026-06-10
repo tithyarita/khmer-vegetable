@@ -65,8 +65,8 @@
 
             <!-- PRICE -->
             <div class="pd-price-row">
-              <span class="pd-price">${{ Number(product.price).toFixed(2) }}</span>
-              <span class="pd-orig">${{ Number(product.originalPrice).toFixed(2) }}</span>
+              <span class="pd-price">${{ discountedPrice.toFixed(2) }}</span>
+              <span v-if="product.discount > 0" class="pd-orig">${{ Number(product.price).toFixed(2) }}</span>
               <span v-if="product.discount > 0" class="pd-off">-{{ product.discount }}%</span>
             </div>
 
@@ -458,6 +458,16 @@ const stockStatus = computed(() => {
   return 'in'
 })
 
+// CALCULATE PRICE AFTER DISCOUNT
+const discountedPrice = computed(() => {
+  const basePrice = Number(product.price) || 0
+  const discountPercent = Number(product.discount) || 0
+  if (discountPercent > 0) {
+    return basePrice * (1 - discountPercent / 100)
+  }
+  return basePrice
+})
+
 const applyProduct = (data) => {
   if (!data) return
 
@@ -473,7 +483,7 @@ const applyProduct = (data) => {
     providerId: data.provider?.user_id || data.provider_id || data.providerId || null,
     providerName: data.provider?.farm_name || data.provider?.provider_name || data.providerName || `Farm #${data.provider?.user_id || '?'}`,
     providerImage: resolveProviderImage(data.provider?.avatar || data.provider?.image || ''),
-    weight: data.weight || 'N/A',
+    weight: data.stock || 'N/A',
     description: data.description || '',
     culinaryBody: data.description || 'Fresh vegetables from local farms.',
     benefits: data.benefits || ['Fresh from farm', 'Healthy and organic'],
@@ -543,7 +553,7 @@ const sortedReviews = computed(() => {
       return list.sort((a, b) => a.rating - b.rating)
     default:
       return list
-  }
+    }
 })
 
 const getStarCount = (star) => {
@@ -569,6 +579,7 @@ const addToCart = () => {
 
   cartStore.addToCart({
     ...product,
+    price: discountedPrice.value, // Passes the newly calculated price to the cart
     quantity: qty.value,
     provider_id: product.providerId,
     providerName: product.providerName,
@@ -624,9 +635,7 @@ const submitReview = async () => {
     showToast(msg, 'error')
   }
 }
-
 </script>
-
 <style scoped>
 /* ============================================
    PRODUCT DETAIL - KH VEGETABLE REDESIGN

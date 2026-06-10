@@ -133,10 +133,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useLanguageStore } from '@/stores/languageStore.js'
-import { messages } from '@/lang/index.js'
-const languageStore = useLanguageStore()
-const t = (key) => messages[languageStore.language][key] || key
+import { useI18n } from '@/composables/useI18n'
+const { t } = useI18n()
 
 import NavigationBar from '../../components/Customer/NavigationBar.vue'
 import Footer from '../../components/Customer/Footer.vue'

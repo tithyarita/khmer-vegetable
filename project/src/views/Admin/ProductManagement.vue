@@ -197,7 +197,7 @@
             <div class="grid-card full-span-card">
               <label>Created Timestamp (MySQL Database)</label>
               <div class="card-value date-stamp">
-                ⏳ {{ formatMySQLTimestamp(selected.createdAt) }}
+                ⏳ {{ formatMySQLTimestamp(selected.addedDate) }}
               </div>
             </div>
           </div>

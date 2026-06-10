@@ -10,6 +10,9 @@
         <TopSellingProducts />
       </div>
     </section>
+            <br>
+        <FashDeal />
+        <br>
 
     <section class="section popular-vegetables">
       <div class="section-inner">
@@ -18,19 +21,16 @@
           <router-link to="/products" class="see-all">{{ t('allVegetables') }} →</router-link>
         </div>
         <Card />
-        <br>
-        <FashDeal />
-        <br>
         <div class="section-header">
           <h2 class="section-title">{{ t('meetFarmers') }}</h2>
           <a href="#" class="see-all">{{ t('allFarmers') }} →</a>
         </div>
         <Farm />
-        <div class="section-header">
+        <!-- <div class="section-header">
           <h2 class="section-title">{{ t('specialDeals') }}</h2>
           <a href="#" class="see-all">{{ t('allDeals') }} →</a>
         </div>
-        <Deals />
+        <Deals /> -->
       </div>
     </section>
      <Footer />
@@ -46,13 +46,9 @@ import Deals from '../../components/Customer/DealsCard.vue'
 import FashDeal from './fashDeals.vue'
 import  Footer  from '../../components/Customer/Footer.vue'
 import TopSellingProducts from '../../components/Customer/TopSellingProducts.vue'
-import { useLanguageStore } from '@/stores/languageStore.js'
-import { messages } from '@/lang/index.js'
-import { computed } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 
-
-const languageStore = useLanguageStore()
-const t = (key) => messages[languageStore.language][key] || key
+const { t } = useI18n()
 </script>
 
 <style scoped>

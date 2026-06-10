@@ -74,10 +74,8 @@
 </template>
 
 <script setup>
-import { useLanguageStore } from '@/stores/languageStore.js'
-import { messages } from '@/lang/index.js'
-const languageStore = useLanguageStore()
-const t = (key) => messages[languageStore.language][key] || key
+import { useI18n } from '@/composables/useI18n'
+const { t } = useI18n()
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cartStore'
@@ -398,6 +396,11 @@ onMounted(async () => {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+}
+
+body.khmer-font .btn-add {
+  font-family: 'Kantumruy Pro', sans-serif;
 }
 
 .btn-add:hover {

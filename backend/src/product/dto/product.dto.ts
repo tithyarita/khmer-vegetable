@@ -9,6 +9,10 @@ export class ProductDto {
   @IsNumber()
   price!: number;
 
+  @IsString()
+  @IsOptional()
+  weight?: string;
+
   @Type(() => Number)
   @IsNumber()
   stock!: number;

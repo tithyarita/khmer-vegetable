@@ -11,7 +11,7 @@
             <circle cx="9" cy="9" r="6" stroke="#9CA3AF" stroke-width="1.6"/>
             <path d="M13.5 13.5L17 17" stroke="#9CA3AF" stroke-width="1.6" stroke-linecap="round"/>
           </svg>
-          <input v-model="query" type="text" placeholder="Search produce..." @focus="openDropdown" @keyup.enter="toSearch" />
+          <input v-model="query" type="text" :placeholder="t('navSearchPlaceholder')" @focus="openDropdown" @keyup.enter="toSearch" />
           <SreachDropdown v-if="showDropdown" :query="query" @close="showDropdown = false" />
         </div>
 
@@ -32,14 +32,14 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
               </svg>
-              <span class="btn-text">Login</span>
+              <span class="btn-text">{{ t('login') }}</span>
             </button>
             <button class="btn-register" @click="goToRegister">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/>
               </svg>
-              <span class="btn-text">Register</span>
+              <span class="btn-text">{{ t('register') }}</span>
             </button>
           </template>
 
@@ -74,14 +74,14 @@
                       <circle cx="12" cy="8" r="4" stroke="#2D7A3A" stroke-width="1.8"/>
                       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#2D7A3A" stroke-width="1.8" stroke-linecap="round"/>
                     </svg>
-                    My Profile
+                    {{ t('myProfile') }}
                   </li>
                   <li @click="goToSettings">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="3" stroke="#2D7A3A" stroke-width="1.8"/>
                       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="#2D7A3A" stroke-width="1.8"/>
                     </svg>
-                    Settings
+                    {{ t('settingsMenu') }}
                   </li>
                 </ul>
 
@@ -94,7 +94,7 @@
                       <polyline points="16 17 21 12 16 7" stroke="#e53e3e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                       <line x1="21" y1="12" x2="9" y2="12" stroke="#e53e3e" stroke-width="1.8" stroke-linecap="round"/>
                     </svg>
-                    Logout
+                    {{ t('logout') }}
                   </li>
                 </ul>
               </div>
@@ -109,16 +109,16 @@
     <div class="navbar-bottom">
       <hr>
       <div class="container">
-        <button class="menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Menu">
+        <button class="menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen" :aria-label="t('menuLabel')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
         </button>
         <ul class="categories" :class="{ open: mobileMenuOpen }">
           <li
-            v-for="(cat, index) in categories"
-            :key="cat.label + index"
-            :class="{ active: active === cat.label }"
+            v-for="cat in categories"
+            :key="cat.key"
+            :class="{ active: active === cat.key }"
             @click="setCategory(cat); mobileMenuOpen = false"
           >
             {{ cat.label }}
@@ -160,6 +160,7 @@ import { useSearchStore } from '../../stores/searchStore'
 import { useUserStore } from '../../stores/userStore'
 import { useLocationStore } from '../../stores/locationStore'
 import { useFavoriteStore } from '../../stores/favoriteStore'
+import { useI18n } from '@/composables/useI18n'
 
 export default {
   name: 'NavigationBar',
@@ -213,29 +214,32 @@ export default {
     const userStore = useUserStore()
     const locationStore = useLocationStore()
     const favoriteStore = useFavoriteStore()
-    return { cartStore, searchStore, userStore, locationStore, favoriteStore }
+    const { t, languageStore } = useI18n()
+    return { cartStore, searchStore, userStore, locationStore, favoriteStore, t, languageStore }
   },
   data() {
     return {
       query: '',
       showDropdown: false,
-      location: 'Phnom Penh, Cambodia',
       showLocationModal: false,
       mobileMenuOpen: false,
-      active: 'Home',
+      active: 'home',
       isFavorited: false,
       profileMenuOpen: false,
-      categories: [
-        { label: 'Home', icon: '', route: '/' },
-        { label: 'Vegetables', icon: '', route: '/category/vegetables' },
-        { label: 'Greens', icon: '', route: '/category/greens' },
-        { label: 'Tubers', icon: '', route: '/category/tubers' },
-        { label: 'Root Veg', icon: '', route: '/category/root%20veg' },
-        { label: 'Cruciferous', icon: '', route: '/category/cruciferous' },
-      ],
     }
   },
   computed: {
+    categories() {
+      this.languageStore.language
+      return [
+        { key: 'home', label: this.t('home'), route: '/' },
+        { key: 'vegetables', label: this.t('vegetables'), route: '/category/vegetables' },
+        { key: 'greens', label: this.t('navGreens'), route: '/category/greens' },
+        { key: 'tubers', label: this.t('navTubers'), route: '/category/tubers' },
+        { key: 'rootveg', label: this.t('navRootVeg'), route: '/category/root%20veg' },
+        { key: 'cruciferous', label: this.t('navCruciferous'), route: '/category/cruciferous' },
+      ]
+    },
     isLoggedIn() {
       return this.userStore.isLoggedIn
     },
@@ -259,7 +263,7 @@ export default {
     },
     locationDisplay() {
       const active = this.locationStore.activeLocation
-      if (!active) return this.location
+      if (!active) return this.t('navDefaultLocation')
       const parts = (active.address || '').split(', ').filter(Boolean)
       const filtered = parts.filter(p => !/^\d+$/.test(p.trim()) && p.trim().toLowerCase() !== 'cambodia')
       return filtered.slice(-2).join(', ')
@@ -267,7 +271,7 @@ export default {
   },
   methods: {
     setCategory(cat) {
-      this.active = cat.label
+      this.active = cat.key
       this.$router.push(cat.route)
     },
     openDropdown() {
@@ -311,9 +315,12 @@ export default {
 
     syncActiveCategory() {
       const path = this.$route.path
-      if (path === '/') this.active = 'Home'
+      if (path === '/' || path === '/home') {
+        this.active = 'home'
+        return
+      }
       const cat = this.categories.find(c => c.route === path)
-      if (cat) this.active = cat.label
+      if (cat) this.active = cat.key
     },
 
     // Close dropdown when clicking outside

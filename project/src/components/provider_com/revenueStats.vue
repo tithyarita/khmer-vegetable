@@ -39,7 +39,11 @@ const loading = ref(false)
 const error = ref('')
 const summary = ref({
   totalRevenue: 0,
+  totalAdminFee: 0,
+  totalProviderNet: 0,
   monthRevenue: 0,
+  monthAdminFee: 0,
+  monthProviderNet: 0,
   totalOrders: 0,
   monthOrders: 0,
   revenueOrders: 0,
@@ -61,21 +65,53 @@ const stats = computed(() => [
   {
     id: 1,
     icon: 'bi bi-wallet2',
-    label: 'Total Revenue',
+    label: 'Total Revenue (Gross)',
     value: formatCurrency(summary.value.totalRevenue),
-    sublabel: 'All revenue orders',
+    sublabel: 'Before 3% admin fee',
     color: '#1a3d2a',
   },
   {
     id: 2,
     icon: 'bi bi-cash-coin',
-    label: 'Revenue This Month',
-    value: formatCurrency(summary.value.monthRevenue),
-    sublabel: 'Current month only',
-    color: '#2d7a3a',
+    label: 'Admin Fee (3%)',
+    value: formatCurrency(summary.value.totalAdminFee),
+    sublabel: `$${Number(summary.value.totalRevenue).toFixed(2)} × 3%`,
+    color: '#dc2626',
   },
   {
     id: 3,
+    icon: 'bi bi-check-circle',
+    label: 'Your Net (97%)',
+    value: formatCurrency(summary.value.totalProviderNet),
+    sublabel: 'Revenue after admin fee',
+    color: '#16a34a',
+  },
+  {
+    id: 4,
+    icon: 'bi bi-calendar3',
+    label: 'Month Revenue (Gross)',
+    value: formatCurrency(summary.value.monthRevenue),
+    sublabel: 'This month before 3%',
+    color: '#2d7a3a',
+  },
+  {
+    id: 5,
+    icon: 'bi bi-currency-dollar',
+    label: 'Month Admin Fee (3%)',
+    value: formatCurrency(summary.value.monthAdminFee),
+    sublabel: `$${Number(summary.value.monthRevenue).toFixed(2)} × 3%`,
+    color: '#dc2626',
+  },
+  {
+    id: 6,
+    icon: 'bi bi-piggy-bank',
+    label: 'Month Your Net (97%)',
+    value: formatCurrency(summary.value.monthProviderNet),
+    sublabel: 'This month after admin fee',
+    color: '#16a34a',
+  },
+  {
+    id: 7,
     icon: 'bi bi-bag-check',
     label: 'Total Orders',
     value: String(summary.value.totalOrders),
@@ -83,7 +119,7 @@ const stats = computed(() => [
     color: '#0f766e',
   },
   {
-    id: 4,
+    id: 8,
     icon: 'bi bi-calendar-check',
     label: 'Orders This Month',
     value: String(summary.value.monthOrders),
@@ -105,12 +141,17 @@ const fetchRevenueSummary = async () => {
 
   try {
     const response = await axios.get(`${API_BASE_URL}/orders/provider/${providerId}/revenue`)
+    const data = response.data || {}
     summary.value = {
-      totalRevenue: Number(response.data?.totalRevenue ?? 0),
-      monthRevenue: Number(response.data?.monthRevenue ?? 0),
-      totalOrders: Number(response.data?.totalOrders ?? 0),
-      monthOrders: Number(response.data?.monthOrders ?? 0),
-      revenueOrders: Number(response.data?.revenueOrders ?? 0),
+      totalRevenue: Number(data.totalRevenue ?? 0),
+      totalAdminFee: Number(data.totalAdminFee ?? 0),
+      totalProviderNet: Number(data.totalProviderNet ?? 0),
+      monthRevenue: Number(data.monthRevenue ?? 0),
+      monthAdminFee: Number(data.monthAdminFee ?? 0),
+      monthProviderNet: Number(data.monthProviderNet ?? 0),
+      totalOrders: Number(data.totalOrders ?? 0),
+      monthOrders: Number(data.monthOrders ?? 0),
+      revenueOrders: Number(data.revenueOrders ?? 0),
     }
   } catch (err) {
     error.value = err.response?.data?.message || err.message || 'Failed to load revenue summary.'

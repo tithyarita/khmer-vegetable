@@ -3,8 +3,8 @@
     
     <header class="dashboard-header-block">
       <div class="brand-title-group">
-        <h1 class="main-dashboard-title">Users Directory</h1>
-        <p class="subtitle-text">Monitor operational roles, register core field operators, and manage active system profiles.</p>
+        <h1 class="main-dashboard-title">{{ t('usersDirectory') }}</h1>
+        <p class="subtitle-text">{{ t('usersSubtitle') }}</p>
       </div>
 
       <div class="interactive-actions-hub">
@@ -13,7 +13,7 @@
           <input
             v-model="search"
             type="text"
-            placeholder="Search name, email..."
+            :placeholder="t('searchUsersPlaceholder')"
             class="modern-search-field"
           />
           <button v-if="search" @click="search = ''" class="search-clear-btn">
@@ -22,11 +22,11 @@
         </div>
 
         <button class="action-btn-pill btn-outline-forest" @click="exportCSV">
-          <i class="bi bi-download font-icon-left"></i> Export CSV
+          <i class="bi bi-download font-icon-left"></i> {{ t('exportCsv') }}
         </button>
 
         <button class="action-btn-pill btn-solid-forest" @click="openCreateModal">
-          <i class="bi bi-person-plus-fill font-icon-left"></i> Add User
+          <i class="bi bi-person-plus-fill font-icon-left"></i> {{ t('addUser') }}
         </button>
       </div>
     </header>
@@ -40,7 +40,7 @@
 
     <div v-if="loading" class="matrix-loading-screen">
       <div class="loading-spinner-circle"></div>
-      <p class="loading-status-msg">Synchronizing real-time profile arrays...</p>
+      <p class="loading-status-msg">{{ t('loadingUsers') }}</p>
     </div>
 
     <div v-else class="dashboard-content-layer">
@@ -48,7 +48,7 @@
       <section class="kpi-metrics-grid">
         <div class="kpi-card shadow-sm-soft">
           <div class="kpi-meta-block">
-            <span class="kpi-label-muted">Aggregate Profiles</span>
+            <span class="kpi-label-muted">{{ t('aggregateProfiles') }}</span>
             <h2 class="kpi-counter-val">{{ totalUsers }}</h2>
           </div>
           <div class="kpi-icon-pod bg-pod-total"><i class="bi bi-people"></i></div>
@@ -56,7 +56,7 @@
 
         <div class="kpi-card shadow-sm-soft">
           <div class="kpi-meta-block">
-            <span class="kpi-label-muted">System Admins</span>
+            <span class="kpi-label-muted">{{ t('systemAdmins') }}</span>
             <h2 class="kpi-counter-val text-forest">{{ totalAdmins }}</h2>
           </div>
           <div class="kpi-icon-pod bg-pod-admin"><i class="bi bi-shield-lock"></i></div>
@@ -64,7 +64,7 @@
 
         <div class="kpi-card shadow-sm-soft">
           <div class="kpi-meta-block">
-            <span class="kpi-label-muted">Staff Employees</span>
+            <span class="kpi-label-muted">{{ t('staffEmployees') }}</span>
             <h2 class="kpi-counter-val text-ocean">{{ totalStaff }}</h2>
           </div>
           <div class="kpi-icon-pod bg-pod-staff"><i class="bi bi-briefcase"></i></div>
@@ -72,7 +72,7 @@
 
         <div class="kpi-card shadow-sm-soft">
           <div class="kpi-meta-block">
-            <span class="kpi-label-muted">Active Providers</span>
+            <span class="kpi-label-muted">{{ t('activeProviders') }}</span>
             <h2 class="kpi-counter-val text-amber">{{ totalProviders }}</h2>
           </div>
           <div class="kpi-icon-pod bg-pod-provider"><i class="bi bi-shop-window"></i></div>
@@ -80,7 +80,7 @@
 
         <div class="kpi-card shadow-sm-soft">
           <div class="kpi-meta-block">
-            <span class="kpi-label-muted">Registered Customers</span>
+            <span class="kpi-label-muted">{{ t('registeredCustomers') }}</span>
             <h2 class="kpi-counter-val text-purple">{{ totalCustomers }}</h2>
           </div>
           <div class="kpi-icon-pod bg-pod-customer"><i class="bi bi-cart3"></i></div>
@@ -92,12 +92,12 @@
           <table class="modern-data-table">
             <thead>
               <tr>
-                <th>Profile Identifier</th>
-                <th>User Matrix Details</th>
-                <th>Contact Line</th>
-                <th>Assigned Role</th>
-                <th>Registration Date</th>
-                <th class="table-align-right">Control Desk</th>
+                <th>{{ t('colProfileId') }}</th>
+                <th>{{ t('colUserDetails') }}</th>
+                <th>{{ t('colContactLine') }}</th>
+                <th>{{ t('colAssignedRole') }}</th>
+                <th>{{ t('colRegistrationDate') }}</th>
+                <th class="table-align-right">{{ t('colControlDesk') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -105,8 +105,8 @@
                 <td colspan="6" class="table-empty-row-state">
                   <div class="empty-state-pouch">
                     <i class="bi bi-person-x-fill empty-state-icon"></i>
-                    <p class="empty-state-headline">No matching profiles identified</p>
-                    <p class="empty-state-subtitle">Refine your search parameters or register a new profile entry.</p>
+                    <p class="empty-state-headline">{{ t('noMatchingProfiles') }}</p>
+                    <p class="empty-state-subtitle">{{ t('noMatchingProfilesHint') }}</p>
                   </div>
                 </td>
               </tr>
@@ -130,7 +130,7 @@
                 <td>
                   <span class="badge-role-pill" :class="user.role">
                     <span class="role-badge-bullet"></span>
-                    {{ user.role }}
+                    {{ translateRole(user.role) }}
                   </span>
                 </td>
                 <td>
@@ -138,13 +138,13 @@
                 </td>
                 <td class="table-align-right">
                   <div class="action-button-group">
-                    <button class="row-action-btn view-btn" @click="openViewModal(user)" title="View Details">
+                    <button class="row-action-btn view-btn" @click="openViewModal(user)" :title="t('viewDetails')">
                       <i class="bi bi-eye"></i>
                     </button>
-                    <button class="row-action-btn edit-btn" @click="openEditModal(user)" title="Edit Profile">
+                    <button class="row-action-btn edit-btn" @click="openEditModal(user)" :title="t('editProfile')">
                       <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="row-action-btn delete-btn" @click="deleteUser(user.id)" title="Remove user profile">
+                    <button class="row-action-btn delete-btn" @click="deleteUser(user.id)" :title="t('removeUser')">
                       <i class="bi bi-trash3"></i>
                     </button>
                   </div>
@@ -169,14 +169,14 @@
               </div>
               <div>
                 <h3 class="modal-headline">
-                  <span v-if="modalType === 'create'">Register Profile</span>
-                  <span v-else-if="modalType === 'edit'">Modify Profile Matrix</span>
-                  <span v-else>Profile Deep-Dive Details</span>
+                  <span v-if="modalType === 'create'">{{ t('modalCreateTitle') }}</span>
+                  <span v-else-if="modalType === 'edit'">{{ t('modalEditTitle') }}</span>
+                  <span v-else>{{ t('modalViewTitle') }}</span>
                 </h3>
                 <p class="modal-subheadline">
-                  <span v-if="modalType === 'create'">Instantiate a secure platform authorization entry.</span>
-                  <span v-else-if="modalType === 'edit'">Update core registry data arrays securely.</span>
-                  <span v-else>Read-only access to user state database entity.</span>
+                  <span v-if="modalType === 'create'">{{ t('modalCreateSub') }}</span>
+                  <span v-else-if="modalType === 'edit'">{{ t('modalEditSub') }}</span>
+                  <span v-else>{{ t('modalViewSub') }}</span>
                 </p>
               </div>
             </div>
@@ -185,11 +185,11 @@
 
           <form @submit.prevent="submitUser" class="modal-form-matrix">
             <div class="form-field-row">
-              <label class="form-input-label">Account Owner Name</label>
+              <label class="form-input-label">{{ t('accountOwnerName') }}</label>
               <input 
                 v-model="formUser.name" 
                 type="text" 
-                placeholder="e.g. Alexander Pierce" 
+                :placeholder="t('placeholderName')" 
                 class="form-input-element" 
                 :disabled="modalType === 'view'"
                 required 
@@ -197,11 +197,11 @@
             </div>
 
             <div class="form-field-row">
-              <label class="form-input-label">Email Address Address</label>
+              <label class="form-input-label">{{ t('emailAddress') }}</label>
               <input 
                 v-model="formUser.email" 
                 type="email" 
-                placeholder="name@domain.com" 
+                :placeholder="t('placeholderEmail')" 
                 class="form-input-element" 
                 :disabled="modalType === 'view'"
                 required 
@@ -210,11 +210,11 @@
 
             <div class="form-grid-dual">
               <div class="form-field-row">
-                <label class="form-input-label">Mobile Line</label>
+                <label class="form-input-label">{{ t('mobileLine') }}</label>
                 <input 
                   v-model="formUser.phone" 
                   type="text" 
-                  placeholder="+1 (555) 000-0000" 
+                  :placeholder="t('placeholderPhone')" 
                   class="form-input-element" 
                   :disabled="modalType === 'view'"
                   required 
@@ -222,30 +222,30 @@
               </div>
               
               <div class="form-field-row">
-                <label class="form-input-label">Access Authorization Role</label>
+                <label class="form-input-label">{{ t('accessRole') }}</label>
                 <select 
                   v-model="formUser.role" 
                   class="form-input-element select-menu-custom" 
                   :disabled="modalType === 'view'"
                   required
                 >
-                  <option value="admin">Admin</option>
-                  <option value="staff">Staff</option>
-                  <option value="provider">Provider</option>
-                  <option value="customer">Customer</option>
+                  <option value="admin">{{ t('roleAdmin') }}</option>
+                  <option value="staff">{{ t('roleStaff') }}</option>
+                  <option value="provider">{{ t('roleProvider') }}</option>
+                  <option value="customer">{{ t('roleCustomer') }}</option>
                 </select>
               </div>
             </div>
 
             <div v-if="modalType !== 'view'" class="form-field-row">
               <label class="form-input-label">
-                Access Core Password 
-                <span v-if="modalType === 'edit'" class="optional-tag">(Leave blank to keep unchanged)</span>
+                {{ t('accessPassword') }}
+                <span v-if="modalType === 'edit'" class="optional-tag">{{ t('passwordOptional') }}</span>
               </label>
               <input 
                 v-model="formUser.password" 
                 type="password" 
-                placeholder="••••••••" 
+                :placeholder="t('placeholderPassword')" 
                 class="form-input-element" 
                 :required="modalType === 'create'" 
               />
@@ -253,23 +253,23 @@
 
             <div v-if="modalType === 'view'" class="form-grid-dual metadata-view-block">
               <div class="form-field-row">
-                <label class="form-input-label">System Identity ID</label>
+                <label class="form-input-label">{{ t('systemIdentityId') }}</label>
                 <div class="static-view-value">#{{ formUser.id }}</div>
               </div>
               <div class="form-field-row">
-                <label class="form-input-label">Created At Timestamp</label>
+                <label class="form-input-label">{{ t('createdAtTimestamp') }}</label>
                 <div class="static-view-value">{{ formatDate(formUser.created_at) }}</div>
               </div>
             </div>
 
             <footer class="modal-actions-footer">
               <button class="action-btn-pill btn-outline-gray" type="button" @click="closeModal">
-                {{ modalType === 'view' ? 'Close Window' : 'Cancel' }}
+                {{ modalType === 'view' ? t('closeWindow') : t('cancel') }}
               </button>
               <button v-if="modalType !== 'view'" class="action-btn-pill btn-solid-forest" type="submit" :disabled="submitting">
-                <span v-if="submitting" class="inline-loading-dots">Processing pipeline update...</span>
-                <span v-else-if="modalType === 'create'">Confirm & Save User</span>
-                <span v-else>Apply Core Changes</span>
+                <span v-if="submitting" class="inline-loading-dots">{{ t('processing') }}</span>
+                <span v-else-if="modalType === 'create'">{{ t('confirmSaveUser') }}</span>
+                <span v-else>{{ t('applyChanges') }}</span>
               </button>
             </footer>
           </form>
@@ -284,6 +284,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import { useI18n } from '@/composables/useI18n'
+
+const { t, languageStore } = useI18n()
 
 /* COMPONENT INITIALIZATION STRATEGY */
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
@@ -321,11 +324,11 @@ const fetchUsers = async () => {
   } catch (error) {
     console.error('Fetch operation failure execution logs:', error)
     if (error.response) {
-      errorMessage.value = error.response.data.message || `Server synchronization drop (${error.response.status})`
+      errorMessage.value = error.response.data.message || t('serverSyncError').replace('{status}', error.response.status)
     } else if (error.request) {
-      errorMessage.value = 'Network transmission failure. Backend stack unreachable.'
+      errorMessage.value = t('networkError')
     } else {
-      errorMessage.value = error.message || 'An unexpected structural exception occurred.'
+      errorMessage.value = error.message || t('unexpectedError')
     }
   } finally {
     loading.value = false
@@ -334,7 +337,7 @@ const fetchUsers = async () => {
 
 /* DESTRUCTION MANAGEMENT HANDLERS */
 const deleteUser = async (id) => {
-  const confirmed = confirm('Are you sure you want to completely remove this user profile from active directories? This action cannot be undone.')
+  const confirmed = confirm(t('deleteConfirm'))
   if (!confirmed) return
 
   try {
@@ -342,7 +345,7 @@ const deleteUser = async (id) => {
     users.value = users.value.filter(u => u.id !== id)
   } catch (error) {
     console.error('Destruction handling error payload:', error)
-    alert(error.response?.data?.message || 'Failed to destroy profile entity. Please clean database child relations first.')
+    alert(error.response?.data?.message || t('deleteFailed'))
   }
 }
 
@@ -403,7 +406,7 @@ const submitUser = async () => {
     await fetchUsers()
   } catch (error) {
     console.error('Data pipeline write fault:', error)
-    alert(error.response?.data?.message || 'Profile processing rejected by data core validations.')
+    alert(error.response?.data?.message || t('validationFailed'))
   } finally {
     submitting.value = false
   }
@@ -437,9 +440,20 @@ const getAvatarInitials = (name) => {
   return segments[0][0].toUpperCase()
 }
 
+const translateRole = (role) => {
+  const map = {
+    admin: t('roleAdmin'),
+    staff: t('roleStaff'),
+    provider: t('roleProvider'),
+    customer: t('roleCustomer'),
+  }
+  return map[role] || role
+}
+
 const formatDate = (date) => {
   if (!date) return '—'
-  return new Date(date).toLocaleDateString('en-US', {
+  const locale = languageStore.language === 'km' ? 'km-KH' : 'en-US'
+  return new Date(date).toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric'
@@ -447,13 +461,13 @@ const formatDate = (date) => {
 }
 
 const exportCSV = () => {
-  const headers = ['ID', 'Name', 'Email', 'Phone', 'Role', 'Created At']
+  const headers = [t('csvId'), t('csvName'), t('csvEmail'), t('csvPhone'), t('csvRole'), t('csvCreatedAt')]
   const rows = users.value.map(u => [
     u.id,
     u.name,
     u.email,
     u.phone || '',
-    u.role,
+    translateRole(u.role),
     new Date(u.created_at).toISOString()
   ])
 

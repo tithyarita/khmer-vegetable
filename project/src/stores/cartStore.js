@@ -19,11 +19,21 @@ api.interceptors.request.use((config) => {
 
 export const useCartStore = defineStore('cart', () => {
   // ================= STATE =================
-  const normalizeCartItem = (item) => ({
-    ...item,
-    providerId: Number(item?.providerId ?? item?.provider_id ?? item?.provider?.user_id ?? 0) || null,
-    provider_id: Number(item?.provider_id ?? item?.providerId ?? item?.provider?.user_id ?? 0) || null,
-  })
+  const normalizeCartItem = (item) => {
+    const basePrice = Number(item?.originalPrice ?? item?.price ?? 0)
+    const discount = Number(item?.discount ?? 0)
+    const finalPrice = discount > 0 ? +(basePrice * (1 - discount / 100)).toFixed(2) : Number(item?.price ?? basePrice)
+
+    return {
+      ...item,
+      price: finalPrice,
+      unitPrice: finalPrice,
+      originalPrice: basePrice,
+      discount: discount,
+      providerId: Number(item?.providerId ?? item?.provider_id ?? item?.provider?.user_id ?? 0) || null,
+      provider_id: Number(item?.provider_id ?? item?.providerId ?? item?.provider?.user_id ?? 0) || null,
+    }
+  }
 
   const cartItems = ref(
     JSON.parse(localStorage.getItem('cart') || '[]').map(normalizeCartItem),
@@ -83,20 +93,27 @@ export const useCartStore = defineStore('cart', () => {
       const backendCart = response.data || []
 
       // Map backend cart items to frontend format
-      cartItems.value = backendCart.map(item => ({
-        id: item.product?.id,
-        name: item.product?.name,
-        price: Number(item.unit_price || item.product?.price || 0),
-        unitPrice: Number(item.unit_price || item.product?.price || 0),
-        originalPrice: Number(item.product?.price || 0),
-        image: item.product?.imageUrl || item.product?.image,
-        category: item.product?.category,
-        unit: item.product?.unit || 'item',
-        providerId: Number(item.product?.provider?.user_id || 0),   // ← use nested provider
-        provider_id: Number(item.product?.provider?.user_id || 0),  // ← use nested provider
-        providerName: item.product?.provider?.provider_name || 'Unknown',
-        quantity: Number(item.quantity || 1)
-      }))
+      cartItems.value = backendCart.map(item => {
+        const basePrice = Number(item.unit_price || item.product?.price || 0)
+        const discount = Number(item.product?.discount || 0)
+        const finalPrice = discount > 0 ? +(basePrice * (1 - discount / 100)).toFixed(2) : basePrice
+
+        return {
+          id: item.product?.id,
+          name: item.product?.name,
+          price: finalPrice,
+          unitPrice: finalPrice,
+          originalPrice: basePrice,
+          discount: discount,
+          image: item.product?.imageUrl || item.product?.image,
+          category: item.product?.category,
+          unit: item.product?.unit || 'item',
+          providerId: Number(item.product?.provider?.user_id || 0),   // ← use nested provider
+          provider_id: Number(item.product?.provider?.user_id || 0),  // ← use nested provider
+          providerName: item.product?.provider?.provider_name || 'Unknown',
+          quantity: Number(item.quantity || 1)
+        }
+      })
 
       persistCart()
     } catch (err) {
@@ -156,6 +173,7 @@ export const useCartStore = defineStore('cart', () => {
         price: itemPrice,
         unitPrice: itemPrice,
         originalPrice: itemOriginalPrice,
+        discount: Number(product.discount ?? 0),
         image: product.image,
         category: product.category,
         unit: product.unit || 'item',

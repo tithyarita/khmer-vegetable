@@ -22,16 +22,41 @@
 
       <div class="user-chip">
         <div class="user-info">
-          <span class="user-name">Julian Moss</span>
-          <span class="user-role">Head Administrator</span>
+          <span class="user-name">{{ displayName }}</span>
+          <span class="user-role">{{ displayRole }}</span>
         </div>
-        <div class="user-avatar">JM</div>
+        <div class="user-avatar">{{ initials }}</div>
       </div>
     </div>
   </header>
 </template>
 
-<script setup></script>
+<script setup>
+import { computed } from 'vue'
+import { useUserStore } from '@/stores/userStore'
+
+const userStore = useUserStore()
+
+const displayName = computed(() => {
+  if (!userStore.user) return 'Admin'
+  return userStore.user.name || userStore.user.username || userStore.user.email?.split('@')[0] || 'Admin'
+})
+
+const displayRole = computed(() => {
+  if (!userStore.user) return 'Administrator'
+  return userStore.user.role || userStore.user.user_type || 'Administrator'
+})
+
+const initials = computed(() => {
+  const name = displayName.value
+  return name
+    .split(' ')
+    .map(part => part.charAt(0))
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+})
+</script>
 
 <style scoped>
 .admin-topbar {

@@ -2,10 +2,10 @@
   <section class="top-selling-section">
     <div class="section-head">
       <div>
-        <p class="eyebrow">Trending now</p>
-        <h2>Top Selling Products</h2>
+        <p class="eyebrow">{{ t('trendingNow') }}</p>
+        <h2>{{ t('topSellingProducts') }}</h2>
         <p class="subtext">
-          Products ranked by total quantity ordered in the selected period.
+          {{ t('topSellingDescription') }}
         </p>
       </div>
 
@@ -15,7 +15,7 @@
           :class="{ active: period === 'week' }"
           @click="changePeriod('week')"
         >
-          Week
+          {{ t('week') }}
         </button>
 
         <button
@@ -23,13 +23,13 @@
           :class="{ active: period === 'month' }"
           @click="changePeriod('month')"
         >
-          Month
+          {{ t('month') }}
         </button>
       </div>
     </div>
 
     <div v-if="loading" class="state-card">
-      Loading top sellers...
+      {{ t('loadingTopSellers') }}
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -37,7 +37,7 @@
     </div>
 
     <div v-else-if="products.length === 0" class="state-card">
-      No orders found for this period yet.
+      {{ t('noOrdersFound') }}
     </div>
 
     <div v-else class="product-grid">
@@ -58,7 +58,7 @@
 
           <div class="meta-row">
             <span>{{ formatNumber(p.totalQuantity) }} kg</span>
-            <span>{{ p.orderCount || 0 }} orders</span>
+            <span>{{ p.orderCount || 0 }} {{ t('orders') }}</span>
           </div>
 
           <div class="price-row">
@@ -74,6 +74,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 /* =========================
    CONFIG
@@ -103,7 +106,7 @@ const products = ref([])
    COMPUTED
 ========================= */
 const label = computed(() =>
-  period.value === 'month' ? 'This Month' : 'This Week'
+  period.value === 'month' ? t('thisMonth') : t('thisWeek')
 )
 
 /* =========================
@@ -114,7 +117,18 @@ const placeholder =
 
 function getImage(url) {
   if (!url) return placeholder
-  if (url.startsWith('http')) return url
+
+  // If it's a full URL (e.g. http://localhost:3000/uploads/...)
+  // extract the relative path and rebuild with the correct API base URL
+  if (url.startsWith('http')) {
+    const uploadsMatch = url.match(/\/+(uploads\/.+)$/i)
+    if (uploadsMatch) {
+      return `${API}/${uploadsMatch[1]}`
+    }
+    // Not an uploads URL (e.g. Cloudinary URL) — keep as-is
+    return url
+  }
+
   return `${API}${url.startsWith('/') ? url : '/images/' + url}`
 }
 
@@ -166,11 +180,11 @@ async function fetchTopSellers() {
     console.error(err)
 
     if (err.response?.status === 400) {
-      error.value = 'Server rejected period (backend misconfigured)'
+      error.value = t('serverRejectedPeriod')
     } else if (err.response?.status >= 500) {
-      error.value = 'Server error. Please try again later.'
+      error.value = t('serverErrorTryAgain')
     } else {
-      error.value = 'Network error'
+      error.value = t('networkError')
     }
   } finally {
     if (currentRequest === requestId) {

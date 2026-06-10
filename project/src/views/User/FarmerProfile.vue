@@ -3,7 +3,7 @@
     <NavigationBar />
 
     <div class="container" v-if="provider">
-      <button class="back-btn" @click="$router.back()">← Back</button>
+      <button class="back-btn" @click="$router.back()">{{ t('back') }}</button>
 
       <div class="farmer-header">
         <img :src="provider.image" :alt="provider.name" class="farmer-avatar" />
@@ -12,8 +12,8 @@
           <p class="farm-name">{{ provider.farm }}</p>
           <p class="location">{{ provider.location }}</p>
           <div class="badges">
-            <span class="badge">{{ provider.productCount }} products</span>
-            <span class="badge">{{ provider.topProductCount }} top-selling items</span>
+            <span class="badge">{{ provider.productCount }} {{ t('products') }}</span>
+            <span class="badge">{{ provider.topProductCount }} {{ t('topSellingItems') }}</span>
           </div>
         </div>
       </div>
@@ -21,37 +21,37 @@
       <div class="stats">
         <div class="stat">
           <span class="stat-value">{{ provider.productCount }}</span>
-          <span class="stat-label">All Products</span>
+          <span class="stat-label">{{ t('allProducts') }}</span>
         </div>
         <div class="stat">
           <span class="stat-value">{{ provider.topProductCount }}</span>
-          <span class="stat-label">Top Products</span>
+          <span class="stat-label">{{ t('topProducts') }}</span>
         </div>
         <div class="stat">
           <span class="stat-value">{{ provider.monthOrders }}</span>
-          <span class="stat-label">This Month Orders</span>
+          <span class="stat-label">{{ t('thisMonthOrders') }}</span>
         </div>
       </div>
 
-      <blockquote class="quote">"{{ provider.quote }}"</blockquote>
+      <blockquote class="quote">"{{ t('browseAllProducts') }} {{ provider.name }}."</blockquote>
 
-      <h2>Top Selling Products by {{ provider.name }}</h2>
+      <h2>{{ t('topSellingProductsBy') }} {{ provider.name }}</h2>
       <Card v-if="provider.popularProducts.length" :products="provider.popularProducts" />
-      <p v-else class="empty-note">No popular products found for this provider yet.</p>
+      <p v-else class="empty-note">{{ t('noPopularProducts') }}</p>
 
-      <h2 style="margin-top:32px">Promotion Products by {{ provider.name }}</h2>
+      <h2 style="margin-top:32px">{{ t('promotionProductsBy') }} {{ provider.name }}</h2>
       <Card v-if="provider.promotionProducts.length" :products="provider.promotionProducts" />
-      <p v-else class="empty-note">No discount products available right now.</p>
+      <p v-else class="empty-note">{{ t('noDiscountProducts') }}</p>
 
-      <h2 style="margin-top:32px">All Products by {{ provider.name }}</h2>
+      <h2 style="margin-top:32px">{{ t('allProductsBy') }} {{ provider.name }}</h2>
       <Card v-if="provider.products.length" :products="provider.products" />
-      <p v-else class="empty-note">No products found for this provider.</p>
+      <p v-else class="empty-note">{{ t('noProductsFound') }}</p>
     </div>
 
     <div v-else class="container empty-state">
-      <button class="back-btn" @click="$router.back()">← Back</button>
-      <p v-if="loading">Loading provider...</p>
-      <p v-else>Provider not found.</p>
+      <button class="back-btn" @click="$router.back()">{{ t('back') }}</button>
+      <p v-if="loading">{{ t('loadingProvider') }}</p>
+      <p v-else>{{ t('providerNotFound') }}</p>
     </div>
   </div>
 </template>
@@ -63,10 +63,12 @@ import { useRoute } from 'vue-router'
 import NavigationBar from '@/components/Customer/NavigationBar.vue'
 import Card from '@/components/Customer/Card.vue'
 import { useProductStore } from '@/stores/productStore'
+import { useI18n } from '@/composables/useI18n'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 const route = useRoute()
 const productStore = useProductStore()
+const { t } = useI18n()
 
 const provider = ref(null)
 const loading = ref(false)
@@ -192,65 +194,195 @@ onMounted(loadProvider)
 
 <style scoped>
 .profile-page {
-  background: #f9f9f6;
+  background: linear-gradient(135deg, #f0fdf4 0%, #f9f9f6 100%);
   min-height: 100vh;
+  font-family: 'Poppins', sans-serif;
 }
+
+body.khmer-font .profile-page {
+  font-family: 'Kantumruy Pro', sans-serif;
+}
+
 .container {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 24px 80px;
+  padding: 32px 24px 80px;
 }
+
 .back-btn {
-  background: none;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
   border: none;
-  color: #2d6a4f;
-  font-size: 15px;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  padding: 8px 0;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+  transition: all 0.3s ease;
 }
+
+.back-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.3);
+}
+
 .farmer-header {
   display: flex;
-  gap: 28px;
+  gap: 32px;
   align-items: center;
-  background: #fff;
-  border-radius: 16px;
-  padding: 28px 32px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 32px 40px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  margin-bottom: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
+
 .farmer-avatar {
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #e8f5ee;
+  border: 4px solid #22c55e;
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
 }
-.farmer-header h1 { font-size: 24px; font-weight: 700; margin: 0 0 4px; color: #1a2e1a; }
-.farm-name { font-size: 16px; color: #2d6a4f; font-weight: 600; margin: 0 0 2px; }
-.location { font-size: 13px; color: #8fa896; margin: 0 0 10px; }
-.badges { display: flex; flex-wrap: wrap; gap: 8px; }
-.badge { background: #e8f5ee; color: #1a4a2e; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 99px; }
-.stats { display: flex; gap: 16px; margin-bottom: 24px; }
-.stat { flex: 1; background: #fff; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
-.stat-value { display: block; font-size: 22px; font-weight: 700; color: #2d6a4f; }
-.stat-label { font-size: 12px; color: #8fa896; margin-top: 4px; }
-.quote { font-style: italic; color: #5a7060; font-size: 16px; line-height: 1.6; border-left: 3px solid #2d6a4f; padding-left: 20px; margin: 0 0 32px; }
-h2 { font-size: 20px; font-weight: 700; color: #1a2e1a; margin-bottom: 20px; }
-.products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-.product-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; transition: transform 0.2s; }
-.product-card:hover { transform: translateY(-4px); }
-.product-card img { width: 100%; height: 150px; object-fit: cover; }
-.product-info { padding: 14px; display: flex; flex-direction: column; gap: 4px; }
-.category { font-size: 11px; color: #8fa896; text-transform: uppercase; font-weight: 600; }
-.name { font-weight: 600; font-size: 14px; color: #1a2e1a; }
-.price { font-weight: 700; color: #2d6a4f; font-size: 16px; margin-top: 4px; }
-.empty-state { padding-top: 40px; }
-.empty-note { color: #6f7f73; margin: 0 0 8px; }
+
+.farmer-header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  color: #1a2e1a;
+  letter-spacing: -0.02em;
+}
+
+.farm-name {
+  font-size: 18px;
+  color: #2d6a4f;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.location {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.badge {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #166534;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 99px;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.stat {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+}
+
+.stat:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.stat-value {
+  display: block;
+  font-size: 32px;
+  font-weight: 800;
+  color: #22c55e;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.quote {
+  font-style: italic;
+  color: #4b5563;
+  font-size: 17px;
+  line-height: 1.7;
+  border-left: 4px solid #22c55e;
+  padding-left: 24px;
+  margin: 0 0 40px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 20px 24px;
+  border-radius: 0 16px 16px 0;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a2e1a;
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+}
+
+.empty-state {
+  padding-top: 60px;
+  text-align: center;
+}
+
+.empty-note {
+  color: #6b7280;
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
 @media (max-width: 768px) {
-  .farmer-header { flex-direction: column; text-align: center; }
-  .badges { justify-content: center; }
-  .stats { flex-direction: column; }
+  .farmer-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px;
+  }
+  
+  .badges {
+    justify-content: center;
+  }
+  
+  .stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .farmer-avatar {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .farmer-header h1 {
+    font-size: 22px;
+  }
 }
 </style>
