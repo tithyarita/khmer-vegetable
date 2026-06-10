@@ -25,7 +25,7 @@
           </div>
           <div class="user-meta">
             <h2>{{ adminData.name || 'Store Manager' }}</h2>
-            <span class="role-badge">{{ adminData.role || 'Admin' }}</span>
+            <span class="role-badge">{{ adminData.role || userStore.user?.role || 'Admin' }}</span>
           </div>
         </div>
 
@@ -104,7 +104,7 @@
 
             <div class="info-card">
               <label>Privilege Tier</label>
-              <p style="text-transform: capitalize;">{{ adminData.role || 'Admin User' }}</p>
+              <p style="text-transform: capitalize;">{{ adminData.role || userStore.user?.role || 'Admin' }}</p>
             </div>
           </div>
           
@@ -127,10 +127,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { useUserStore } from '@/stores/userStore'
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+const userStore = useUserStore()
 
-const userId = ref(1)
+const userId = ref(userStore.user?.id || 1)
 const defaultAvatar =
   'https://cdn-icons-png.flaticon.com/512/149/149071.png'
 

@@ -7,7 +7,6 @@
       >
         <div v-for="(slide, index) in slides" :key="index" class="slide">
           <div class="slide-bg" :style="{ backgroundImage: `url(${slide.image})` }"></div>
-          <div class="slide-overlay"></div>
           <div class="slide-content">
             <button class="btn" @click="shopNow(slide)">Shop Now</button>
           </div>
@@ -35,7 +34,9 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-
+import hero2 from '@/assets/images/hero2.png'
+import hero1 from '@/assets/images/hero1.png'
+import hero3 from '@/assets/images/hero3.png'
 const currentIndex = ref(0)
 const progressWidth = ref(0)
 let autoSlide = null
@@ -44,10 +45,9 @@ const SLIDE_DURATION = 4500
 const PROGRESS_STEP = 50
 
 const slides = [
-  { tag: "Today's Pick", title: 'Organic Curly Kale', subtitle: 'Fresh & nutrient-packed greens', price: '2.50', originalPrice: '3.20', unit: 'bunch', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1600&q=95' },
-  { tag: 'Best Seller', title: 'Heirloom Tomatoes', subtitle: 'Vine-ripened and full of flavor', price: '4.99', originalPrice: '6.50', unit: 'pack', image: 'https://images.unsplash.com/photo-1592982537447-6f2a6a0c7c18?w=1600&q=95' },
-  { tag: 'Superfood', title: 'Fresh Spinach Mix', subtitle: 'Iron-rich daily superfood', price: '3.75', originalPrice: '4.50', unit: 'bag', image: 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=1600&q=95' },
-  { tag: 'Seasonal', title: 'Asparagus Spears', subtitle: 'Spring harvest at its finest', price: '5.25', originalPrice: '6.99', unit: 'lb', image: 'https://images.unsplash.com/photo-1515471209610-dae1c92d8777?w=1600&q=95' },
+  { tag: "Today's Pick", title: 'Organic Curly Kale', subtitle: 'Fresh & nutrient-packed greens', price: '2.50', originalPrice: '3.20', unit: 'bunch', image: hero1 },
+  { tag: 'Best Seller', title: 'Heirloom Tomatoes', subtitle: 'Vine-ripened and full of flavor', price: '4.99', originalPrice: '6.50', unit: 'pack', image: hero2 },
+  { tag: 'Superfood', title: 'Fresh Spinach Mix', subtitle: 'Iron-rich daily superfood', price: '3.75', originalPrice: '4.50', unit: 'bag', image: hero3 },
 ]
 
 function shopNow(slide) {
@@ -136,15 +136,6 @@ onUnmounted(() => { stopAutoSlide() })
   background-repeat: no-repeat;
 }
 
-.slide-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.45);
-}
-
 .slide-content {
   position: absolute;
   z-index: 2;
@@ -154,8 +145,8 @@ onUnmounted(() => { stopAutoSlide() })
 }
 
 .btn {
-  background: white;
-  color: #1a1a1a;
+  background: #2d7a3a;
+  color: #fff;
   border: none;
   padding: 12px 32px;
   border-radius: 50px;
@@ -173,7 +164,7 @@ onUnmounted(() => { stopAutoSlide() })
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.15);
+  background: #2d7a3a;
   color: white;
   border: none;
   width: 36px;
@@ -186,7 +177,7 @@ onUnmounted(() => { stopAutoSlide() })
 }
 
 .arrow:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #1a5c2a;
 }
 
 .arrow.prev { left: 12px; }
@@ -212,7 +203,7 @@ onUnmounted(() => { stopAutoSlide() })
 }
 
 .dot.active {
-  background: white;
+  background: #2d7a3a;
   transform: scale(1.2);
 }
 
