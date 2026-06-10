@@ -112,7 +112,7 @@ async function handleVerify() {
   inset: 0;
   background:
     linear-gradient(135deg, rgba(26,58,42,0.82) 0%, rgba(26,58,42,0.45) 50%, rgba(26,58,42,0.78) 100%),
-    url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&q=80') center / cover no-repeat;
+    url('../../assets/images/background.png') center / cover no-repeat;
   filter: saturate(1.1);
   z-index: 0;
 }
