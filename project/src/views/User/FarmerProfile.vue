@@ -82,21 +82,19 @@ api.interceptors.request.use((config) => {
 
 const placeholderImage = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22%3E%3Crect width=%22200%22 height=%22200%22 rx=%2224%22 fill=%22%23eef3ee%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2216%22 fill=%22%236b7280%22%3ENo Image%3C/text%3E%3C/svg%3E'
 
-const getOriginalPrice = (product) => {
-  const price = Number(product?.price ?? 0)
-  const discount = Number(product?.discount ?? 0)
-
-  if (!discount || discount <= 0) {
-    return Number(product?.originalPrice ?? price)
-  }
-
-  return Number(product?.originalPrice ?? (price / Math.max(1 - discount / 100, 0.01)))
-}
-
 function resolveImage(imageUrl) {
   if (!imageUrl) return placeholderImage
   if (imageUrl.startsWith('http')) return imageUrl
   return `${API_BASE_URL}/images/${imageUrl.replace('/images/', '')}`
+}
+
+const getOriginalPrice = (product) => {
+  const price = Number(product?.price ?? 0)
+  const discount = Number(product?.discount ?? 0)
+  if (!discount || discount <= 0) {
+    return Number(product?.originalPrice ?? price)
+  }
+  return Number(product?.originalPrice ?? (price / Math.max(1 - discount / 100, 0.01)))
 }
 
 const providerId = computed(() => Number(route.params.id || 0) || null)
@@ -104,45 +102,44 @@ const providerId = computed(() => Number(route.params.id || 0) || null)
 const loadProvider = async () => {
   loading.value = true
   try {
-    if (!productStore.products.length) {
-      await productStore.fetchAllProducts()
+    const [providerRes, topRes] = await Promise.allSettled([
+      api.get(`/providers/${providerId.value}`),
+      api.get('/orders/top-products', {
+        params: { period: 'month', providerId: providerId.value },
+      }),
+    ])
+
+    const providerData = providerRes.status === 'fulfilled' ? providerRes.value.data : null
+    const topProducts = topRes.status === 'fulfilled' && Array.isArray(topRes.value.data?.products)
+      ? topRes.value.data.products
+      : []
+
+    const name = providerData?.provider_name || providerData?.farm_name || 'Unknown Provider'
+    const farm = providerData?.farm_name || name
+
+    let allProducts = []
+    if (providerData?.products) {
+      allProducts = providerData.products
+    } else {
+      if (!productStore.products.length) {
+        await productStore.fetchAllProducts()
+      }
+      allProducts = productStore.products.filter((product) => {
+        const pid = Number(product.providerId ?? product.provider_id ?? product.provider?.user_id ?? 0) || null
+        return pid === providerId.value
+      })
     }
-
-    const allProducts = productStore.products.filter((product) => {
-      const currentProviderId = Number(product.providerId ?? product.provider_id ?? product.provider?.user_id ?? 0) || null
-      return currentProviderId === providerId.value
-    })
-
-    const providerName =
-      allProducts[0]?.providerName ||
-      allProducts[0]?.provider?.provider_name ||
-      allProducts[0]?.provider?.name ||
-      'Unknown Provider'
 
     const productLookup = new Map(allProducts.map((product) => [Number(product.id), product]))
-
-    let topProducts = []
-    try {
-      const topResponse = await api.get('/orders/top-products', {
-        params: { period: 'month', providerId: providerId.value },
-      })
-      topProducts = Array.isArray(topResponse.data?.products) ? topResponse.data.products : []
-    } catch (error) {
-      topProducts = []
-    }
 
     const popularProducts = (topProducts.length ? topProducts : allProducts.slice(0, 4)).map((product) => {
       const source = productLookup.get(Number(product.id)) || product
       const price = Number(source.price ?? product.price ?? 0)
       const discount = Number(source.discount ?? product.discount ?? 0)
-
       return {
-        ...source,
-        ...product,
-        price,
-        discount,
+        ...source, ...product, price, discount,
         originalPrice: getOriginalPrice({ ...source, ...product, price, discount }),
-        providerName: source.providerName || providerName,
+        providerName: source.providerName || name,
         image: resolveImage(source.image || source.imageUrl || product.image || product.imageUrl),
         badge: 'HOT',
         label: `${Number(product.totalQuantity || 0).toFixed(2)} kg sold`,
@@ -157,18 +154,17 @@ const loadProvider = async () => {
         price: Number(product.price ?? 0),
         discount: Number(product.discount ?? 0),
         originalPrice: getOriginalPrice(product),
-        providerName: product.providerName || providerName,
+        providerName: product.providerName || name,
         image: resolveImage(product.image || product.imageUrl),
         badge: 'SALE',
       }))
 
     provider.value = {
       id: providerId.value,
-      name: providerName,
-      farm: providerName,
-      location: 'Cambodia',
-      quote: `Browse all products and top sellers from ${providerName}.`,
-      image: resolveImage(allProducts[0]?.image || allProducts[0]?.imageUrl),
+      name,
+      farm,
+      image: resolveImage(providerData?.avatar || providerData?.farm_image || allProducts[0]?.image || allProducts[0]?.imageUrl),
+      location: providerData?.location || 'Cambodia',
       productCount: allProducts.length,
       topProductCount: topProducts.length,
       monthOrders: Number((topProducts || []).reduce((sum, item) => sum + Number(item.orderCount || 0), 0)),
@@ -178,7 +174,7 @@ const loadProvider = async () => {
         discount: Number(product.discount ?? 0),
         originalPrice: getOriginalPrice(product),
         image: resolveImage(product.image || product.imageUrl),
-        providerName: product.providerName || providerName,
+        providerName: product.providerName || name,
       })),
       popularProducts,
       promotionProducts,
