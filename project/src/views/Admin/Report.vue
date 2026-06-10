@@ -6,7 +6,7 @@
           <i class="bi bi-flower1"></i>
           <span>Khmer Veg Admin Platform</span>
         </div>
-        <h1 class="page-title">របាយការណ៍ និងការវិភាគ <span class="sub-text">(Reports & Analytics)</span></h1>
+        <h1 class="page-title">Report and Analytics<span class="sub-text"></span></h1>
         <p class="page-subtitle">Track your marketplace yield, vendor performance, and regional logistics metrics.</p>
       </div>
 
