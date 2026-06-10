@@ -143,15 +143,16 @@
           <!-- Top Orders Section -->
           <div class="card mb-4">
             <div class="card-body">
-              <TopOrders :limit="5" />
+              <TopOrders :limit="5" @view-order="openDetailModal" />
             </div>
           </div>
 
           <!-- Recent Orders -->
-          <RecentOrder />
+          <RecentOrder @view-order="openDetailModal" />
         </div>
       </div>
     </div>
+    <OrderDetailModal :show="showDetailModal" :order="selectedOrder" @close="showDetailModal = false" />
   </div>
 </template>
 
@@ -166,8 +167,16 @@ import ProductsSellAnalysis from '../../components/provider_com/ProductsSellAnal
 import RecentOrder from '../../components/provider_com/recentOrder.vue'
 import TopCustomers from '../../components/provider_com/TopCustomers.vue'
 import TopOrders from '../../components/provider_com/TopOrders.vue'
+import OrderDetailModal from '../../components/provider_com/OrderDetailModal.vue'
 
 const API_BASE_URL = 'http://localhost:3000'
+const showDetailModal = ref(false)
+const selectedOrder = ref({})
+
+const openDetailModal = (order) => {
+  selectedOrder.value = order
+  showDetailModal.value = true
+}
 const reportRef = ref(null)
 const reportLoading = ref(false)
 const reportData = ref({

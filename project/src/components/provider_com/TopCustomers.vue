@@ -207,6 +207,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import { useUserStore } from '@/stores/userStore'
 import { useProviderOrderStore } from '@/stores/providerOrderStore'
 
@@ -425,13 +426,27 @@ const fetchTopCustomers = async () => {
     // Group orders by customer
     const customersMap = {}
     
+    const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+    let emailMap = {}
+    try {
+      const usersRes = await axios.get(`${API_BASE_URL}/users`)
+      if (Array.isArray(usersRes.data)) {
+        usersRes.data.forEach(u => emailMap[u.id] = u.email)
+      }
+    } catch (e) {
+      console.warn('Failed to fetch users for emails', e)
+    }
+
     orders.forEach(order => {
       const customerId = order.customerIdRaw || Math.random() // Fallback if no ID
+      const fallbackEmail = order.raw?.customer?.user?.email || order.raw?.customer?.email || 'No email provided'
+      const realEmail = emailMap[customerId] || fallbackEmail
+
       if (!customersMap[customerId]) {
         customersMap[customerId] = {
           id: customerId,
           name: order.customerName || 'Unknown Customer',
-          email: order.raw?.customer?.user?.email || order.raw?.customer?.email || 'No email provided',
+          email: realEmail,
           avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(order.customerName || 'U')}&background=random`,
           totalOrders: 0,
           totalItems: 0,
