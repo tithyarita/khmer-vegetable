@@ -32,7 +32,8 @@
             <h3>Delivery Review</h3>
             <div class="stars" style="margin-bottom: 10px">
               <span v-for="i in 5" :key="'dr'+i" class="star" :class="{ on: i <= deliveryRating }" @click="deliveryRating = i">★</span>
-              <span class="star-lbl">{{ ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][deliveryRating] }}</span>
+              <span v-if="deliveryRating" class="star-lbl">{{ ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][deliveryRating] }}</span>
+              <span v-if="deliveryRating" class="star-score">{{ deliveryRating }}/5</span>
             </div>
             <textarea v-model="deliveryFeedback" rows="3" placeholder="Tell us about your delivery experience (optional)"></textarea>
           </div>
@@ -48,6 +49,8 @@
             </div>
             <div class="stars" style="margin: 10px 0">
               <span v-for="i in 5" :key="'pr'+i" class="star" :class="{ on: i <= productRating }" @click="productRating = i">★</span>
+              <span v-if="productRating" class="star-lbl">{{ ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][productRating] }}</span>
+              <span v-if="productRating" class="star-score">{{ productRating }}/5</span>
             </div>
             <textarea v-model="productFeedback" rows="3" placeholder="Tell others about this product (optional)"></textarea>
           </div>
@@ -108,8 +111,8 @@ const handleNavigate = (section) => {
 provide('isSidebarOpen', isSidebarOpen)
 provide('closeSidebar', closeSidebar)
 
-const deliveryRating = ref(4)
-const productRating = ref(4)
+const deliveryRating = ref(0)
+const productRating = ref(0)
 const activeProduct = ref(0)
 const productFeedback = ref('')
 const deliveryFeedback = ref('')
@@ -357,6 +360,13 @@ const submitReview = async () => {
   font-size: 0.95rem;
   font-weight: 600;
   color: #4a5c50;
+}
+
+.star-score {
+  margin-left: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2d7a3a;
 }
 
 .chips {
