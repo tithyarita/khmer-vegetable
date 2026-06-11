@@ -12,6 +12,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:5173',
       'http://localhost:5174',
+      'http://localhost:8080',
       'http://143.198.91.135',
       'http://www.prave-vinuth.online',
     ],

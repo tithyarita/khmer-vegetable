@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   backend:
@@ -8,10 +6,15 @@ services:
     restart: always
     ports:
       - "3000:3000"
-    env_file:
-      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: "110704"
+      DB_NAME: khmer_vegetable_market
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -21,8 +24,6 @@ services:
     restart: always
     ports:
       - "8080:80"
-    env_file:
-      - .env
     depends_on:
       - backend
     networks:
@@ -33,12 +34,17 @@ services:
     container_name: vegetable-db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: vegetable
-    expose:
-      - "3306"
+      MYSQL_ROOT_PASSWORD: "110704"
+      MYSQL_DATABASE: khmer_vegetable_market
+    ports:
+      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p110704"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
     networks:
       - app-network
 
