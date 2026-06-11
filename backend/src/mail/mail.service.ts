@@ -1,22 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: nodemailer.Transporter;
-
-  constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST ?? 'smtp.gmail.com',
-      port: Number(process.env.MAIL_PORT ?? 587),
-      secure: true, // true for port 465
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-      },
-    });
-  }
+  private resend = new Resend(process.env.RESEND_API_KEY);
 
   async sendProviderApproval(params: {
     to: string;
@@ -77,7 +65,7 @@ export class MailService {
                 <span class="cred-value">${password}</span>
               </div>
             </div>
-
+            
             <div class="warning">
               ⚠️ <strong>Please change your password immediately after your first login.</strong>
               This temporary password should not be kept for long-term use.
@@ -103,9 +91,9 @@ export class MailService {
     `;
 
     try {
-      await this.transporter.sendMail({
+      await this.resend.emails.send({
         from:
-          process.env.MAIL_FROM ?? 'Organic Editorial <no-reply@example.com>',
+          process.env.MAIL_FROM ?? 'Organic Editorial <onboarding@resend.dev>',
         to,
         subject: 'Your Provider Application Has Been Approved!',
         html,
@@ -122,38 +110,38 @@ export class MailService {
     const { to, code } = params;
 
     const html = `
-    <!DOCTYPE html>
-    <html>
-    <head><meta charset="utf-8" />
-    <style>
-      body { font-family: Arial, sans-serif; background: #f5f7fb; margin: 0; }
-      .wrapper { max-width: 480px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
-      .header { background: linear-gradient(135deg, #16a34a, #14532d); padding: 28px 32px; text-align: center; }
-      .header h1 { color: #fff; margin: 0; font-size: 20px; }
-      .body { padding: 32px; color: #374151; text-align: center; }
-      .code-box { background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 24px 0; letter-spacing: 8px; font-size: 36px; font-weight: 800; color: #14532d; font-family: monospace; }
-      .note { font-size: 13px; color: #6b7280; }
-      .footer { text-align: center; padding: 16px; font-size: 11px; color: #9ca3af; border-top: 1px solid #f3f4f6; }
-    </style>
-    </head>
-    <body>
-      <div class="wrapper">
-        <div class="header"><h1>🌿 Organic Editorial</h1></div>
-        <div class="body">
-          <p>Use this code to verify your email for the provider application:</p>
-          <div class="code-box">${code}</div>
-          <p class="note">This code expires in <strong>10 minutes</strong>.<br/>If you didn't request this, you can safely ignore this email.</p>
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8" />
+      <style>
+        body { font-family: Arial, sans-serif; background: #f5f7fb; margin: 0; }
+        .wrapper { max-width: 480px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+        .header { background: linear-gradient(135deg, #16a34a, #14532d); padding: 28px 32px; text-align: center; }
+        .header h1 { color: #fff; margin: 0; font-size: 20px; }
+        .body { padding: 32px; color: #374151; text-align: center; }
+        .code-box { background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 24px 0; letter-spacing: 8px; font-size: 36px; font-weight: 800; color: #14532d; font-family: monospace; }
+        .note { font-size: 13px; color: #6b7280; }
+        .footer { text-align: center; padding: 16px; font-size: 11px; color: #9ca3af; border-top: 1px solid #f3f4f6; }
+      </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <div class="header"><h1>🌿 Organic Editorial</h1></div>
+          <div class="body">
+            <p>Use this code to verify your login:</p>
+            <div class="code-box">${code}</div>
+            <p class="note">This code expires in <strong>10 minutes</strong>.<br/>If you didn't request this, you can safely ignore this email.</p>
+          </div>
+          <div class="footer">© 2026 Digital Greenhouse System</div>
         </div>
-        <div class="footer">© 2026 Digital Greenhouse System</div>
-      </div>
-    </body>
-    </html>
-  `;
+      </body>
+      </html>
+    `;
 
     try {
-      await this.transporter.sendMail({
+      await this.resend.emails.send({
         from:
-          process.env.MAIL_FROM ?? 'Organic Editorial <no-reply@example.com>',
+          process.env.MAIL_FROM ?? 'Organic Editorial <onboarding@resend.dev>',
         to,
         subject: '🔐 Your verification code',
         html,
