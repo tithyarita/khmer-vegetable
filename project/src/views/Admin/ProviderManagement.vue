@@ -195,28 +195,52 @@
 
       <div style="border:1px solid #e5e7eb;border-top:none;padding:20px 24px;">
         <div style="font-size:11px;font-weight:700;color:#14532d;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px;">Provider Information</div>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-          <tr>
-            <td style="padding:7px 0;color:#6b7280;width:130px;">Email</td>
-            <td style="padding:7px 0;color:#111827;font-weight:500;">{{ selectedProvider.email }}</td>
-            <td style="padding:7px 0;color:#6b7280;width:130px;">Phone</td>
-            <td style="padding:7px 0;color:#111827;font-weight:500;">{{ selectedProvider.phone }}</td>
-          </tr>
-          <tr>
-            <td style="padding:7px 0;color:#6b7280;border-top:1px solid #f3f4f6;">Role</td>
-            <td style="padding:7px 0;color:#111827;font-weight:500;border-top:1px solid #f3f4f6;">{{ selectedProvider.role }}</td>
-            <td style="padding:7px 0;color:#6b7280;border-top:1px solid #f3f4f6;">Status</td>
-            <td style="padding:7px 0;color:#111827;font-weight:500;border-top:1px solid #f3f4f6;">{{ selectedProvider.providerStatus }}</td>
-          </tr>
-          <tr>
-            <td style="padding:7px 0;color:#6b7280;border-top:1px solid #f3f4f6;">Farm Address</td>
-            <td colspan="3" style="padding:7px 0;color:#111827;font-weight:500;border-top:1px solid #f3f4f6;">{{ selectedProvider.farmAddress }}</td>
-          </tr>
-          <tr>
-            <td style="padding:7px 0;color:#6b7280;border-top:1px solid #f3f4f6;">Approved By</td>
-            <td colspan="3" style="padding:7px 0;color:#111827;font-weight:500;border-top:1px solid #f3f4f6;">{{ selectedProvider.approvedBy }}</td>
-          </tr>
-        </table>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <tbody>
+              <tr>
+                <td style="padding:7px 0;color:#6b7280;width:130px;">Email</td>
+                <td style="padding:7px 0;color:#111827;font-weight:500;">
+                  {{ selectedProvider.email }}
+                </td>
+                <td style="padding:7px 0;color:#6b7280;width:130px;">Phone</td>
+                <td style="padding:7px 0;color:#111827;font-weight:500;">
+                  {{ selectedProvider.phone }}
+                </td>
+              </tr>            
+              <tr>
+                <td style="padding:7px 0;color:#6b7280;border-top:1px solid #f3f4f6;">
+                  Role
+                </td>
+                <td style="padding:7px 0;color:#111827;font-weight:500;border-top:1px solid #f3f4f6;">
+                  {{ selectedProvider.role }}
+                </td>
+                <td style="padding:7px 0;color:#6b7280;border-top:1px solid #f3f4f6;">
+                  Status
+                </td>
+                <td style="padding:7px 0;color:#111827;font-weight:500;border-top:1px solid #f3f4f6;">
+                  {{ selectedProvider.providerStatus }}
+                </td>
+              </tr>           
+              <tr>
+                <td style="padding:7px 0;color:#6b7280;border-top:1px solid #f3f4f6;">
+                  Farm Address
+                </td>
+                <td colspan="3"
+                    style="padding:7px 0;color:#111827;font-weight:500;border-top:1px solid #f3f4f6;">
+                  {{ selectedProvider.farmAddress }}
+                </td>
+              </tr>            
+              <tr>
+                <td style="padding:7px 0;color:#6b7280;border-top:1px solid #f3f4f6;">
+                  Approved By
+                </td>
+                <td colspan="3"
+                    style="padding:7px 0;color:#111827;font-weight:500;border-top:1px solid #f3f4f6;">
+                  {{ selectedProvider.approvedBy }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
       </div>
 
       <div v-if="selectedProvider.appImages?.length" style="border:1px solid #e5e7eb;border-top:none;padding:20px 24px;">

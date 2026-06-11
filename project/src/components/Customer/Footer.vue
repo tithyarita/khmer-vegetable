@@ -33,7 +33,7 @@
               <li><a href="#">{{ t('returnPolicy') }}</a></li>
               <li><a href="#">{{ t('privacyPolicy') }}</a></li>
               <li><a href="#">{{ t('termsConditions') }}</a></li>
-              <li><a href="#">{{ t('becomeProvider') }}</a></li>
+              <li><a href="/application-form">{{ t('becomeProvider') }}</a></li>
             </ul>
           </div>
           <div class="footer-col contact-col">
