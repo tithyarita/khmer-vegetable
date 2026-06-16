@@ -81,7 +81,7 @@ async function submit() {
   if (rating.value === 0) return
   submitting.value = true
   try {
-    await axios.post('http://localhost:3000/feedbacks', {
+    await axios.post(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/feedbacks`, {
       provider_id:     props.providerId,
       customer_id:     props.customerId,
       customer_name:   props.customerName,

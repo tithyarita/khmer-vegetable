@@ -198,7 +198,7 @@ import TopCustomers from '../../components/provider_com/TopCustomers.vue'
 import TopOrders from '../../components/provider_com/TopOrders.vue'
 import OrderDetailModal from '../../components/provider_com/OrderDetailModal.vue'
 
-const API_BASE_URL = 'http://localhost:3000'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 const showDetailModal = ref(false)
 const selectedOrder = ref({})
 

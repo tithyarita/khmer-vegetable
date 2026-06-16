@@ -224,7 +224,7 @@ Chart.register(
   Filler
 )
 
-const API = "http://localhost:3000"
+const API = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 
 // Core State Fields
 const allRawOrders = ref([])
