@@ -10,6 +10,44 @@
 
         <div class="content-wrapper flex-grow-1 overflow-y-auto p-4">
           
+          <!-- Date Range Filter -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <div class="date-filter-row">
+                <div class="date-filter-group">
+                  <div class="date-field">
+                    <label for="startDate">Start Date</label>
+                    <input
+                      id="startDate"
+                      type="date"
+                      v-model="dateRange.start"
+                      class="form-control"
+                    />
+                  </div>
+                  <div class="date-field">
+                    <label for="endDate">End Date</label>
+                    <input
+                      id="endDate"
+                      type="date"
+                      v-model="dateRange.end"
+                      class="form-control"
+                    />
+                  </div>
+                  <button class="btn btn-primary" @click="loadMonthlyReport" :disabled="reportLoading">
+                    <i class="bi bi-search me-1"></i> Analyze
+                  </button>
+                  <button class="btn btn-outline-secondary" @click="resetDateRange" :disabled="reportLoading">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                  </button>
+                </div>
+                <div class="date-range-badge" v-if="dateRange.start || dateRange.end">
+                  <i class="bi bi-calendar-range me-1"></i>
+                  {{ dateRange.start || '...' }} → {{ dateRange.end || '...' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="card mb-4">
             <div class="card-body report-toolbar">
               <div>
@@ -139,12 +177,8 @@
             </div>
           </div>
 
-<<<<<<< HEAD
-          <RecentOrder />
-=======
           <!-- Recent Orders -->
           <RecentOrder @view-order="openDetailModal" />
->>>>>>> 7f3779a20e5389c446a639340c05344f0a4ce3be
         </div>
       </div>
     </div>
@@ -153,7 +187,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, reactive } from 'vue'
 import axios from 'axios'
 import html2pdf from 'html2pdf.js'
 import SideBar from '../../components/provider_com/sideBar.vue'
@@ -175,17 +209,33 @@ const openDetailModal = (order) => {
 const reportRef = ref(null)
 const reportLoading = ref(false)
 
-const reportData = ref({
-  providerName: '-',
-  totalRevenue: 0,
-  adminFee: 0,
-  netRevenue: 0,
-})
+  const reportData = ref({
+    providerName: '-',
+    totalRevenue: 0,
+    adminFee: 0,
+    netRevenue: 0,
+    totalOrders: 0,
+  })
 
 const reportMeta = ref({
   monthLabel: '',
   generatedAt: '',
 })
+
+const dateRange = reactive({
+  start: '',
+  end: '',
+})
+
+const getDefaultMonthRange = () => {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth(), 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10),
+  }
+}
 
 const api = axios.create({ baseURL: API_BASE_URL })
 api.interceptors.request.use((config) => {
@@ -215,50 +265,61 @@ const buildMonthLabel = () => {
   })
 }
 
+const resetDateRange = () => {
+  const defaults = getDefaultMonthRange()
+  dateRange.start = defaults.start
+  dateRange.end = defaults.end
+  loadMonthlyReport()
+}
+
 const loadMonthlyReport = async () => {
   reportLoading.value = true
   const providerId = getProviderId()
-  let revenueData = {}
-  let products = []
 
   if (providerId) {
     try {
-      const [revenueResponse, productsResponse] = await Promise.all([
-        api.get(`/orders/provider/${providerId}/revenue`),
-        api.get('/orders/top-products', {
-          params: { period: 'month', providerId },
-        }),
-      ])
-      revenueData = revenueResponse.data || {}
-      products = Array.isArray(productsResponse.data?.products) ? productsResponse.data.products : []
+      // Fetch report data from the reports table (pre-calculated revenue, admin fee, net)
+      const reportResponse = await api.get(`/reports/provider/${providerId}`)
+      const report = reportResponse.data || {}
+
+      reportData.value = {
+        providerName: report.provider_name || userName(),
+        totalRevenue: Number(report.total_revenue || 0),
+        adminFee: Number(report.admin_profit || 0),
+        netRevenue: Number(report.net_revenue || 0),
+        totalOrders: Number(report.total_orders || 0),
+      }
     } catch (e) {
-      console.error(e)
+      console.error('Failed to load provider report:', e)
+      // Fallback: show zeros
+      reportData.value = {
+        providerName: userName(),
+        totalRevenue: 0,
+        adminFee: 0,
+        netRevenue: 0,
+        totalOrders: 0,
+      }
+    }
+  } else {
+    reportData.value = {
+      providerName: userName(),
+      totalRevenue: 0,
+      adminFee: 0,
+      netRevenue: 0,
+      totalOrders: 0,
     }
   }
 
-  const computedProducts = products.map((product) => ({
-    ...product,
-    revenue: Number(product.totalQuantity || 0) * Number(product.price || 0),
-  }))
-
-  // Establish base Gross revenue
-  const baseRevenue = Number(revenueData.totalRevenue ?? 0) || computedProducts.reduce((s, p) => s + Number(p.revenue || 0), 0)
-
-  // Explicit, accurate calculations
-  const computedAdminFee = baseRevenue * 0.03
-  const computedNetRevenue = baseRevenue * 0.97
-
-  reportData.value = {
-    providerName: userName(),
-    totalRevenue: baseRevenue,
-    adminFee: computedAdminFee,
-    netRevenue: computedNetRevenue,
+  // Build period label from date range
+  if (dateRange.start || dateRange.end) {
+    const startLabel = dateRange.start ? new Date(dateRange.start + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '...'
+    const endLabel = dateRange.end ? new Date(dateRange.end + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '...'
+    reportMeta.value.monthLabel = `${startLabel} - ${endLabel}`
+  } else {
+    reportMeta.value.monthLabel = buildMonthLabel()
   }
 
-  reportMeta.value = {
-    monthLabel: buildMonthLabel(),
-    generatedAt: new Date().toLocaleString(),
-  }
+  reportMeta.value.generatedAt = new Date().toLocaleString()
 
   reportLoading.value = false
 }
@@ -340,12 +401,71 @@ const userName = () => {
 }
 
 onMounted(() => {
+  // Set default date range to current month
+  const defaults = getDefaultMonthRange()
+  dateRange.start = defaults.start
+  dateRange.end = defaults.end
   reportMeta.value.monthLabel = buildMonthLabel()
   loadMonthlyReport()
 })
 </script>
 
 <style scoped>
+/* Date Filter */
+.date-filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.date-filter-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.date-field label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.date-field input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  min-width: 150px;
+}
+.date-field input:focus {
+  outline: none;
+  border-color: #2d6a4f;
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
+}
+.date-filter-group .btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  height: 38px;
+}
+.date-range-badge {
+  font-size: 0.8rem;
+  color: #2d6a4f;
+  background: #dcfce7;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* Grid for the 3 main cards */
 .dashboard-stats-grid {
   display: grid;

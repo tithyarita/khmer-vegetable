@@ -139,6 +139,10 @@
                   >
                     <option value="">Select Category</option>
                     <option value="vegetables">Vegetables</option>
+                    <option value="greens">Leafy Greens</option>
+                    <option value="tubers">Tubers</option>
+                    <option value="root-veg">Root Veg</option>
+                    <option value="cruciferous">Cruciferous</option>
                     <option value="fruits">Fruits</option>
                     <option value="herbs">Herbs</option>
                   </select>

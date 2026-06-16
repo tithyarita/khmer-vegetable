@@ -18,7 +18,7 @@
         </select>
 
         <select v-model="category">
-          <option>All Categories</option>
+          <option value="All">All Categories</option>
           <option v-for="c in categories" :key="c">{{ c }}</option>
         </select>
       </div>

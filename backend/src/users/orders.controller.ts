@@ -132,8 +132,12 @@ export class OrdersController {
   // GET BY PROVIDER
   // =========================
   @Get('provider/:id/revenue')
-  async getProviderRevenue(@Param('id', ParseIntPipe) id: number) {
-    return await this.ordersService.getProviderRevenue(id);
+  async getProviderRevenue(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return await this.ordersService.getProviderRevenue(id, startDate, endDate);
   }
 
   @Get('provider/:id')

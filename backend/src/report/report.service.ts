@@ -471,6 +471,111 @@ export class ReportService {
   }
 
   // ===============================
+  // GET REPORT BY PROVIDER ID (FROM REPORTS TABLE + LIVE ORDERS FALLBACK)
+  // ===============================
+  async findByProviderId(providerId: number) {
+    try {
+      // First try the reports table
+      const report = await this.reportRepo.findOne({
+        where: { provider_id: providerId },
+      });
+
+      if (report) {
+        const totalRevenue = Number(report.total_revenue || 0);
+        const adminProfit = Number(report.admin_profit || 0);
+        const netRevenue = Number((totalRevenue - adminProfit).toFixed(2));
+
+        return {
+          provider_id: report.provider_id,
+          provider_name: report.provider_name,
+          total_orders: report.total_orders,
+          total_revenue: totalRevenue,
+          admin_profit: adminProfit,
+          net_revenue: netRevenue,
+        };
+      }
+
+      // Fallback: compute from live orders and auto-create the report
+      const orders = await this.orderRepo.find({
+        where: { provider_id: providerId },
+        relations: ['provider'],
+      });
+
+      if (orders.length === 0) {
+        return {
+          provider_id: providerId,
+          provider_name: 'Unknown',
+          total_orders: 0,
+          total_revenue: 0,
+          admin_profit: 0,
+          net_revenue: 0,
+        };
+      }
+
+      let totalOrders = 0;
+      let totalRevenue = 0;
+
+      for (const o of orders) {
+        totalOrders += 1;
+        totalRevenue += Number(o.total || 0);
+      }
+
+      totalRevenue = Number(totalRevenue.toFixed(2));
+      const adminProfit = this.calculateAdminProfit(totalRevenue);
+      const netRevenue = Number((totalRevenue - adminProfit).toFixed(2));
+
+      // Determine provider name
+      const providerName =
+        (orders[0] as any)?.provider?.provider_name ||
+        (orders[0] as any)?.provider?.name ||
+        'Unknown';
+
+      // Auto-create the report entry so it persists
+      try {
+        let newReport = await this.reportRepo.findOne({
+          where: { provider_id: providerId },
+        });
+
+        if (!newReport) {
+          newReport = this.reportRepo.create({
+            provider_id: providerId,
+            provider_name: providerName,
+            total_orders: totalOrders,
+            total_revenue: totalRevenue,
+            admin_profit: adminProfit,
+          });
+        } else {
+          newReport.total_orders = totalOrders;
+          newReport.total_revenue = totalRevenue;
+          newReport.admin_profit = adminProfit;
+          newReport.provider_name = providerName;
+        }
+
+        const saved = await this.reportRepo.save(newReport);
+
+        if (!saved.report_code) {
+          saved.report_code = `#REP-${saved.report_id}`;
+          await this.reportRepo.save(saved);
+        }
+      } catch (saveErr) {
+        this.logger.error('Failed to auto-create report for provider', saveErr.message);
+      }
+
+      return {
+        provider_id: providerId,
+        provider_name: providerName,
+        total_orders: totalOrders,
+        total_revenue: totalRevenue,
+        admin_profit: adminProfit,
+        net_revenue: netRevenue,
+      };
+    } catch (error) {
+      this.logger.error('Error fetching provider report:', error.message);
+      throw new InternalServerErrorException('Failed to fetch provider report');
+    }
+  }
+
+  // ===============================
   // GET ORDERS DISTRIBUTION BY STATUS (FOR ORDER DISTRIBUTION CHART)
   // ===============================
   async getOrdersDistribution(start: string, end: string) {

@@ -104,6 +104,22 @@
                     Vegetables
                   </option>
 
+                  <option value="greens">
+                    Leafy Greens
+                  </option>
+
+                  <option value="tubers">
+                    Tubers
+                  </option>
+
+                  <option value="root-veg">
+                    Root Veg
+                  </option>
+
+                  <option value="cruciferous">
+                    Cruciferous
+                  </option>
+
                   <option value="fruits">
                     Fruits
                   </option>
@@ -120,7 +136,7 @@
                   @click="openAddModal"
                 >
                   <i class="bi bi-plus-circle"></i>
-                  បន្ថែមផលិតផល
+                  add product
                 </button>
               </div>
 

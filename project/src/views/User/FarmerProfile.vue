@@ -11,6 +11,19 @@
           <h1>{{ provider.name }}</h1>
           <p class="farm-name">{{ provider.farm }}</p>
           <p class="location">{{ provider.location }}</p>
+
+          <!-- Contact Info: Email & Phone -->
+          <div class="contact-info">
+            <div class="contact-item" v-if="provider.email">
+              <i class="bi bi-envelope-fill"></i>
+              <span>{{ provider.email }}</span>
+            </div>
+            <div class="contact-item" v-if="provider.phone">
+              <i class="bi bi-telephone-fill"></i>
+              <span>{{ provider.phone }}</span>
+            </div>
+          </div>
+
           <div class="badges">
             <span class="badge">{{ provider.productCount }} {{ t('products') }}</span>
             <span class="badge">{{ provider.topProductCount }} {{ t('topSellingItems') }}</span>
@@ -159,10 +172,15 @@ const loadProvider = async () => {
         badge: 'SALE',
       }))
 
+    // Extract email and phone from provider data or related user
+    const providerEmail = providerData?.email || providerData?.user?.email || ''
+    const providerPhone = providerData?.user?.phone || ''
     provider.value = {
       id: providerId.value,
       name,
       farm,
+      email: providerEmail,
+      phone: providerPhone,
       image: resolveImage(providerData?.avatar || providerData?.farm_image || allProducts[0]?.image || allProducts[0]?.imageUrl),
       location: providerData?.location || 'Cambodia',
       productCount: allProducts.length,
@@ -268,6 +286,25 @@ body.khmer-font .profile-page {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+.contact-item i {
+  font-size: 16px;
+  color: #2d6a4f;
+  width: 18px;
 }
 
 .badges {

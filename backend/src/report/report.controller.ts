@@ -65,6 +65,11 @@ export class ReportController {
     return this.reportService.findByDateRange(start, end);
   }
 
+  @Get('provider/:providerId')
+  async getByProvider(@Param('providerId') providerId: number) {
+    return this.reportService.findByProviderId(providerId);
+  }
+
   @Get('orders-distribution')
   async getOrdersDistribution(
     @Query('start') start: string,

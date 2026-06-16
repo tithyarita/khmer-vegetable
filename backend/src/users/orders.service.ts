@@ -403,13 +403,23 @@ export class OrdersService {
   // =========================
   // PROVIDER REVENUE SUMMARY
   // =========================
-  async getProviderRevenue(providerId: number) {
-    const orders = await this.ordersRepo.find({
+  async getProviderRevenue(providerId: number, startDate?: string, endDate?: string) {
+    let orders = await this.ordersRepo.find({
       where: { provider_id: providerId },
       order: { id: 'DESC' },
     });
 
     const ADMIN_FEE_RATE = 0.03; // 3%
+
+    // Filter by date range if provided
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate) : new Date(0);
+      const end = endDate ? new Date(endDate + 'T23:59:59.999Z') : new Date('9999-12-31T23:59:59.999Z');
+      orders = orders.filter((order) => {
+        const created = new Date(order.created_at);
+        return created >= start && created <= end;
+      });
+    }
 
     const totalOrders = orders.length;
     const totalRevenue = orders.reduce(
