@@ -181,7 +181,7 @@ const loadProvider = async () => {
       farm,
       email: providerEmail,
       phone: providerPhone,
-      image: resolveImage(providerData?.avatar || providerData?.farm_image || allProducts[0]?.image || allProducts[0]?.imageUrl),
+      image: resolveImage(providerData?.avatar || providerData?.farm_image || providerData?.user?.avatar || allProducts[0]?.image || allProducts[0]?.imageUrl),
       location: providerData?.location || 'Cambodia',
       productCount: allProducts.length,
       topProductCount: topProducts.length,

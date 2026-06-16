@@ -376,6 +376,12 @@ watch(
 onMounted(async () => {
   loading.value = true
 
+  // Read search query from URL
+  const searchFromUrl = route.query.search
+  if (searchFromUrl) {
+    searchQuery.value = decodeURIComponent(String(searchFromUrl))
+  }
+
   try {
     await productStore.fetchAllProducts()
   } finally {

@@ -2,9 +2,9 @@
   <header class="navbar">
     <div class="navbar-top">
       <div class="container">
-        <div class="logo">
+        <router-link to="/" class="logo" aria-label="Home">
           <span class="logo-text"><img src="../../assets/images/Logo.png" alt="Logo" /></span>
-        </div>
+        </router-link>
 
         <div class="search" ref="searchRef">
           <svg class="search-icon" width="16" height="16" viewBox="0 0 20 20" fill="none" @click="openDropdown">
@@ -285,8 +285,9 @@ export default {
       this.showDropdown = true
     },
     toSearch() {
+      if (!this.query.trim()) return
       this.searchStore.open(this.query)
-      this.$router.push('/search')
+      this.$router.push(`/products?search=${encodeURIComponent(this.query.trim())}`)
     },
     goToCart() {
       this.$router.push('/cart')
@@ -390,6 +391,8 @@ export default {
   display: flex;
   align-items: center;
   gap: 5px;
+  cursor: pointer;
+  text-decoration: none;
 }
 
 .logo-text {

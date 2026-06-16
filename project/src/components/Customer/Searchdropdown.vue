@@ -30,7 +30,7 @@
     <div class="sd-section">
       <div class="sd-label">Popular categories</div>
       <div class="sd-tags">
-        <span v-for="tag in popularTags" :key="tag" class="sd-tag" @mousedown.prevent="searchTag(tag)">{{ tag }}</span>
+        <span v-for="tag in popularTags" :key="tag.key" class="sd-tag" @mousedown.prevent="searchTag(tag.key)">{{ tag.label }}</span>
       </div>
     </div>
   </div>
@@ -44,7 +44,13 @@ export default {
   setup() { return { productStore: useProductStore() } },
   data() {
     return {
-      popularTags: ['Leafy Greens', 'Microgreens', 'Heirloom', 'Organic', 'Herbs'],
+      popularTags: [
+        { label: 'Vegetables', key: 'vegetables' },
+        { label: 'Leafy Greens', key: 'greens' },
+        { label: 'Tubers', key: 'tubers' },
+        { label: 'Root Veg', key: 'root-veg' },
+        { label: 'Cruciferous', key: 'cruciferous' },
+      ],
     }
   },
   computed: {
@@ -91,7 +97,7 @@ export default {
   methods: {
     goToProduct(item) { this.$router.push(`/product/${item.id}`); this.$emit('close') },
     goToFarmer(provider) { this.$router.push(`/farmer/${provider.id}`); this.$emit('close') },
-    searchTag(tag) { this.$emit('close') },
+    searchTag(key) { this.$router.push(`/category/${key}`); this.$emit('close') },
   },
   mounted() { if (!this.productStore.products.length) this.productStore.fetchAllProducts() },
 }

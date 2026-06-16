@@ -75,7 +75,7 @@ export class ProvidersController {
   async getProvider(@Param('id') id: string): Promise<Provider | null> {
     return this.providerRepo.findOne({
       where: { user_id: Number(id) },
-      relations: ['user', 'banks'],
+      relations: ['user', 'banks', 'products'],
     });
   }
 
