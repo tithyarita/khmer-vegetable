@@ -237,7 +237,7 @@ export default {
         { key: 'vegetables', label: this.t('vegetables'), route: '/category/vegetables' },
         { key: 'greens', label: this.t('navGreens'), route: '/category/greens' },
         { key: 'tubers', label: this.t('navTubers'), route: '/category/tubers' },
-        { key: 'rootveg', label: this.t('navRootVeg'), route: '/category/root%20veg' },
+        { key: 'rootveg', label: this.t('navRootVeg'), route: '/category/root-veg' },
         { key: 'cruciferous', label: this.t('navCruciferous'), route: '/category/cruciferous' },
       ]
     },
@@ -321,12 +321,12 @@ export default {
     },
 
     syncActiveCategory() {
-      const path = this.$route.path
+      const path = decodeURIComponent(this.$route.path)
       if (path === '/' || path === '/home') {
         this.active = 'home'
         return
       }
-      const cat = this.categories.find(c => c.route === path)
+      const cat = this.categories.find(c => decodeURIComponent(c.route) === path)
       if (cat) this.active = cat.key
     },
 

@@ -270,16 +270,18 @@ const categoryMap = {
   vegetables: 'Vegetables',
   greens: 'Leafy Greens',
   tubers: 'Tubers',
-  'root veg': 'Root Veg',
   'root-veg': 'Root Veg',
+  'root veg': 'Root Veg', // backward compat for old URLs
   cruciferous: 'Cruciferous',
   fruits: 'Fruits',
   herbs: 'Herbs',
 }
 
-const categoryType = computed(() =>
-  decodeURIComponent(route.params.type || '').toLowerCase()
-)
+const categoryType = computed(() => {
+  const type = route.params.type
+  const raw = Array.isArray(type) ? type[0] : type
+  return decodeURIComponent(raw || '').toLowerCase()
+})
 
 const categoryName = computed(() =>
   categoryMap[categoryType.value] ||

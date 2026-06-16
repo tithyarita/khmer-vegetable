@@ -1,13 +1,17 @@
-import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { MailService } from '../mail/mail.service';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
+	private readonly logger = new Logger(AuthService.name);
+
 	constructor(
 		private readonly usersService: UsersService,
 		private readonly jwtService: JwtService,
+		private readonly mailService: MailService,
 	) {}
 
 	async validateUser(email: string, password: string) {
@@ -44,9 +48,15 @@ export class AuthService {
 
 		await this.usersService.setResetToken(user.id, otp, expires);
 
-		console.log(`[OTP] Your verification code for ${email || phone}: ${otp}`);
+		// Send OTP via email if email was provided
+		if (email) {
+			await this.mailService.sendVerificationCode({ to: email, code: otp });
+			this.logger.log(`OTP email sent to ${email}`);
+		} else if (phone) {
+			this.logger.log(`OTP for ${phone}: ${otp} (SMS not implemented)`);
+		}
 
-		return { message: 'If an account exists, a reset link has been sent.' };
+		return { message: 'If an account exists, a verification code has been sent.' };
 	}
 
 	async verifyOtp(email?: string, phone?: string, otp?: string) {

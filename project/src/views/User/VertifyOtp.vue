@@ -37,6 +37,16 @@
           <span>{{ loading ? 'Verifying…' : 'Verify Code' }}</span>
           <span v-if="loading" class="spinner" />
         </button>
+
+        <button
+          class="btn-ghost"
+          @click="resendCode"
+          :disabled="resendCooldown > 0 || resending"
+          type="button"
+        >
+          {{ resendCooldown > 0 ? `Resend in ${resendCooldown}s` : resending ? 'Sending…' : 'Resend code' }}
+        </button>
+        <span v-if="resendMsg" class="resend-msg">{{ resendMsg }}</span>
       </div>
 
       <p class="back-row">
@@ -47,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 
@@ -58,6 +68,44 @@ const contact = ref(route.query.contact || '')
 const otp = ref('')
 const loading = ref(false)
 const error = ref('')
+
+// Resend logic
+const resending = ref(false)
+const resendCooldown = ref(0)
+const resendMsg = ref('')
+let cooldownTimer = null
+
+function startCooldown() {
+  resendCooldown.value = 60
+  cooldownTimer = setInterval(() => {
+    resendCooldown.value--
+    if (resendCooldown.value <= 0) clearInterval(cooldownTimer)
+  }, 1000)
+}
+
+onUnmounted(() => {
+  if (cooldownTimer) clearInterval(cooldownTimer)
+})
+
+async function resendCode() {
+  resending.value = true
+  resendMsg.value = ''
+  error.value = ''
+
+  const isEmail = /\S+@\S+\.\S+/.test(contact.value)
+  const isPhone = /^\+?\d{7,}$/.test(contact.value)
+  const payload = isPhone ? { phone: contact.value } : { email: contact.value }
+
+  try {
+    await axios.post(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/auth/forgot-password`, payload)
+    startCooldown()
+    resendMsg.value = 'A new code has been sent!'
+  } catch (e) {
+    resendMsg.value = e.response?.data?.message || 'Failed to resend. Try again.'
+  } finally {
+    resending.value = false
+  }
+}
 
 async function handleVerify() {
   const code = otp.value.trim()
@@ -257,4 +305,35 @@ input:focus {
   transition: color 0.2s;
 }
 .back-row a:hover { color: var(--green-deep); }
+
+.btn-ghost {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: var(--green-mid);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(45,106,79,0.06);
+  border-color: var(--green-mid);
+}
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resend-msg {
+  display: block;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--green-accent);
+  margin-top: 8px;
+}
 </style>

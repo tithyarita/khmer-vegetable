@@ -61,18 +61,25 @@ async function handleSubmit() {
     return
   }
 
+  const isEmail = /\S+@\S+\.\S+/.test(val)
+  const isPhone = /^\+?\d{7,}$/.test(val)
+
+  if (!isEmail && !isPhone) {
+    error.value = 'Please enter a valid email address or phone number.'
+    return
+  }
+
   loading.value = true
   error.value = ''
 
-  const isEmail = /\S+@\S+\.\S+/.test(val)
-  const isPhone = /^\+?\d{7,}$/.test(val)
   const payload = isPhone ? { phone: val } : { email: val }
 
   try {
     await axios.post(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000'}/auth/forgot-password`, payload)
     router.push(`/verify-otp?contact=${encodeURIComponent(val)}`)
-  } catch {
-    error.value = 'Failed to send reset link. Try again later.'
+  } catch (e) {
+    const msg = e.response?.data?.message || e.message || ''
+    error.value = msg || 'Failed to send verification code. Please try again later.'
   } finally {
     loading.value = false
   }

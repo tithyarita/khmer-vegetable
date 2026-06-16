@@ -4,7 +4,23 @@ import { Resend } from 'resend';
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private resend = new Resend(process.env.RESEND_API_KEY);
+  private _resend: Resend | null = null;
+
+  constructor() {
+    const key = process.env.RESEND_API_KEY;
+    if (key) {
+      this.logger.log(`Resend API key loaded (${key.slice(0, 6)}...)`);
+    } else {
+      this.logger.error('RESEND_API_KEY is NOT set! Check your .env file.');
+    }
+  }
+
+  private get resend(): Resend {
+    if (!this._resend) {
+      this._resend = new Resend(process.env.RESEND_API_KEY);
+    }
+    return this._resend;
+  }
 
   async sendProviderApproval(params: {
     to: string;
@@ -139,17 +155,18 @@ export class MailService {
     `;
 
     try {
-      await this.resend.emails.send({
+      const result = await this.resend.emails.send({
         from:
           process.env.MAIL_FROM ?? 'Organic Editorial <onboarding@resend.dev>',
         to,
         subject: '🔐 Your verification code',
         html,
       });
-      this.logger.log(`Verification code sent to ${to}`);
+      this.logger.log(`Verification code sent to ${to}, id=${result.data?.id}`);
     } catch (err) {
-      this.logger.error(`Failed to send verification code to ${to}:`, err);
-      throw new Error('Failed to send verification email. Please try again.');
+      const message = err?.message || String(err);
+      this.logger.error(`Failed to send verification code to ${to}: ${message}`, err?.stack);
+      throw new Error(`Failed to send verification email: ${message}`);
     }
   }
 }
