@@ -12,13 +12,6 @@
     <!-- FILTER -->
     <div class="filter-row">
       <input class="search-input" type="text" placeholder="Search by name..." v-model="search" />
-      <div class="status-filter">
-        <label>Status:</label>
-        <select v-model="status">
-          <option>All Statuses</option>
-          <option>provider</option>
-        </select>
-      </div>
     </div>
 
     <!-- MAIN -->
@@ -50,10 +43,10 @@
               <td>
                 <div class="farm-owner">
                   <img
-                    :src="p.profilePhotoUrl || fallbackAvatar(p.id)"
+                    :src="p.profilePhotoUrl"
                     class="avatar"
                     style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid #e5e7eb;"
-                    @error="e => e.target.src = fallbackAvatar(p.id)"
+                    @error="e => e.target.src = ''"
                   />
                   <div>
                     <div class="farm-name">{{ p.name }}</div>
@@ -104,9 +97,9 @@
         <div class="details-card">
           <div class="profile-header">
             <img
-              :src="selectedProvider.profilePhotoUrl || fallbackAvatar(selectedProvider.id)"
+              :src="selectedProvider.profilePhotoUrl"
               class="profile-avatar"
-              @error="e => e.target.src = fallbackAvatar(selectedProvider.id)"
+              @error="e => e.target.src = ''"
             />
             <div>
               <h3 style="margin:0 0 2px;color:#14532d;">{{ selectedProvider.name }}</h3>
@@ -178,7 +171,7 @@
     >
       <div style="background:#14532d;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0;display:flex;align-items:center;gap:16px;">
         <img
-          :src="selectedProvider.profilePhotoUrl || fallbackAvatar(selectedProvider.id)"
+          :src="selectedProvider.profilePhotoUrl"
           style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;"
           crossorigin="anonymous"
         />
@@ -375,8 +368,6 @@ const previewDataUrl        = ref(null)
 let   cachedCanvas          = null   
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-const fallbackAvatar = (id) =>
-  `https://randomuser.me/api/portraits/men/${(id ?? 0) % 100}.jpg`
 
 function buildImageUrl(path) {
   if (!path) return null
@@ -498,9 +489,10 @@ const downloadFromPreview = async () => {
 // ── Fetch ─────────────────────────────────────────────────────────────────
 const fetchProviders = async () => {
   try {
-    const [usersRes, appsRes] = await Promise.all([
+    const [usersRes, appsRes, providersRes] = await Promise.all([
       axios.get(`${API}/users`, { params: { role: 'provider' } }),
       axios.get(`${API}/api/applications`),
+      axios.get(`${API}/providers`),
     ])
 
     const approvedApps = appsRes.data.filter(
@@ -515,14 +507,23 @@ const fetchProviders = async () => {
           latestAppByEmail.set(a.contact_email, a)
         }
       })
+    // Map provider records by user_id for quick lookup
+    const providerByUserId = new Map()
+    providersRes.data.forEach(p => {
+      providerByUserId.set(p.user_id, p)
+    })
 
     providers.value = usersRes.data.map(u => {
       const app   = latestAppByEmail.get(u.email)
+      const provider = providerByUserId.get(u.id)
       const staff = app?.staff_reviewed_by
 
-      const profilePhotoUrl = app?.profile_photo_path
-        ? buildImageUrl(app.profile_photo_path)
-        : null
+      // Priority: provider.avatar (latest) → u.avatar → app photo → null
+      const profilePhotoUrl =
+        (provider?.avatar && buildImageUrl(provider.avatar)) ||
+        (u.avatar ? u.avatar : null) ||
+        (app?.profile_photo_path ? buildImageUrl(app.profile_photo_path) : null)
+
 
       const appImages = []
       if (app?.id_document_path) {

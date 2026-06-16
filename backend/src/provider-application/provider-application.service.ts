@@ -130,10 +130,17 @@ export class ApplicationsService {
       // 2. Create provider table record
       await tx.save(Provider, {
         user_id: savedUser.id,
-        provider_name: app.business_name,
+        provider_name: app.owner_name,
+        farm_name: app.business_name,
         email: app.contact_email,
         password: hashedPassword,
         status: 'active',
+        application_id: app.id,
+        location: [app.village, app.commune, app.district, app.city_province]
+          .filter(Boolean)
+          .join(', '),
+        avatar: app.profile_photo_path ?? null,
+        farm_image: app.farm_angle1_path ?? null,
       });
 
       // Send approval email — after transaction succeeds
@@ -142,7 +149,7 @@ export class ApplicationsService {
         ownerName: app.owner_name,
         businessName: app.business_name,
         password: DEFAULT_PASSWORD, // plain text for the email
-        loginUrl: 'http://localhost:5173/provider/login', // change to your real domain in production
+        loginUrl: 'http://www.prave-vinuth.online/user/login', // change to your real domain in production
       });
     });
   }

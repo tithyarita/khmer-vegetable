@@ -178,11 +178,14 @@ router.beforeEach((to) => {
   }
 
   // 3. ADMIN PROTECTION
-  if (to.path.startsWith('/admin')) {
-    if (!user || role !== 'admin') {
-      return `/user/login?redirect=${to.fullPath}`
-    }
-  }
+   if (to.path.startsWith('/admin')) {
+     if (!user || role !== 'admin') {
+       return `/user/login?redirect=${to.fullPath}`
+     }
+     if (!sessionStorage.getItem('admin_2fa_ok')) { 
+       return `/user/login?redirect=${to.fullPath}`
+     }
+   }
 
   // 4. PROVIDER PROTECTION
   if (to.path.startsWith('/provider')) {

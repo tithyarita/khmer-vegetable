@@ -1,10 +1,10 @@
 <template>
   <div class="staff-page">
-    <!-- STAFF SUMMARY CARD (like Elite Providers) -->
+
+    <!-- TOP STAFF CARD -->
     <div class="staff-summary-card">
       <div class="card-header">
         <h3 class="card-title">Top Staff</h3>
-        <a href="#" class="view-all">View All</a>
       </div>
       <div class="staff-list">
         <div v-for="(s, i) in topStaff" :key="s.id" class="staff-row-summary">
@@ -14,7 +14,11 @@
           </div>
           <div class="staff-info">
             <p class="staff-name">{{ s.name }}</p>
-            <p class="staff-role">{{ s.role }}</p>
+            <p class="staff-role">ID: #{{ s.id }} · {{ s.role }}</p>
+          </div>
+          <div class="top-stats">
+            <span class="top-stat approved"> {{ s.approved }}</span>
+            <span class="top-stat rejected"> {{ s.rejected }}</span>
           </div>
           <div class="staff-status">
             <span :class="['status-tag', `status-tag--${s.status.toLowerCase()}`]">{{ s.status }}</span>
@@ -34,80 +38,73 @@
       <input v-model="search" placeholder="Search staff..." />
     </div>
 
-    <!-- MAIN -->
-    <div class="layout">
-
-      <!-- LEFT: LIST -->
-      <div class="list-card">
-
-        <div class="list-header">STAFF</div>
-
-        <div
-          v-for="s in filteredStaff"
-          :key="s.id"
-          class="staff-row"
-        >
-          <div class="staff-left">
-            <img :src="s.avatar" />
-            <div>
-              <div class="name">{{ s.name }}</div>
-              <div class="email">{{ s.email }}</div>
-            </div>
-          </div>
-
-          <div class="role">{{ s.role }}</div>
-
-          <div class="actions">
-            <button @click="viewStaff(s)">View</button>
-            <button @click="openEdit(s)">Edit</button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- RIGHT: PROFILE -->
-      <div v-if="selected" class="profile">
-
-        <div class="profile-card">
-          <img :src="selected.avatar" class="avatar-large" />
-
-          <h3>{{ selected.name }}</h3>
-          <p>{{ selected.email }}</p>
-
-          <div class="badges">
-            <span>{{ selected.role }}</span>
-            <span>{{ selected.status }}</span>
-          </div>
-        </div>
-
-        <div class="info-card">
-          <h4>Activity</h4>
-          <p><b>Last Login:</b> 2 hours ago</p>
-          <p><b>Orders Managed:</b> 15 today</p>
-          <p><b>Access:</b> Full</p>
-        </div>
-
-        <div class="danger-card">
-          <h4>Security</h4>
-          <p>Revoke access or reset permissions</p>
-          <button>Revoke Access</button>
-        </div>
-
-      </div>
-
+    <!-- TABLE -->
+    <div class="list-card">
+      <table class="staff-table">
+        <thead>
+          <tr>
+            <th>STAFF ID</th>
+            <th>NAME & EMAIL</th>
+            <th>ROLE</th>
+            <th>STATUS</th>
+            <th style="text-align:center;">APPROVED</th>
+            <th style="text-align:center;">REJECTED</th>
+            <th style="text-align:center;">TOTAL</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="s in filteredStaff" :key="s.id" @click="selected = s" :class="{ selected: selected?.id === s.id }">
+            <td class="id-cell">#{{ s.id }}</td>
+            <td>
+              <div class="name-email">
+                <img :src="s.avatar || ''" @error="e => e.target.style.display='none'" class="row-avatar" />
+                <div>
+                  <div class="name">{{ s.name }}</div>
+                  <div class="email">{{ s.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="role-tag">{{ s.role }}</span></td>
+            <td>
+              <span :class="['status-tag', `status-tag--${s.status.toLowerCase()}`]">{{ s.status }}</span>
+            </td>
+            <td style="text-align:center;">
+              <span class="count-badge approved">{{ s.approved }}</span>
+            </td>
+            <td style="text-align:center;">
+              <span class="count-badge rejected">{{ s.rejected }}</span>
+            </td>
+            <td style="text-align:center;">
+              <span class="count-badge total">{{ s.total }}</span>
+            </td>
+            <td>
+              <div class="actions">
+                <button @click.stop="viewStaff(s)">View</button>
+                <button @click.stop="openEdit(s)">Edit</button>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="filteredStaff.length === 0">
+            <td colspan="8" style="text-align:center;color:#888;padding:20px;">No staff found</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <!-- EDIT MODAL -->
     <!-- VIEW MODAL -->
     <div v-if="showView" class="modal">
       <div class="modal-box">
         <h3>Staff Information</h3>
         <div class="view-staff-info">
-          <img :src="viewStaffData.avatar" class="avatar-large" style="margin-bottom: 1rem;" />
+          <img :src="viewStaffData.avatar" class="avatar-large" style="margin-bottom:1rem;" @error="e=>e.target.style.display='none'" />
+          <div><b>Staff ID:</b> #{{ viewStaffData.id }}</div>
           <div><b>Name:</b> {{ viewStaffData.name }}</div>
           <div><b>Email:</b> {{ viewStaffData.email }}</div>
           <div><b>Role:</b> {{ viewStaffData.role }}</div>
           <div><b>Status:</b> {{ viewStaffData.status }}</div>
+          <div><b>Approved:</b> {{ viewStaffData.approved }}</div>
+          <div><b>Rejected:</b> {{ viewStaffData.rejected }}</div>
         </div>
         <div class="modal-actions">
           <button @click="showView=false">Close</button>
@@ -121,7 +118,6 @@
         <h3>Edit Staff</h3>
         <input v-model="editForm.name" placeholder="Name" />
         <input v-model="editForm.email" placeholder="Email" />
-        <input v-model="editForm.role" placeholder="Role" />
         <div class="modal-actions">
           <button @click="saveEdit">Save</button>
           <button @click="showEdit=false">Cancel</button>
@@ -148,24 +144,37 @@ const viewStaffData = ref({})
 
 // Top 3 staff by name
 const topStaff = computed(() =>
-  staff.value
-    .filter(s => s.status.toLowerCase() === 'active')
-    .sort((a, b) => a.name.localeCompare(b.name))
+  [...staff.value]
+    .sort((a, b) => b.total - a.total)
     .slice(0, 3)
 )
 
 // ── Fetch ─────────────────────────────────────────────────────────────────
 const fetchStaff = async () => {
-  const res = await axios.get(`${API}/users`, { params: { role: 'staff' } })
+  const [staffRes, appsRes] = await Promise.all([
+    axios.get(`${API}/users`, { params: { role: 'staff' } }),
+    axios.get(`${API}/api/applications`),
+  ])
 
-  staff.value = res.data.map(u => ({
-    id:     u.id,
-    name:   u.name,
-    email:  u.email,
-    role:   u.role || 'staff',       
-    status: u.status || 'Active',
-    avatar: `https://randomuser.me/api/portraits/men/${u.id % 100}.jpg`,
-  }))
+  const apps = appsRes.data
+
+  staff.value = staffRes.data.map(u => {
+    const staffApps = apps.filter(a => a.staff_reviewed_by?.user_id === u.id)
+    const approved  = staffApps.filter(a => a.application_status === 'approved').length
+    const rejected  = staffApps.filter(a => a.application_status === 'rejected').length
+
+    return {
+      id:     u.id,
+      name:   u.name,
+      email:  u.email,
+      role:   u.role || 'staff',
+      status: u.status || 'Active',
+      avatar: u.avatar || '',
+      approved,
+      rejected,
+      total:    approved + rejected,
+    }
+  })
 
   if (staff.value.length > 0) selected.value = staff.value[0]
 }
@@ -479,4 +488,54 @@ onMounted(fetchStaff)
   justify-content: flex-end;
   gap: 0.5rem;
 }
+/* TABLE */
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.87rem;
+}
+.staff-table th {
+  background: #f6f6f6;
+  color: #374151;
+  font-weight: 600;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  white-space: nowrap;
+}
+.staff-table td {
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+.staff-table tr:hover   { background: #f9fafb; cursor: pointer; }
+.staff-table tr.selected { background: #f0fdf4; }
+
+.id-cell { color: #6b7280; font-size: 0.82rem; white-space: nowrap; }
+
+.name-email { display: flex; align-items: center; gap: 10px; }
+.row-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: #e2f8ec; }
+
+.role-tag {
+  background: #e2f8ec; color: #14532d;
+  padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.8rem; white-space: nowrap;
+}
+
+.count-badge {
+  display: inline-block;
+  min-width: 28px;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-align: center;
+}
+.count-badge.approved { background: #dcfce7; color: #15803d; }
+.count-badge.rejected { background: #fee2e2; color: #dc2626; }
+.count-badge.total    { background: #e0e7ff; color: #3730a3; }
+
+/* TOP STAFF */
+.top-stats { display: flex; gap: 8px; margin-right: 12px; }
+.top-stat  { font-size: 0.82rem; font-weight: 600; }
+.top-stat.approved { color: #15803d; }
+.top-stat.rejected { color: #dc2626; }
 </style>

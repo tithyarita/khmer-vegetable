@@ -15,7 +15,7 @@ export class ProvidersService {
   ) {}
 
   // ================= GET PROVIDER =================
-    async findByUserId(userId: number): Promise<Provider | null> {
+  async findByUserId(userId: number): Promise<Provider | null> {
     return this.providerRepo.findOne({
       where: { user_id: userId },
       relations: ['user', 'banks'],

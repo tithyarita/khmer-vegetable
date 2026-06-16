@@ -26,6 +26,9 @@ export class Staff {
   @Column()
   status!: string;
 
+  @Column({ nullable: true, default: null })
+  department!: string;
+
   @OneToOne(() => users, (user) => user.staff)
   @JoinColumn({ name: 'user_id' })
   user!: users;

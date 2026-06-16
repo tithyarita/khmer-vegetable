@@ -200,4 +200,32 @@ export class UsersController {
 
     return this.usersService.changePassword(id, cp, np)
   }
+  @Patch(':id/avatar')
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async updateAvatar(
+    @Param('id', ParseIntPipe) userId: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('No file provided');
+
+    const avatarUrl = await uploadToCloudinary(
+      file.buffer,
+      'users/avatars',
+      file.originalname,
+    );
+
+    await this.usersRepository.update(userId, { avatar: avatarUrl });
+
+    const updated = await this.usersRepository.findOne({
+      where: { id: userId },
+    });
+    if (!updated) throw new NotFoundException('User not found');
+
+    return { avatarUrl: updated.avatar };
+  }
 }

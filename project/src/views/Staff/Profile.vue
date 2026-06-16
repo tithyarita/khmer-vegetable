@@ -11,38 +11,30 @@
       <div class="left-col">
         <ProfileForm
           v-model="profile"
+          :saving="saving"
+          :user-id="userStore.user?.id"
           @save="onSaveProfile"
-          @change-avatar="onChangeAvatar"
         />
+      </div>
+      
+      <div class="right-col">
         <SecurityAccess
           :last-login="session.lastLogin"
           :location="session.location"
           @update-password="onUpdatePassword"
         />
+
       </div>
-
-      <div class="right-col">
-        <NotificationsCard v-model:notifications="notifications" />
-
-        <div class="twofa-info-card">
-          <i class="bi bi-shield-check-fill twofa-icon"></i>
-          <div>
-            <p class="twofa-title">Two-Factor Auth is Active</p>
-            <p class="twofa-sub">
-              Every login requires email verification. This cannot be disabled for staff accounts.
-            </p>
-          </div>
+      <div class="twofa-info-card">
+        <i class="bi bi-shield-check-fill twofa-icon"></i>
+        <div>
+          <p class="twofa-title">Two-Factor Auth is Active</p>
+          <p class="twofa-sub">
+            Every login requires email verification. This cannot be disabled for staff accounts.
+          </p>
         </div>
       </div>
     </div>
-    <div class="deactivate-footer">
-      <div>
-        <span class="deactivate-label">Deactivate Account</span>
-        <p class="deactivate-sub">Temporarily disable your access to the staff portal.</p>
-      </div>
-      <button class="btn-deactivate" @click="onDeactivate">Request Deactivation</button>
-    </div>
-
   </div>
 </template>
 
@@ -50,28 +42,35 @@
 import { useUserStore } from '@/stores/userStore'
 import ProfileForm       from '../../components/Staff/Profileform.vue'
 import SecurityAccess    from '../../components/Staff/Securityaccess.vue'
-import NotificationsCard from '../../components/Staff/Notificationscard.vue'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 export default {
   name: 'ProfileSettings',
-  components: { ProfileForm, SecurityAccess, NotificationsCard },
+  components: { ProfileForm, SecurityAccess },
 
   setup() {
     const userStore = useUserStore()
     return { userStore }
   },
-
+  
   data() {
     const u = this.userStore?.user || {}
+    const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+    
+    function resolveImage(path) {
+      if (!path) return ''
+      if (path.startsWith('http')) return path
+      return `${BASE}/images/${path.replace(/^\/?(uploads\/)?/, '')}`
+    }
     return {
+      saving: false,
       profile: {
         fullName:   u.name       || '',
         email:      u.email      || '',
         department: u.department || '',
         role:       (u.role || 'staff').toUpperCase(),
-        avatarUrl:  u.avatarUrl  || '',
+        avatarUrl:  resolveImage(u.avatar || u.avatarUrl || ''),
       },
       session: {
         lastLogin: u.lastLogin || 'Unknown',
@@ -85,12 +84,47 @@ export default {
     }
   },
 
+async mounted() {
+  const userId = this.userStore?.user?.id
+  if (!userId) return
+
+  try {
+    const token = localStorage.getItem('token')
+    const headers = token ? { Authorization: `Bearer ${token}` } : {}
+
+    const userRes  = await fetch(`${API_BASE}/users/${userId}`, { headers })
+    const userData = await userRes.json()
+    const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+
+    function resolveImage(path) {
+      if (!path) return ''
+      if (path.startsWith('http')) return path
+      return `${BASE}/images/${path.replace(/^\/?(uploads\/)?/, '')}`
+    }
+    this.profile = {
+      fullName:   userData.name  || '',
+      email:      userData.email || '',
+      department: '',
+      role:       (userData.role || 'staff').toUpperCase(),
+      avatarUrl:  resolveImage(userData.avatar) || '',
+    }
+
+    const staffRes  = await fetch(`${API_BASE}/staff/${userId}/profile`, { headers })
+    const staffData = await staffRes.json()
+    this.profile.department = staffData.department || ''
+
+  } catch (err) {
+    console.error('Failed to load profile:', err)
+  }
+},
   methods: {
     async onUpdatePassword({ currentPassword, newPassword }) {
       const userId = this.userStore?.user?.id
       if (!userId) { alert('User session not found. Please re-login.'); return }
-      if (currentPassword === newPassword) { alert('New password must be different from your current password.'); return }
-
+      if (currentPassword === newPassword) { 
+        alert('New password must be different from your current password.')
+        return 
+      }
       try {
         const token = localStorage.getItem('token')
         const res = await fetch(`${API_BASE}/users/${userId}/password`, {
@@ -102,26 +136,45 @@ export default {
           body: JSON.stringify({ currentPassword, newPassword }),
         })
 
-        if (res.status === 400) {
-          const body = await res.json().catch(() => ({}))
-          alert(body.message || 'Current password is incorrect.')
-          return
-        }
+        const body = await res.json().catch(() => ({}))
+      
         if (!res.ok) {
-          const body = await res.json().catch(() => ({}))
-          throw new Error(body.message || `Server error (${res.status})`)
+          alert(body.message || 'Failed to update password.')
+          return
         }
         alert('Password updated successfully!')
       } catch (err) {
         alert(`Failed to update password: ${err.message}`)
       }
     },
-
-    onSaveProfile()  { alert('Profile changes saved!') },
-    onChangeAvatar() { alert('Avatar upload dialog would open here.') },
-    onDeactivate() {
-      if (confirm('Are you sure you want to request account deactivation?')) {
-        alert('Deactivation request submitted.')
+  
+    async onSaveProfile() {
+      const userId = this.userStore?.user?.id
+      if (!userId) { alert('Session not found.'); return }
+      this.saving = true
+      try {
+        const token = localStorage.getItem('token')
+        const res = await fetch(`${API_BASE}/staff/${userId}/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            name:       this.profile.fullName,
+            department: this.profile.department || '',
+          }),
+        })
+        if (!res.ok) throw new Error('Failed to save')
+        this.userStore.setUser({
+          ...this.userStore.user,
+          name: this.profile.fullName,
+        }, localStorage.getItem('token'))
+        alert('Profile saved!')
+      } catch (err) {
+        alert('Failed to save: ' + err.message)
+      } finally {
+        this.saving = false
       }
     },
   },

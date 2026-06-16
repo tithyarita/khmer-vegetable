@@ -204,4 +204,16 @@ export class UsersService {
 
     return { message: 'Password updated successfully' };
   }
+  async updateAvatar(
+    id: number,
+    avatar: string,
+  ): Promise<{ avatarUrl: string }> {
+    await this.usersRepository.update(id, { avatar });
+
+    const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
+    const clean = avatar.replace(/^\/?(uploads\/)?/, '');
+    const avatarUrl = `${appUrl}/images/${clean}`;
+
+    return { avatarUrl };
+  }
 }

@@ -4,7 +4,7 @@
     <div class="split-container">
       <div class="split-image" />
       <div class="card" :class="{ shake: shaking }">
-        <div v-if="userStore?.isLoggedIn" class="logged-in">
+        <div v-if="userStore?.isLoggedIn && !needsReAuth" class="logged-in">
           <div class="logo">
             <img src="@/assets/images/Logo.png" alt="Logo" class="logo-icon" />
           </div>
@@ -156,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onUnmounted } from 'vue'
+import { ref, reactive, onUnmounted, onMounted, computed  } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { useUserStore } from '@/stores/userStore'
@@ -186,6 +186,26 @@ const verifying      = ref(false)
 const resending      = ref(false)
 const resendCooldown = ref(0)
 let cooldownTimer    = null
+
+const needsReAuth = computed(() => {
+  if (!userStore?.isLoggedIn) return false
+  const role = (userStore.user?.role || '').toLowerCase().replace(/\s+/g, '')
+  return (role === 'staff' || role === 'admin') && !sessionStorage.getItem(`${role}_2fa_ok`)
+})
+
+onMounted(() => {
+  if (userStore?.isLoggedIn) {
+    const role = (userStore.user?.role || '').toLowerCase().replace(/\s+/g, '')
+
+    if ((role === 'staff' || role === 'admin') && !sessionStorage.getItem(`${role}_2fa_ok`)) {
+      email.value  = userStore.user.email
+      pendingUser  = userStore.user
+      pendingToken = localStorage.getItem('token')
+      sendOtp()
+      step.value = 'otp'
+    }
+  }
+})
 
 function triggerShake () { shaking.value = true; setTimeout(() => (shaking.value = false), 450) }
 
@@ -217,7 +237,7 @@ async function handleLogin() {
         const user = data?.user; const token = data?.token || data?.access_token
         const role = (user.role || '').toLowerCase().replace(/\s+/g, '')
 
-    if (role === 'staff') {
+    if (role === 'staff' || role === 'admin') {
       pendingUser  = user
       pendingToken = token
       await sendOtp()
@@ -284,10 +304,8 @@ async function verifyOtp() {
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || 'Invalid code')
-
-    sessionStorage.setItem('staff_2fa_ok', 'true')
-
     const role = (pendingUser.role || '').toLowerCase().replace(/\s+/g, '')
+    sessionStorage.setItem(`${role}_2fa_ok`, 'true')
     finalizeLogin(pendingUser, pendingToken, role)
 
   } catch (err) {

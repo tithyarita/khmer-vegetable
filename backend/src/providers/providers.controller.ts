@@ -65,6 +65,12 @@ export class ProvidersController {
   // ========================================
   // GET PROVIDER
   // ========================================
+  @Get()
+  findAll() {
+    return this.providerRepo.find({
+      select: ['user_id', 'avatar', 'provider_name', 'email'],
+    });
+  }
   @Get(':id')
   async getProvider(@Param('id') id: string): Promise<Provider | null> {
     return this.providerRepo.findOne({

@@ -33,7 +33,7 @@
               <li><a href="#">{{ t('returnPolicy') }}</a></li>
               <li><a href="#">{{ t('privacyPolicy') }}</a></li>
               <li><a href="#">{{ t('termsConditions') }}</a></li>
-              <li><a href="/application-form">{{ t('becomeProvider') }}</a></li>
+              <li><a href="/application-form" @click="handleBecomeProvider">{{ t('becomeProvider') }}</a></li>
             </ul>
           </div>
           <div class="footer-col contact-col">
@@ -70,10 +70,31 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/userStore'
+const router = useRouter()
+const userStore = useUserStore()
 const { t } = useI18n()
 const email = ref('')
+const role = computed(() =>
+  (userStore.user?.role || '').toLowerCase().replace(/\s+/g, '')
+)
+function handleBecomeProvider(e) {
+  e.preventDefault()
+  if (role.value === 'admin') {
+    alert('You are an admin. You cannot become a provider.')
+    return
+  } else if (role.value === 'staff') {
+    alert('You are a staff member. You cannot become a provider.')
+    return
+  } else if (role.value === 'provider') {
+    router.push('/provider/dashboard')
+  } else {
+    router.push('/application-form')
+  }
+}
 function subscribe() {
   if (!email.value) return
   alert(`Subscribed: ${email.value}`)
