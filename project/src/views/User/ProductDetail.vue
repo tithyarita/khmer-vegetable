@@ -23,7 +23,6 @@
                 :alt="product.name"
                 ref="mainImg"
               />
-              <span class="pd-seasonal">{{ t('seasonalPick') }}</span>
             </div>
 
             <div class="pd-thumbs">
@@ -719,19 +718,6 @@ const submitReview = async () => {
   width: 100%;
   display: block;
   border-radius: 10px;
-}
-
-.pd-seasonal {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  background: var(--gm);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 20px;
-  letter-spacing: 0.3px;
 }
 
 .pd-thumbs {

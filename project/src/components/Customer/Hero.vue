@@ -8,7 +8,7 @@
         <div v-for="(slide, index) in slides" :key="index" class="slide">
           <div class="slide-bg" :style="{ backgroundImage: `url(${slide.image})` }"></div>
           <div class="slide-content">
-            <button class="btn" @click="shopNow(slide)">Shop Now</button>
+            <button class="btn" @click="shopNow">Shop Now</button>
           </div>
         </div>
       </div>
@@ -34,9 +34,12 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import hero2 from '@/assets/images/hero2.png'
 import hero1 from '@/assets/images/hero1.png'
 import hero3 from '@/assets/images/hero3.png'
+
+const router = useRouter()
 const currentIndex = ref(0)
 const progressWidth = ref(0)
 let autoSlide = null
@@ -50,9 +53,8 @@ const slides = [
   { tag: 'Superfood', title: 'Fresh Spinach Mix', subtitle: 'Iron-rich daily superfood', price: '3.75', originalPrice: '4.50', unit: 'bag', image: hero3 },
 ]
 
-function shopNow(slide) {
-  const message = `Hi! I'm interested in ${slide.title}. Can you share some recipes or tips?`
-  window.location.href = `/chat?message=${encodeURIComponent(message)}`
+function shopNow() {
+  router.push('/products')
 }
 
 function nextSlide() {
