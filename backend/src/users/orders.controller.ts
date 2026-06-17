@@ -188,6 +188,17 @@ export class OrdersController {
   }
 
   // =========================
+  // UPDATE PAYMENT STATUS
+  // =========================
+  @Patch(':id/payment-status')
+  updatePaymentStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { payment_status: PaymentStatus },
+  ) {
+    return this.ordersService.updatePaymentStatus(id, body.payment_status);
+  }
+
+  // =========================
   // UPDATE ORDER
   // =========================
   @Patch(':id')

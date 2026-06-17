@@ -361,7 +361,7 @@ export class OrdersService {
   // GET ONE
   // =========================
   async findOne(id: number) {
-    return this.ordersRepo.findOne({
+    const order = await this.ordersRepo.findOne({
       where: { id },
       relations: {
         order_items: { product: true },
@@ -369,13 +369,22 @@ export class OrdersService {
         customer: true,
       },
     });
+
+    // Auto-fix legacy order: if receipt was uploaded but payment_status is still PENDING, mark as PAID
+    if (order && order.payment_proof && order.payment_status === PaymentStatus.PENDING) {
+      order.payment_status = PaymentStatus.PAID;
+      order.paid_at = new Date();
+      await this.ordersRepo.save(order);
+    }
+
+    return order;
   }
 
   // =========================
   // BY PROVIDER
   // =========================
   async findByProvider(providerId: number) {
-    return this.ordersRepo.find({
+    const orders = await this.ordersRepo.find({
       where: { provider_id: providerId },
       relations: {
         order_items: { product: true },
@@ -383,13 +392,28 @@ export class OrdersService {
         customer: true,
       },
     });
+
+    // Auto-fix legacy orders: if receipt was uploaded but payment_status is still PENDING, mark as PAID
+    const needsFix = orders.filter(
+      (o) => o.payment_proof && o.payment_status === PaymentStatus.PENDING,
+    );
+    if (needsFix.length > 0) {
+      const now = new Date();
+      for (const o of needsFix) {
+        o.payment_status = PaymentStatus.PAID;
+        o.paid_at = now;
+      }
+      await this.ordersRepo.save(needsFix);
+    }
+
+    return orders;
   }
 
   // =========================
   // BY CUSTOMER
   // =========================
   async findByCustomer(customerId: number) {
-    return this.ordersRepo.find({
+    const orders = await this.ordersRepo.find({
       where: { customer_id: customerId },
       relations: {
         order_items: { product: true },
@@ -398,6 +422,21 @@ export class OrdersService {
       },
       order: { id: 'DESC' },
     });
+
+    // Auto-fix legacy orders: if receipt was uploaded but payment_status is still PENDING, mark as PAID
+    const needsFix = orders.filter(
+      (o) => o.payment_proof && o.payment_status === PaymentStatus.PENDING,
+    );
+    if (needsFix.length > 0) {
+      const now = new Date();
+      for (const o of needsFix) {
+        o.payment_status = PaymentStatus.PAID;
+        o.paid_at = now;
+      }
+      await this.ordersRepo.save(needsFix);
+    }
+
+    return orders;
   }
 
   // =========================
@@ -505,6 +544,23 @@ export class OrdersService {
 
     if (status === OrderStatus.COMPLETED && !order.completed_at) {
       order.completed_at = new Date();
+    }
+
+    return this.ordersRepo.save(order);
+  }
+
+  // =========================
+  // UPDATE PAYMENT STATUS
+  // =========================
+  async updatePaymentStatus(id: number, paymentStatus: PaymentStatus) {
+    const order = await this.ordersRepo.findOne({ where: { id } });
+
+    if (!order) throw new NotFoundException('Order not found');
+
+    order.payment_status = paymentStatus;
+
+    if (paymentStatus === PaymentStatus.PAID && !order.paid_at) {
+      order.paid_at = new Date();
     }
 
     return this.ordersRepo.save(order);

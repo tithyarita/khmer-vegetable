@@ -300,6 +300,17 @@
               <span class="status-badge" :class="`badge-${selectedOrder.status}`">
                 {{ getStatusLabel(selectedOrder.status) }}
               </span>
+              <span class="status-label" style="margin-left: 16px;">Payment</span>
+              <span class="status-badge" :class="`badge-payment-${selectedOrder.paymentStatus}`">
+                {{ selectedOrder.paymentStatus === 'paid' ? 'Paid' : 'Pending' }}
+              </span>
+              <button
+                v-if="selectedOrder.paymentStatus !== 'paid' && ['qr', 'bank'].includes(selectedOrder.paymentMethod)"
+                class="btn-mark-paid"
+                @click.stop="markAsPaid(selectedOrder)"
+              >
+                Mark as Paid
+              </button>
             </div>
           </div>
         </div>
@@ -560,6 +571,27 @@ const updateStatus = async (order, status) => {
   } catch (error) {
     console.error('UPDATE ERROR:', error.response?.data || error.message)
     showToast('Failed to update order status', 'error')
+  }
+}
+
+// --- Mark as Paid ---
+const markAsPaid = async (order) => {
+  try {
+    await axios.patch(
+      `${API_BASE_URL}/orders/${order.orderId}/payment-status`,
+      { payment_status: 'paid' }
+    )
+
+    const local = orders.value.find(o => o.orderId === order.orderId)
+    if (local) local.paymentStatus = 'paid'
+
+    if (selectedOrder.value?.orderId === order.orderId)
+      selectedOrder.value.paymentStatus = 'paid'
+
+    showToast('Payment marked as paid')
+  } catch (error) {
+    console.error('PAYMENT UPDATE ERROR:', error.response?.data || error.message)
+    showToast('Failed to update payment status', 'error')
   }
 }
 
@@ -1236,6 +1268,26 @@ const formatFullDate = (date) => {
 .badge-pending    { background: #fff3e0; color: #e65100; }
 .badge-delivering { background: #e3f2fd; color: #1565c0; }
 .badge-completed  { background: #e8f5e9; color: #2e7d32; }
+
+/* Payment status badges */
+.badge-payment-paid    { background: #e8f5e9; color: #2e7d32; }
+.badge-payment-pending { background: #fff3e0; color: #e65100; }
+
+/* Mark as Paid button */
+.btn-mark-paid {
+  margin-left: auto;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #2e7d32;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.btn-mark-paid:hover { background: #1b5e20; }
 
 /* Toast */
 .toast {

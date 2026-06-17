@@ -110,6 +110,17 @@
             <span class="status-badge" :class="`badge-${order.status}`">
               {{ getStatusLabel(order.status) }}
             </span>
+            <span class="status-label" style="margin-left: 16px;">Payment</span>
+            <span class="status-badge" :class="`badge-payment-${order.paymentStatus}`">
+              {{ order.paymentStatus === 'paid' ? 'Paid' : 'Pending' }}
+            </span>
+            <button
+              v-if="order.paymentStatus !== 'paid' && ['qr', 'bank'].includes(order.paymentMethod)"
+              class="btn-mark-paid"
+              @click.stop="markAsPaid(order)"
+            >
+              Mark as Paid
+            </button>
           </div>
         </div>
       </div>
@@ -118,6 +129,8 @@
 </template>
 
 <script setup>
+import axios from 'axios'
+
 const props = defineProps({
   show: {
     type: Boolean,
@@ -129,7 +142,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'markPaid'])
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
@@ -145,6 +158,17 @@ const openReceipt = (url) => {
 const getStatusLabel = (status) => {
   const map = { pending: 'Pending', delivering: 'Delivering', completed: 'Completed' }
   return map[status] || status
+}
+
+const markAsPaid = async (order) => {
+  try {
+    await axios.patch(`${API_BASE_URL}/orders/${order.orderId}/payment-status`, {
+      payment_status: 'paid'
+    })
+    emit('markPaid', order.orderId)
+  } catch (err) {
+    console.error('Failed to mark as paid:', err)
+  }
 }
 </script>
 
@@ -322,6 +346,25 @@ const getStatusLabel = (status) => {
 .badge-pending    { background: #fff3e0; color: #e65100; }
 .badge-delivering { background: #e3f2fd; color: #1565c0; }
 .badge-completed  { background: #e8f5e9; color: #2e7d32; }
+
+/* Payment status badges */
+.badge-payment-paid    { background: #e8f5e9; color: #2e7d32; }
+.badge-payment-pending { background: #fff3e0; color: #e65100; }
+
+.btn-mark-paid {
+  margin-left: auto;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #2e7d32;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.btn-mark-paid:hover { background: #1b5e20; }
 
 .modal-enter-active, .modal-leave-active { transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
 .modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.97); }
