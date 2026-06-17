@@ -18,7 +18,6 @@ import { ReviewModule } from './review/review.module';
 import { OrdersModule } from './users/orders.module';
 import { AddressModule } from './address/address.module';
 import { MailModule } from './mail/mail.module';
-import { NavigationModule } from './navigation/navigation.module';
 
 import { AppController } from './app.controller';
 import { VerifyController } from './verify/verify.controller';
@@ -57,7 +56,6 @@ import { AppService } from './app.service';
     OrdersModule,
     AddressModule,
     MailModule,
-    NavigationModule,
   ],
 
   controllers: [AppController, VerifyController],
