@@ -7,6 +7,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Product } from './product.entity'
+import { Cart } from '../cart/cart.entity'
+import { Favorite } from '../favorite/favorite.entity'
+import { Review } from '../review/review.entity'
+import { orderItems } from '../users/order-items.entity'
 import { HttpService } from '@nestjs/axios'
 import { firstValueFrom } from 'rxjs'
 
@@ -17,6 +21,14 @@ export class ProductService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(Cart)
+    private readonly cartRepository: Repository<Cart>,
+    @InjectRepository(Favorite)
+    private readonly favoriteRepository: Repository<Favorite>,
+    @InjectRepository(Review)
+    private readonly reviewRepository: Repository<Review>,
+    @InjectRepository(orderItems)
+    private readonly orderItemsRepository: Repository<orderItems>,
     private readonly httpService: HttpService,
   ) {}
 
@@ -172,6 +184,12 @@ export class ProductService {
         'You cannot delete this product',
       )
     }
+
+    // Delete related records first to avoid FK constraint errors
+    await this.cartRepository.delete({ product: { id } })
+    await this.favoriteRepository.delete({ product: { id } })
+    await this.reviewRepository.delete({ product: { id } })
+    await this.orderItemsRepository.delete({ product: { id } })
 
     await this.productRepository.remove(product)
 
