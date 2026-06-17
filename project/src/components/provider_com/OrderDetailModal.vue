@@ -62,7 +62,7 @@
             </div>
           </div>
 
-          <div v-if="order.paymentMethod === 'bank'" class="info-card card-receipt">
+          <div v-if="['qr', 'bank'].includes(order.paymentMethod)" class="info-card card-receipt">
             <h3 class="card-title">Customer Remittance Receipt</h3>
             <div class="receipt-wrapper">
               <div v-if="order.receiptUrl" class="receipt-container">

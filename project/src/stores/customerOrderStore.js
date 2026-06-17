@@ -69,6 +69,7 @@ export const useCustomerOrderStore = defineStore('customerOrders', () => {
       itemCount,
       paymentMethod: order.payment_method || '—',
       paymentStatus: order.payment_status || 'pending',
+      paymentProof: order.payment_proof || null,
       previewItems: previewItems.length ? previewItems : ['?'],
       extraCount: Math.max(items.length - previewItems.length, 0),
       itemsLabel: items.length

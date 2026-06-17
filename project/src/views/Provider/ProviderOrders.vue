@@ -229,7 +229,7 @@
               </div>
             </div>
 
-            <div v-if="selectedOrder.paymentMethod === 'bank'" class="info-card card-receipt">
+            <div v-if="['qr', 'bank'].includes(selectedOrder.paymentMethod)" class="info-card card-receipt">
               <h3 class="card-title">Customer Remittance Receipt</h3>
               <div class="receipt-wrapper">
                 <div v-if="selectedOrder.receiptUrl" class="receipt-container">
@@ -432,7 +432,7 @@ const fetchOrders = async () => {
         item: order.item ?? rawItems.length ?? 1,
         // ✅ Map database fields correctly for payment verification
         paymentMethod: order.payment_method || order.paymentMethod || 'bank',
-        receiptUrl: order.payment_url || order.receipt_url || order.receipt || order.payment_receipt || null
+        receiptUrl: order.payment_proof || order.payment_url || order.receipt_url || order.receipt || order.payment_receipt || null
       }
     })
   } catch (err) {

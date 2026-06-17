@@ -72,6 +72,9 @@ export class OrdersController {
         grandTotal: Number(body.total || 0),
       };
 
+      // Auto-set payment_status to PAID when receipt is uploaded (QR payment proof provided)
+      const paymentStatus = receiptUrl ? PaymentStatus.PAID : PaymentStatus.PENDING;
+
       if (Array.isArray(providerOrders) && providerOrders.length > 0) {
         const dtos: CreateOrderDto[] = providerOrders.map((group: any) => {
           const providerId = Number(group.providerId || group.provider_id || 0);
@@ -90,7 +93,7 @@ export class OrdersController {
                 }))
               : [],
             payment_method: body.payment_method,
-            payment_status: PaymentStatus.PENDING,
+            payment_status: paymentStatus,
           };
         });
 
@@ -109,7 +112,7 @@ export class OrdersController {
             }))
           : [],
         payment_method: body.payment_method,
-        payment_status: PaymentStatus.PENDING,
+        payment_status: paymentStatus,
       };
 
       return await this.ordersService.create(dto, receiptUrl, checkoutFees);

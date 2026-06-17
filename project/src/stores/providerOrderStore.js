@@ -35,7 +35,7 @@ export const useProviderOrderStore = defineStore('providerOrders', () => {
       })),
       item: order.item ?? rawItems.length ?? 1,
       paymentMethod: order.payment_method || order.paymentMethod || 'bank',
-      receiptUrl: order.payment_url || order.receipt_url || order.receipt || order.payment_receipt || null,
+      receiptUrl: order.payment_proof || order.payment_url || order.receipt_url || order.receipt || order.payment_receipt || null,
       raw: order,
     }
   }
