@@ -118,8 +118,9 @@
               <td><span class="order-id">#ORD-{{ order.id }}</span></td>
               <td>
                 <div class="customer-cell">
-                  <span class="customer-avatar" :style="{ background: order.customerColor }">
-                    {{ order.customerInitials }}
+                  <span class="customer-avatar" :style="order.customerAvatar ? {} : { background: order.customerColor }">
+                    <img v-if="order.customerAvatar" :src="resolveAvatar(order.customerAvatar)" class="avatar-img" :alt="order.customer" />
+                    <span v-else>{{ order.customerInitials }}</span>
                   </span>
                   <div>
                     <span>{{ order.customer }}</span>
@@ -180,8 +181,9 @@
           </div>
           
           <div class="details-customer">
-            <span class="customer-avatar" :style="{ background: selectedOrder.customerColor }">
-              {{ selectedOrder.customerInitials }}
+            <span class="customer-avatar" :style="selectedOrder.customerAvatar ? {} : { background: selectedOrder.customerColor }">
+              <img v-if="selectedOrder.customerAvatar" :src="resolveAvatar(selectedOrder.customerAvatar)" class="avatar-img" :alt="selectedOrder.customer" />
+              <span v-else>{{ selectedOrder.customerInitials }}</span>
             </span>
             <div>
               <div class="customer-name">{{ selectedOrder.customer }}</div>
@@ -299,6 +301,7 @@ const fetchOrders = async () => {
       const rawShipping = parseFloat(order.shipping_fee) || 0
       const rawService = parseFloat(order.service_fee) || 0
       const lineItems = Array.isArray(order.order_items) ? order.order_items : []
+      const avatar = order.customer?.user?.avatar || null
 
       return {
         id: order.id,
@@ -306,6 +309,7 @@ const fetchOrders = async () => {
         customer: customerName,
         customerInitials: initials,
         customerColor: '#e0e7ff',
+        customerAvatar: avatar,
         provider: order.provider?.provider_name || `Provider ${order.provider_id}`,
         rawPrice,
         subtotal: rawSubtotal,
@@ -359,6 +363,12 @@ const adminItemImage = (imagePath) => {
   if (!imagePath) return ''
   if (imagePath.startsWith('http')) return imagePath
   return `${API_BASE_URL}${imagePath}`
+}
+
+const resolveAvatar = (avatar) => {
+  if (!avatar) return ''
+  if (avatar.startsWith('http')) return avatar
+  return `${API_BASE_URL}${avatar.startsWith('/') ? '' : '/'}${avatar}`
 }
 
 // --- Strict Calendar-Bound Filtering Windows ---
@@ -857,6 +867,14 @@ const updateStatus = async (order, newStatus) => {
   font-weight: 700;
   color: #1e293b;
   font-size: 0.8rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 .btn {
   padding: 6px 14px;

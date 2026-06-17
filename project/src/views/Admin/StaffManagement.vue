@@ -58,7 +58,7 @@
             <td class="id-cell">#{{ s.id }}</td>
             <td>
               <div class="name-email">
-                <img :src="s.avatar || ''" @error="e => e.target.style.display='none'" class="row-avatar" />
+                <img :src="resolveAvatar(s.avatar)" @error="e => e.target.style.display='none'" class="row-avatar" />
                 <div>
                   <div class="name">{{ s.name }}</div>
                   <div class="email">{{ s.email }}</div>
@@ -97,7 +97,7 @@
       <div class="modal-box">
         <h3>Staff Information</h3>
         <div class="view-staff-info">
-          <img :src="viewStaffData.avatar" class="avatar-large" style="margin-bottom:1rem;" @error="e=>e.target.style.display='none'" />
+          <img :src="resolveAvatar(viewStaffData.avatar)" class="avatar-large" style="margin-bottom:1rem;" @error="e=>e.target.style.display='none'" />
           <div><b>Staff ID:</b> #{{ viewStaffData.id }}</div>
           <div><b>Name:</b> {{ viewStaffData.name }}</div>
           <div><b>Email:</b> {{ viewStaffData.email }}</div>
@@ -133,6 +133,12 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+
+const resolveAvatar = (avatar) => {
+  if (!avatar) return ''
+  if (avatar.startsWith('http')) return avatar
+  return `${API}${avatar.startsWith('/') ? '' : '/'}${avatar}`
+}
 
 const staff       = ref([])
 const selected    = ref(null)

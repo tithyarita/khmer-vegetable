@@ -41,19 +41,12 @@ export class UsersController {
   ) {}
 
   // =====================================================
-  // UPDATE USER (CLOUDINARY UPLOAD)
+  // UPDATE USER
   // =====================================================
   @Put(':id')
-  @UseInterceptors(
-    FileInterceptor('avatar', {
-      storage: memoryStorage(),
-      limits: { fileSize: 5 * 1024 * 1024 },
-    }),
-  )
   async updateUser(
     @Param('id', ParseIntPipe) userId: number,
     @Body() body: any,
-    @UploadedFile() file?: Express.Multer.File,
   ) {
     console.log('BODY:', body)
 
@@ -65,20 +58,10 @@ export class UsersController {
     if (body.name?.trim()) update.name = body.name
     if (body.email?.trim()) update.email = body.email
     if (body.phone?.trim()) update.phone = body.phone
+    if (body.role?.trim()) update.role = body.role
 
     if (body.password?.trim()) {
       update.password = await bcrypt.hash(body.password, 10)
-    }
-
-    // -------------------------
-    // AVATAR (CLOUDINARY)
-    // -------------------------
-    if (file) {
-      update.avatar = await uploadToCloudinary(
-        file.buffer,
-        'users/avatars',
-        file.originalname,
-      )
     }
 
     // -------------------------

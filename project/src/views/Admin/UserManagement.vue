@@ -116,7 +116,8 @@
                 <td>
                   <div class="profile-composite-identity">
                     <div class="profile-avatar-placeholder" :class="user.role">
-                      {{ getAvatarInitials(user.name) }}
+                      <img v-if="user.avatar" :src="resolveAvatar(user.avatar)" class="avatar-img" :alt="user.name" />
+                      <span v-else>{{ getAvatarInitials(user.name) }}</span>
                     </div>
                     <div class="profile-text-stack">
                       <span class="identity-fullname-text">{{ user.name }}</span>
@@ -143,9 +144,6 @@
                     </button>
                     <button class="row-action-btn edit-btn" @click="openEditModal(user)" :title="t('editProfile')">
                       <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="row-action-btn delete-btn" @click="deleteUser(user.id)" :title="t('removeUser')">
-                      <i class="bi bi-trash3"></i>
                     </button>
                   </div>
                 </td>
@@ -335,20 +333,6 @@ const fetchUsers = async () => {
   }
 }
 
-/* DESTRUCTION MANAGEMENT HANDLERS */
-const deleteUser = async (id) => {
-  const confirmed = confirm(t('deleteConfirm'))
-  if (!confirmed) return
-
-  try {
-    await axios.delete(`${API_URL}/${id}`)
-    users.value = users.value.filter(u => u.id !== id)
-  } catch (error) {
-    console.error('Destruction handling error payload:', error)
-    alert(error.response?.data?.message || t('deleteFailed'))
-  }
-}
-
 /* INTERFACE CONTROL MODAL SCHEDULERS */
 const openCreateModal = () => {
   modalType.value = 'create'
@@ -431,6 +415,12 @@ const totalProviders = computed(() => users.value.filter(u => u.role === 'provid
 const totalCustomers = computed(() => users.value.filter(u => u.role === 'customer').length)
 
 /* UTILITY HELPERS */
+const resolveAvatar = (avatar) => {
+  if (!avatar) return ''
+  if (avatar.startsWith('http')) return avatar
+  return `${BASE}/images/${avatar.replace(/^\/?(uploads\/)?/, '')}`
+}
+
 const getAvatarInitials = (name) => {
   if (!name) return 'U'
   const segments = name.trim().split(' ')
@@ -830,6 +820,14 @@ onMounted(fetchUsers)
   font-weight: 700;
   color: #ffffff;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .profile-avatar-placeholder.admin { background: linear-gradient(135deg, #4ade80, #16a34a); }
