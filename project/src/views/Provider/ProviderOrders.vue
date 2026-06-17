@@ -304,13 +304,6 @@
               <span class="status-badge" :class="`badge-payment-${selectedOrder.paymentStatus}`">
                 {{ selectedOrder.paymentStatus === 'paid' ? 'Paid' : 'Pending' }}
               </span>
-              <button
-                v-if="selectedOrder.paymentStatus !== 'paid' && ['qr', 'bank'].includes(selectedOrder.paymentMethod)"
-                class="btn-mark-paid"
-                @click.stop="markAsPaid(selectedOrder)"
-              >
-                Mark as Paid
-              </button>
             </div>
           </div>
         </div>
@@ -571,27 +564,6 @@ const updateStatus = async (order, status) => {
   } catch (error) {
     console.error('UPDATE ERROR:', error.response?.data || error.message)
     showToast('Failed to update order status', 'error')
-  }
-}
-
-// --- Mark as Paid ---
-const markAsPaid = async (order) => {
-  try {
-    await axios.patch(
-      `${API_BASE_URL}/orders/${order.orderId}/payment-status`,
-      { payment_status: 'paid' }
-    )
-
-    const local = orders.value.find(o => o.orderId === order.orderId)
-    if (local) local.paymentStatus = 'paid'
-
-    if (selectedOrder.value?.orderId === order.orderId)
-      selectedOrder.value.paymentStatus = 'paid'
-
-    showToast('Payment marked as paid')
-  } catch (error) {
-    console.error('PAYMENT UPDATE ERROR:', error.response?.data || error.message)
-    showToast('Failed to update payment status', 'error')
   }
 }
 

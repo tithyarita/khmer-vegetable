@@ -114,13 +114,6 @@
             <span class="status-badge" :class="`badge-payment-${order.paymentStatus}`">
               {{ order.paymentStatus === 'paid' ? 'Paid' : 'Pending' }}
             </span>
-            <button
-              v-if="order.paymentStatus !== 'paid' && ['qr', 'bank'].includes(order.paymentMethod)"
-              class="btn-mark-paid"
-              @click.stop="markAsPaid(order)"
-            >
-              Mark as Paid
-            </button>
           </div>
         </div>
       </div>
@@ -129,8 +122,6 @@
 </template>
 
 <script setup>
-import axios from 'axios'
-
 const props = defineProps({
   show: {
     type: Boolean,
@@ -142,7 +133,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'markPaid'])
+const emit = defineEmits(['close'])
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
@@ -158,17 +149,6 @@ const openReceipt = (url) => {
 const getStatusLabel = (status) => {
   const map = { pending: 'Pending', delivering: 'Delivering', completed: 'Completed' }
   return map[status] || status
-}
-
-const markAsPaid = async (order) => {
-  try {
-    await axios.patch(`${API_BASE_URL}/orders/${order.orderId}/payment-status`, {
-      payment_status: 'paid'
-    })
-    emit('markPaid', order.orderId)
-  } catch (err) {
-    console.error('Failed to mark as paid:', err)
-  }
 }
 </script>
 
