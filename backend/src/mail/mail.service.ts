@@ -5,6 +5,7 @@ import { Resend } from 'resend';
 export class MailService {
   private readonly logger = new Logger(MailService.name);
   private _resend: Resend | null = null;
+  private readonly logoUrl: string;
 
   constructor() {
     const key = process.env.RESEND_API_KEY;
@@ -13,6 +14,10 @@ export class MailService {
     } else {
       this.logger.error('RESEND_API_KEY is NOT set! Check your .env file.');
     }
+
+    this.logoUrl =
+      process.env.LOGO_URL ||
+      (process.env.APP_URL ? `${process.env.APP_URL}/images/logo.png` : 'https://via.placeholder.com/180x48?text=Logo');
   }
 
   private get resend(): Resend {
@@ -22,6 +27,157 @@ export class MailService {
     return this._resend;
   }
 
+  // ── SHARED EMAIL BASE STYLES ──────────────────────────────────────────────
+  private baseStyles(): string {
+    return `
+      body {
+        margin: 0; padding: 0;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background-color: #f0f4f0;
+      }
+      .email-wrapper {
+        max-width: 520px;
+        margin: 30px auto;
+        background: #ffffff;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      }
+      .email-header {
+        background: #ffffff;
+        padding: 28px 28px 8px 28px;
+        text-align: center;
+        border-bottom: 3px solid #16a34a;
+      }
+      .email-header img {
+        height: 44px;
+        object-fit: contain;
+      }
+      .email-body {
+        padding: 28px 28px 22px 28px;
+        color: #334155;
+      }
+      .email-body h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 10px;
+      }
+      .email-body p {
+        font-size: 14.5px;
+        line-height: 1.7;
+        margin: 0 0 14px;
+        color: #475569;
+      }
+      .info-box {
+        background: #f0fdf4;
+        border: 1px solid #d1fae5;
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin: 18px 0;
+      }
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        padding: 6px 0;
+      }
+      .info-label {
+        color: #64748b;
+        font-weight: 600;
+      }
+      .info-value {
+        color: #0f172a;
+        font-weight: 700;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 13.5px;
+      }
+      .code-display {
+        background: #f0fdf4;
+        border: 2px solid #16a34a;
+        border-radius: 10px;
+        padding: 18px;
+        margin: 20px 0;
+        text-align: center;
+        letter-spacing: 10px;
+        font-size: 34px;
+        font-weight: 800;
+        color: #14532d;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+      }
+      .btn-wrapper {
+        text-align: center;
+        margin: 24px 0 10px;
+      }
+      .btn-primary {
+        display: inline-block;
+        background: #16a34a;
+        color: #ffffff !important;
+        text-decoration: none;
+        padding: 13px 34px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 15px;
+        text-align: center;
+      }
+      .alert-warning {
+        background: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        border-radius: 6px;
+        padding: 12px 16px;
+        font-size: 13px;
+        color: #92400e;
+        margin: 18px 0;
+        line-height: 1.5;
+      }
+      .icon-badge {
+        display: inline-block;
+        width: 20px; height: 20px;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 20px;
+        font-weight: 700;
+        font-size: 11px;
+        margin-right: 6px;
+        vertical-align: middle;
+      }
+      .icon-warn {
+        background: #f59e0b;
+        color: #ffffff;
+      }
+      .icon-info {
+        background: #16a34a;
+        color: #ffffff;
+      }
+      .icon-clock {
+        background: #3b82f6;
+        color: #ffffff;
+      }
+      .text-muted {
+        font-size: 13px;
+        color: #94a3b8;
+        text-align: center;
+        margin-top: 12px;
+        line-height: 1.5;
+      }
+      .text-muted a {
+        color: #16a34a;
+        word-break: break-all;
+      }
+      .email-footer {
+        text-align: center;
+        padding: 18px 28px;
+        font-size: 11.5px;
+        color: #9ca3af;
+        background: #fafbfc;
+        border-top: 1px solid #f1f5f9;
+        line-height: 1.6;
+      }
+    `;
+  }
+
+  // ── PROVIDER APPROVAL EMAIL ───────────────────────────────────────────────
   async sendProviderApproval(params: {
     to: string;
     ownerName: string;
@@ -33,72 +189,56 @@ export class MailService {
 
     const html = `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
       <head>
         <meta charset="utf-8" />
-        <style>
-          body        { font-family: Arial, sans-serif; background: #f5f7fb; margin: 0; padding: 0; }
-          .wrapper    { max-width: 560px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
-          .header     { background: linear-gradient(135deg, #16a34a, #14532d); padding: 36px 32px; text-align: center; }
-          .header h1  { color: #fff; margin: 0; font-size: 24px; }
-          .header p   { color: #bbf7d0; margin: 6px 0 0; font-size: 14px; }
-          .body       { padding: 32px; color: #374151; }
-          .body h2    { font-size: 20px; margin: 0 0 8px; color: #111827; }
-          .body p     { font-size: 14px; line-height: 1.7; margin: 0 0 16px; }
-          .cred-box   { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 18px 22px; margin: 20px 0; }
-          .cred-row   { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 8px; }
-          .cred-label { color: #6b7280; font-weight: 600; }
-          .cred-value { color: #111827; font-weight: 700; font-family: monospace; }
-          .warning    { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 12px 16px; font-size: 13px; color: #854d0e; margin: 20px 0; }
-          .btn-wrap   { text-align: center; margin: 28px 0 8px; }
-          .btn        { display: inline-block; background: #16a34a; color: #fff; text-decoration: none; padding: 13px 32px; border-radius: 10px; font-weight: 700; font-size: 15px; }
-          .footer     { text-align: center; padding: 20px; font-size: 11px; color: #9ca3af; border-top: 1px solid #f3f4f6; }
-        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>${this.baseStyles()}</style>
       </head>
       <body>
-        <div class="wrapper">
+        <div class="email-wrapper">
 
-          <div class="header">
-            <h1>🌿 Organic Editorial</h1>
-            <p>Smart Agricultural Marketplace</p>
+          <div class="email-header">
+            <img src="${this.logoUrl}" alt="Khmer Vegetable" />
           </div>
 
-          <div class="body">
-            <h2>Congratulations, ${ownerName}! 🎉</h2>
+          <div class="email-body">
+            <h2>Welcome, ${ownerName}!</h2>
             <p>
-              Your provider application for <strong>${businessName}</strong> has been
-              <strong style="color:#16a34a;">approved</strong> by our staff team.
-              You can now log in to your provider dashboard and start managing your products.
+              Your provider application for <strong style="color:#16a34a;">${businessName}</strong>
+              has been <strong>approved</strong> by our team. You can now log in and
+              start managing your products on the marketplace.
             </p>
 
-            <div class="cred-box">
-              <div class="cred-row">
-                <span class="cred-label">Login Email</span>
-                <span class="cred-value">${to}</span>
+            <div class="info-box">
+              <div class="info-row">
+                <span class="info-label">Email</span>
+                <span class="info-value">${to}</span>
               </div>
-              <div class="cred-row" style="margin-bottom:0">
-                <span class="cred-label">Temporary Password</span>
-                <span class="cred-value">${password}</span>
+              <div class="info-row">
+                <span class="info-label">Password</span>
+                <span class="info-value">${password}</span>
               </div>
-            </div>
-            
-            <div class="warning">
-              ⚠️ <strong>Please change your password immediately after your first login.</strong>
-              This temporary password should not be kept for long-term use.
             </div>
 
-            <div class="btn-wrap">
-              <a href="${loginUrl}" class="btn">Login to Dashboard →</a>
+            <div class="alert-warning">
+              <span class="icon-badge icon-warn">!</span>
+              <strong>Please change your password immediately</strong> after your first login.
+              This temporary password is for initial access only.
             </div>
 
-            <p style="font-size:13px; color:#6b7280; text-align:center;">
-              If the button doesn't work, copy this link:<br/>
-              <a href="${loginUrl}" style="color:#16a34a;">${loginUrl}</a>
-            </p>
+            <div class="btn-wrapper">
+              <a href="${loginUrl}" class="btn-primary">Go to Dashboard →</a>
+            </div>
+
+            <div class="text-muted">
+              If the button doesn't work, copy and paste this link into your browser:<br/>
+              <a href="${loginUrl}">${loginUrl}</a>
+            </div>
           </div>
 
-          <div class="footer">
-            © 2026 Digital Greenhouse System · You received this because you applied as a provider.
+          <div class="email-footer">
+            You received this email because your provider application was reviewed.
           </div>
 
         </div>
@@ -109,9 +249,9 @@ export class MailService {
     try {
       await this.resend.emails.send({
         from:
-          process.env.MAIL_FROM ?? 'Organic Editorial <onboarding@resend.dev>',
+          process.env.MAIL_FROM ?? 'Khmer Vegetable <no-reply@prave-vinuth.online>',
         to,
-        subject: 'Your Provider Application Has Been Approved!',
+        subject: 'Your Provider Application Has Been Approved',
         html,
       });
       this.logger.log(`Approval email sent to ${to}`);
@@ -119,6 +259,8 @@ export class MailService {
       this.logger.error(`Failed to send approval email to ${to}:`, err);
     }
   }
+
+  // ── VERIFICATION CODE EMAIL ───────────────────────────────────────────────
   async sendVerificationCode(params: {
     to: string;
     code: string;
@@ -127,28 +269,39 @@ export class MailService {
 
     const html = `
       <!DOCTYPE html>
-      <html>
-      <head><meta charset="utf-8" />
-      <style>
-        body { font-family: Arial, sans-serif; background: #f5f7fb; margin: 0; }
-        .wrapper { max-width: 480px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
-        .header { background: linear-gradient(135deg, #16a34a, #14532d); padding: 28px 32px; text-align: center; }
-        .header h1 { color: #fff; margin: 0; font-size: 20px; }
-        .body { padding: 32px; color: #374151; text-align: center; }
-        .code-box { background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 24px 0; letter-spacing: 8px; font-size: 36px; font-weight: 800; color: #14532d; font-family: monospace; }
-        .note { font-size: 13px; color: #6b7280; }
-        .footer { text-align: center; padding: 16px; font-size: 11px; color: #9ca3af; border-top: 1px solid #f3f4f6; }
-      </style>
+      <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>${this.baseStyles()}</style>
       </head>
       <body>
-        <div class="wrapper">
-          <div class="header"><h1>🌿 Organic Editorial</h1></div>
-          <div class="body">
-            <p>Use this code to verify your login:</p>
-            <div class="code-box">${code}</div>
-            <p class="note">This code expires in <strong>10 minutes</strong>.<br/>If you didn't request this, you can safely ignore this email.</p>
+        <div class="email-wrapper">
+
+          <div class="email-header">
+            <img src="${this.logoUrl}" alt="Khmer Vegetable" />
           </div>
-          <div class="footer">© 2026 Digital Greenhouse System</div>
+
+          <div class="email-body">
+            <h2>Verify Your Identity</h2>
+            <p>
+              Please use the verification code below to complete your login.
+              This code is valid for a single use only.
+            </p>
+
+            <div class="code-display">${code}</div>
+
+            <div class="alert-warning">
+              <span class="icon-badge icon-clock">&#x23F1;</span>
+              This code expires in <strong>10 minutes</strong>.<br/>
+              If you didn't request this code, you can safely ignore this email.
+            </div>
+          </div>
+
+          <div class="email-footer">
+            This is an automated message — please do not reply.
+          </div>
+
         </div>
       </body>
       </html>
@@ -157,9 +310,9 @@ export class MailService {
     try {
       const result = await this.resend.emails.send({
         from:
-          process.env.MAIL_FROM ?? 'Organic Editorial <onboarding@resend.dev>',
+          process.env.MAIL_FROM ?? 'Khmer Vegetable <no-reply@prave-vinuth.online>',
         to,
-        subject: '🔐 Your verification code',
+        subject: 'Your Verification Code — Khmer Vegetable',
         html,
       });
       this.logger.log(`Verification code sent to ${to}, id=${result.data?.id}`);

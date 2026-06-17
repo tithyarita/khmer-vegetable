@@ -146,10 +146,6 @@
           </button>
         </div>
 
-        <footer class="card-footer">
-          <small>© 2026 Digital Greenhouse System</small>
-        </footer>
-
       </div>
     </div>
   </div>
@@ -544,8 +540,6 @@ input:focus { border-color: var(--green-accent); background: #fff; box-shadow: 0
 .otp-box:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.12); }
 .otp-box.otp-error { border-color: #dc2626; }
 .otp-err { font-size: 12px; color: #dc2626; text-align: center; margin: 0 0 12px; }
-
-.card-footer { margin-top: auto; padding-top: 20px; text-align: center; color: var(--text-muted); }
 
 @media (max-width: 768px) {
   .split-container { flex-direction: column; margin: 16px; }
