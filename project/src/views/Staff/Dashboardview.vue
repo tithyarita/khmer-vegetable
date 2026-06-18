@@ -57,6 +57,7 @@
       :loading="loading"
       :error="error"
       @view-all="$router.push('/staff/applications')"
+      @delete-app="handleDelete"
     />
   </div>
 </template>
@@ -109,6 +110,20 @@ function renderStatusChart() {
     }
   })
 }
+async function handleDelete(id) {
+  if (!confirm('Delete this application? This cannot be undone.')) return
+  try {
+    const res = await fetch(`${API_BASE}/api/applications/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.message || 'Delete failed')
+    }
+    applications.value = applications.value.filter(a => a.id !== id)
+  } catch (err) {
+    alert('Failed to delete: ' + err.message)
+  }
+}
+
 onMounted(async () => {
   try {
     const res = await fetch(`${API_BASE}/api/applications`)

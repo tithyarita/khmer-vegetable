@@ -184,6 +184,21 @@ export class ApplicationsService {
     return app;
   }
 
+  async remove(id: number): Promise<void> {
+    const app = await this.findOne(id);
+
+    if (
+      app.application_status !== ApplicationStatus.APPROVED &&
+      app.application_status !== ApplicationStatus.REJECTED
+    ) {
+      throw new BadRequestException(
+        'Only approved or rejected applications can be deleted',
+      );
+    }
+
+    await this.repo.remove(app);
+  }
+
   async checkEmailExists(email: string): Promise<boolean> {
     const count = await this.repo.count({
       where: { contact_email: email },

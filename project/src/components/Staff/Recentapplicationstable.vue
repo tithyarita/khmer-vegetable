@@ -46,8 +46,13 @@
         </div>
 
         <div class="col col-menu menu-cell">
-          <button class="menu-btn" title="More options">
-            <i class="bi bi-three-dots"></i>
+          <button
+            v-if="app.status === 'approved' || app.status === 'rejected'"
+            class="menu-btn menu-btn--delete"
+            title="Delete application"
+            @click="$emit('delete-app', app.id)"
+          >
+            <i class="bi bi-trash"></i>
           </button>
         </div>
       </div>
@@ -83,7 +88,7 @@ const props = defineProps({
   loading:      { type: Boolean, default: false },
   error:        { type: String,  default: null },
 })
-defineEmits(['view-all'])
+defineEmits(['view-all', 'delete-app'])
 
 const PAGE_SIZE   = 6
 const currentPage = ref(1)
@@ -200,6 +205,8 @@ const pagedItems = computed(() => {
   transition: color .12s, background .12s;
 }
 .menu-btn:hover { color: #374151; background: #f3f4f6; }
+.menu-btn--delete { color: #dc2626; }
+.menu-btn--delete:hover { color: #b91c1c; background: #fef2f2; }
 
 .table-footer {
   display: flex; align-items: center; justify-content: space-between;

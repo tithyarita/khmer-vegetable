@@ -10,6 +10,7 @@ import {
   BadRequestException,
   ConflictException,
   Patch,
+  Delete,
   Query,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -141,6 +142,13 @@ export class ApplicationsController {
       staffId ? +staffId : undefined,
     );
   }
+  /** DELETE /api/applications/:id */
+  @Delete(':id')
+  async remove(@Param('id', ParseIntPipe) id: number): Promise<{ message: string }> {
+    await this.service.remove(id);
+    return { message: 'Application deleted successfully' };
+  }
+
   /** GET /api/applications?search= */
   @Get()
   findAll(@Query('search') search?: string): Promise<ProviderApplication[]> {
