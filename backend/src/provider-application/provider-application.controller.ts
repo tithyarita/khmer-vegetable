@@ -144,7 +144,9 @@ export class ApplicationsController {
   }
   /** DELETE /api/applications/:id */
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<{ message: string }> {
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string }> {
     await this.service.remove(id);
     return { message: 'Application deleted successfully' };
   }

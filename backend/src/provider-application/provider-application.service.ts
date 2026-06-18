@@ -185,7 +185,11 @@ export class ApplicationsService {
   }
 
   async remove(id: number): Promise<void> {
-    const app = await this.findOne(id);
+    const app = await this.repo.findOne({
+      where: { id },
+      relations: ['staff_reviewed_by', 'provider'],
+    });
+    if (!app) throw new NotFoundException(`Application #${id} not found`);
 
     if (
       app.application_status !== ApplicationStatus.APPROVED &&
@@ -194,6 +198,10 @@ export class ApplicationsService {
       throw new BadRequestException(
         'Only approved or rejected applications can be deleted',
       );
+    }
+    if (app.provider) {
+      app.provider.application_id = null as any;
+      await this.providerRepo.save(app.provider);
     }
 
     await this.repo.remove(app);
