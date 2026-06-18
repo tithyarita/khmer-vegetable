@@ -40,6 +40,18 @@
       />
     </div>
 
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Status Distribution</h3>
+          <p>Breakdown of vendor applications by current status</p>
+        </div>
+        <div class="chart-body">
+          <canvas ref="statusCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+
     <RecentApplicationsTable
       :applications="recentApplications"
       :loading="loading"
@@ -50,16 +62,53 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, onBeforeUnmount } from 'vue'
 import StatsCard               from '../../components/Staff/StateCard.vue'
 import RecentApplicationsTable from '../../components/Staff/Recentapplicationstable.vue'
+import {
+  Chart,
+  ArcElement,
+  Tooltip,
+  Legend
+} from 'chart.js'
+Chart.register(ArcElement, Tooltip, Legend)
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
+const statusCanvas = ref(null)
+let statusChart = null
 const applications = ref([])
 const loading      = ref(true)
 const error        = ref(null)
 
+function renderStatusChart() {
+  if (!statusCanvas.value) return
+  statusChart?.destroy()
+  statusChart = new Chart(statusCanvas.value, {
+    type: 'doughnut',
+    data: {
+      labels: ['Pending', 'Approved', 'Rejected'],
+      datasets: [{
+        data: [counts.value.pending, counts.value.approved, counts.value.rejected],
+        backgroundColor: ['#d97706', '#16a34a', '#dc2626'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { size: 12, weight: '500' }, padding: 16, color: '#2d3748' }
+        },
+        tooltip: { padding: 12, cornerRadius: 8 }
+      }
+    }
+  })
+}
 onMounted(async () => {
   try {
     const res = await fetch(`${API_BASE}/api/applications`)
@@ -68,7 +117,8 @@ onMounted(async () => {
   } catch (err) {
     error.value = err.message
   } finally {
-    loading.value = false
+  loading.value = false
+  nextTick(renderStatusChart)
   }
 })
 
@@ -113,7 +163,8 @@ const recentApplications = computed(() =>
         : null,
       logoStyle: { background: '#f0f4f8' },
     }))
-)
+  )
+  onBeforeUnmount(() => statusChart?.destroy())
 </script>
 
 <style scoped>
@@ -122,4 +173,33 @@ const recentApplications = computed(() =>
 .page-title   { font-size: 26px; font-weight: 800; color: var(--brand-dark); letter-spacing: -.4px; }
 .page-sub     { font-size: 13px; color: #6b7280; margin-top: 4px; }
 .stats-row    { display: flex; gap: 14px; flex-wrap: wrap; }
+.charts-row { margin: 24px 0 24px; }
+.chart-card {
+  border: 1px solid #e1e9e3;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(18,43,29,0.02);
+  overflow: hidden;
+}
+.chart-header {
+  padding: 20px;
+  border-bottom: 1px solid #f0f4f1;
+}
+.chart-header h3 {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #111c15;
+  margin: 0;
+}
+.chart-header p {
+  font-size: 12px;
+  color: #718096;
+  margin: 2px 0 0;
+}
+.chart-body {
+  padding: 24px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 </style>
